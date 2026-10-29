@@ -1,0 +1,103 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "id": "content-calendar",
+  "version": "0.1.1",
+  "name": "Content Calendar Planner",
+  "category": "marketing",
+  "summary": "Plans a 4\u20138 week content calendar mapped to your ICP's questions and buying stages.",
+  "description": "Generates themes, post ideas and formats across channels you choose, each tied to a persona pain and a funnel stage, so content supports acquisition rather than filling a schedule.",
+  "status": "planned",
+  "problems": [
+    "I don't have a marketing team",
+    "I don't know what content to publish",
+    "I want inbound leads from content",
+    "I post inconsistently on LinkedIn"
+  ],
+  "tags": [
+    "content",
+    "seo",
+    "linkedin",
+    "editorial",
+    "inbound"
+  ],
+  "inputs": [
+    {
+      "use": "company_name",
+      "required": true
+    },
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "channels",
+      "label": "Channels",
+      "type": "list",
+      "required": true,
+      "description": "Where you will publish.",
+      "example": "LinkedIn, blog, newsletter"
+    },
+    {
+      "key": "weeks",
+      "label": "Number of weeks",
+      "type": "number",
+      "required": false,
+      "description": "Length of the plan (4\u20138)."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "calendar",
+      "label": "Calendar",
+      "description": "Week-by-week items with channel, format, topic and stage.",
+      "format": "table"
+    }
+  ],
+  "steps": [
+    {
+      "id": "plan",
+      "name": "Plan calendar",
+      "kind": "agent",
+      "responsibility": "Draft themes and items tied to persona pains.",
+      "tools": []
+    },
+    {
+      "id": "check_coverage",
+      "name": "Check coverage",
+      "kind": "check",
+      "responsibility": "Ensure every week and channel has items and every stage is covered.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [
+    {
+      "workflowId": "icp-builder",
+      "required": true,
+      "reason": "Topics are derived from ICP pains and personas."
+    }
+  ],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "coverage",
+        "description": "All weeks and channels have planned items.",
+        "method": "rule",
+        "critical": true
+      }
+    ],
+    "threshold": 0.7
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 4
+  }
+}
