@@ -16,7 +16,7 @@
 | Runtime | `src/lib/runtime/engine.ts`, `budget.ts`, `evaluation.ts`, `model.ts` | The bounded produce → check → evaluate → retry/accept/escalate loop, call and time budgets, and structured-output helpers |
 | Executors | `src/lib/runtime/executors/*` | Code for each runnable workflow (Market Research, ICP Builder), registered by id and exact definition version |
 | Run service | `src/lib/server/run-service.ts`, `db/runs.ts`, `app/api/runs/*`, `app/runs/*` | Preflight, background execution in dependency order, cancellation, restart recovery, trace and evaluation storage |
-| Model client | `src/lib/server/claude.ts` | The only file that talks to Anthropic. Exposes `createMessage`, `checkConnection` (free models endpoint) and error mapping |
+| Model client | `src/lib/providers.ts`, `src/lib/server/model-client.ts`, `claude.ts`, `openai.ts`, `src/lib/runtime/openai-translate.ts` | Picks the provider from the environment; one file per provider SDK; a translator so OpenAI serves the same request shape |
 | Config | `src/lib/server/config.ts` | Reads env at call time and reports `configured`/`model`/`problem`, never the key |
 | Request guard | `src/lib/request-guard.ts`, `src/proxy.ts` | Host allowlist, same-origin and JSON checks on `/api/*` |
 | Logging | `src/lib/server/log.ts` | JSON lines with recursive secret redaction |
@@ -26,7 +26,7 @@
 
 **Workflow definitions as JSON, not TypeScript.** JSON is data-only, so a contributed definition can't execute code. It is easy to diff and review, and can be validated by a script. TypeScript definitions would give type inference but would let a definition run arbitrary code at import time.
 
-**One provider behind one file, not a provider framework.** `claude.ts` owns the Anthropic SDK. The chat engine depends only on a `CreateMessage` function type, which is also how the tests inject a fake model. Supporting another provider means writing another implementation of that function. A universal provider layer can be built if a second provider is actually added.
+**Two providers behind one function type, not a provider framework.** The chat engine and runtime depend only on `CreateMessage` (Anthropic's request and reply shape), which is also how tests inject a fake model. `claude.ts` passes requests straight to Anthropic. For OpenAI, `openai-translate.ts` turns the same request into a Chat Completions call: text, tool calls and tool results, function tools, `tool_choice`, JSON output format and reasoning effort. It turns the reply back into the Anthropic shape. Anthropic-only features, such as the server-side web search tool, are refused with a clear error instead of being dropped; that's why Market Research's preflight skips it on OpenAI. `model-client.ts` chooses per request from the environment (`WORKFLOWS_PROVIDER`, otherwise whichever key exists).
 
 **Grounding by tool, verified by the server.** The model never sees the catalog in its prompt. It must call `search_catalog`. The system prompt requires citing workflows by `` `id` ``, and the server extracts those ids and splits them into verified and unknown. This turns "the LLM must not invent workflows" into something enforced and tested (`tests/chat.test.ts`), not just a prompt instruction.
 

@@ -26,13 +26,21 @@ You can open the app before adding a key. The workflow library works without one
 
 ## Configuring your API key
 
-Model usage is billed to **your** Anthropic account. 100 Workflows uses `claude-opus-5-5` by default.
+Bring a key from **Anthropic** or **OpenAI**. Model usage is billed to that account.
+
+| Provider | Key variable | Default model | Notes |
+| --- | --- | --- | --- |
+| Anthropic | `ANTHROPIC_API_KEY` | `claude-opus-5-5` | Everything works, including web search for Market Research |
+| OpenAI | `OPENAI_API_KEY` | `gpt-6.1-sol` | Chat, recommendations and ICP Builder work; Market Research is skipped (web search is Anthropic-only for now) |
+
+The app uses whichever key is set. With both set, Anthropic wins, unless you add `WORKFLOWS_PROVIDER=openai` (or `anthropic`).
 
 | What | How |
 | --- | --- |
-| Add or replace the key | `npm run setup`. Input is hidden and written to `.env.local` with owner-only (600) permissions. |
-| Do it by hand | `cp .env.example .env.local`, then set `ANTHROPIC_API_KEY=sk-ant-...` |
-| Verify the key | `npm run check:config`, or **Model & keys → Check connection** in the app. Both call Anthropic's free models endpoint, so they spend **no tokens**. |
+| Add an Anthropic key | `npm run setup`. Input is hidden and written to `.env.local` with owner-only (600) permissions. |
+| Add an OpenAI key | Add `OPENAI_API_KEY=sk-...` to `.env.local` |
+| Do it by hand | `cp .env.example .env.local`, then fill in one key |
+| Verify the key | `npm run check:config`, or **Model & keys → Check connection** in the app. Both call the provider's free models endpoint, so they spend **no tokens**. |
 | Use a different model | Set `WORKFLOWS_MODEL=...` in `.env.local`. |
 | Apply changes | Restart `npm run dev`. Env files are read at startup. |
 
@@ -40,7 +48,7 @@ Model usage is billed to **your** Anthropic account. 100 Workflows uses `claude-
 
 - The key is read only by server code (`src/lib/server/*`, guarded by `server-only`). The browser receives just two facts: whether a key is set, and which model is configured.
 - `.env.local` and every other `.env*` file except `.env.example` are git-ignored.
-- Logs are structured JSON and redact anything that looks like a key or an auth header.
+- Logs are structured JSON and redact anything that looks like an Anthropic or OpenAI key, or an auth header.
 - The dev and production servers bind to `127.0.0.1`. API routes reject requests whose `Host` isn't localhost (protection against DNS rebinding), cross-origin POSTs, and non-JSON POSTs (`src/proxy.ts`).
 
 ## Commands
