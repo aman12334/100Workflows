@@ -93,9 +93,15 @@ export function toOpenAIRequest(params: CreateParams): ChatParams {
     request.response_format = { type: "json_schema", json_schema: { name: "output", schema: format.schema, strict: false } };
   }
 
-  const effort = params.output_config?.effort;
-  if (effort && supportsReasoningEffort(params.model)) {
-    request.reasoning_effort = effort === "xhigh" || effort === "max" ? "high" : effort;
+  if (supportsReasoningEffort(params.model)) {
+    if (request.tools?.length) {
+      // Chat Completions rejects function tools combined with reasoning on these models
+      // ("set reasoning_effort to 'none'"); the Responses API would allow both.
+      request.reasoning_effort = "none";
+    } else {
+      const effort = params.output_config?.effort;
+      if (effort) request.reasoning_effort = effort === "xhigh" || effort === "max" ? "high" : effort;
+    }
   }
   return request;
 }

@@ -65,13 +65,17 @@ describe("OpenAI request translation", () => {
       params({
         tools: [{ name: "search_catalog", description: "Search", input_schema: { type: "object", properties: {} } }],
         tool_choice: { type: "none" },
-        output_config: { effort: "xhigh", format: { type: "json_schema", schema: { type: "object" } } },
+        output_config: { effort: "medium" },
       }),
     );
     expect(req.tools).toEqual([{ type: "function", function: { name: "search_catalog", description: "Search", parameters: { type: "object", properties: {} } } }]);
     expect(req.tool_choice).toBe("none");
-    expect(req.response_format).toEqual({ type: "json_schema", json_schema: { name: "output", schema: { type: "object" }, strict: false } });
-    expect(req.reasoning_effort).toBe("high");
+    // OpenAI rejects function tools with reasoning on Chat Completions for these models.
+    expect(req.reasoning_effort).toBe("none");
+
+    const structured = toOpenAIRequest(params({ output_config: { effort: "xhigh", format: { type: "json_schema", schema: { type: "object" } } } }));
+    expect(structured.response_format).toEqual({ type: "json_schema", json_schema: { name: "output", schema: { type: "object" }, strict: false } });
+    expect(structured.reasoning_effort).toBe("high");
     expect(supportsReasoningEffort("gpt-4.1")).toBe(false);
     expect(toOpenAIRequest(params({ model: "gpt-4.1", output_config: { effort: "low" } })).reasoning_effort).toBeUndefined();
   });
