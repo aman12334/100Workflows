@@ -1,0 +1,117 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "id": "pricing-analysis",
+  "version": "0.1.1",
+  "name": "Pricing & Packaging Review",
+  "category": "finance",
+  "summary": "Reviews your pricing tiers against value metrics, unit costs and competitor price points.",
+  "description": "Assesses whether your value metric, tier boundaries and price levels fit your ICP, computes gross margin per tier from the costs you supply, and proposes options with trade-offs.",
+  "status": "planned",
+  "problems": [
+    "I don't know what to charge",
+    "My pricing tiers confuse customers",
+    "I want to raise prices without losing customers"
+  ],
+  "tags": [
+    "pricing",
+    "packaging",
+    "margin",
+    "monetization"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "current_pricing",
+      "label": "Current pricing",
+      "type": "long_text",
+      "required": true,
+      "description": "Your tiers, prices and what each includes.",
+      "example": "Starter $49/mo (3 seats), Team $199/mo (15 seats), Enterprise custom"
+    },
+    {
+      "key": "unit_costs",
+      "label": "Unit costs",
+      "type": "long_text",
+      "required": false,
+      "description": "Cost to serve per customer or per unit."
+    },
+    {
+      "use": "price_point",
+      "required": false
+    }
+  ],
+  "outputs": [
+    {
+      "key": "assessment",
+      "label": "Assessment",
+      "description": "Strengths and problems of current pricing.",
+      "format": "markdown"
+    },
+    {
+      "key": "options",
+      "label": "Pricing options",
+      "description": "Alternatives with expected trade-offs.",
+      "format": "table"
+    }
+  ],
+  "steps": [
+    {
+      "id": "assess",
+      "name": "Assess pricing",
+      "kind": "agent",
+      "responsibility": "Evaluate value metric and tier structure.",
+      "tools": []
+    },
+    {
+      "id": "margins",
+      "name": "Compute margins",
+      "kind": "check",
+      "responsibility": "Calculate gross margin per tier from supplied costs.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [
+    {
+      "workflowId": "competitor-teardown",
+      "required": false,
+      "reason": "Competitor price points anchor the options."
+    },
+    {
+      "workflowId": "icp-builder",
+      "required": false,
+      "reason": "ICP budget and value drivers shape the value metric."
+    }
+  ],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "tradeoffs",
+        "description": "Each option states at least one downside.",
+        "method": "rule"
+      },
+      {
+        "id": "margins_match",
+        "description": "Margins quoted in the options match the deterministic margin calculation.",
+        "method": "rule",
+        "critical": true
+      }
+    ],
+    "threshold": 0.7
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 5
+  }
+}
