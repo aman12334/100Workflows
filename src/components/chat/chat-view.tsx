@@ -21,12 +21,13 @@ interface Props {
   workflowNames: Record<string, string>;
   configured: boolean;
   configProblem?: string;
+  providerLabel: string;
   catalogSize: number;
   categoryCounts: Partial<Record<Category, number>>;
 }
 
 export function ChatView(props: Props) {
-  const { configured, configProblem, catalogSize, categoryCounts, workflowNames, linkedPackages } = props;
+  const { configured, configProblem, providerLabel, catalogSize, categoryCounts, workflowNames, linkedPackages } = props;
   const router = useRouter();
   const [conversationId, setConversationId] = useState(props.conversationId);
   const [messages, setMessages] = useState<StoredMessage[]>(props.initialMessages);
@@ -113,7 +114,9 @@ export function ChatView(props: Props) {
       <header className="flex items-center justify-between gap-3 py-5">
         <div className="flex min-w-0 items-center gap-2 text-sm text-ink-500">
           <Sparkles className="size-4 shrink-0 text-volt-500" />
-          <span className="truncate">Guided by your own Claude key · {catalogSize} workflows in the catalog</span>
+          <span className="truncate">
+            Guided by your own {providerLabel} key · {catalogSize} workflows in the catalog
+          </span>
         </div>
         {!empty && (
           <Link
@@ -129,7 +132,7 @@ export function ChatView(props: Props) {
         <div className="mb-4 flex items-start gap-3 rounded-2xl border border-coral/30 bg-[#fff1f0] p-4 text-sm text-[#8a1f1f]">
           <KeyRound className="mt-0.5 size-5 shrink-0" />
           <div>
-            <div className="font-semibold">Connect your Anthropic key to start chatting</div>
+            <div className="font-semibold">Connect a model key to start chatting</div>
             <p className="mt-0.5 text-[#8a1f1f]/80">
               {configProblem} You can still browse the{" "}
               <Link href="/library" className="font-semibold underline">

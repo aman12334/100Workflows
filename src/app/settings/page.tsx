@@ -1,17 +1,19 @@
 import { CheckCircle2, CircleDashed, Cpu, EyeOff, Globe, HardDrive, Lock, Network, ScanSearch, Terminal } from "lucide-react";
 import { webSearchEnabled } from "@/lib/runtime/executors/market-research";
 import { ConnectionCheck } from "@/components/connection-check";
+import { PROVIDERS } from "@/lib/providers";
 import { getModelConfig } from "@/lib/server/config";
 
 export default function SettingsPage() {
   const config = getModelConfig();
+  const provider = PROVIDERS[config.provider];
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-8 sm:py-12">
       <div className="text-xs font-semibold tracking-[0.16em] text-volt-600 uppercase">Model & keys</div>
       <h1 className="mt-2 font-display text-3xl font-extrabold tracking-tight text-ink-950 sm:text-4xl">Bring your own key</h1>
       <p className="mt-2 max-w-2xl text-ink-700">
-        100 Workflows calls Claude with your Anthropic API key, so model usage is billed to your own Anthropic account. The key stays on
+        100 Workflows calls the model with your own API key, so usage is billed to your own Anthropic or OpenAI account. The key stays on
         this computer, in the local server process.
       </p>
 
@@ -28,15 +30,15 @@ export default function SettingsPage() {
             </div>
             <p className="text-sm text-ink-700">
               {config.configured
-                ? "Run the check to confirm Anthropic accepts it. The check uses the free models endpoint and spends no credits."
+                ? `Run the check to confirm ${provider.label} accepts it. The check uses the free models endpoint and spends no credits.`
                 : config.problem}
             </p>
           </div>
         </div>
         <dl className="grid border-t border-line text-sm sm:grid-cols-3">
-          <Fact icon={Cpu} label="Provider" value="Anthropic" />
+          <Fact icon={Cpu} label="Provider" value={provider.label} />
           <Fact icon={Cpu} label="Model" value={config.model} mono />
-          <Fact icon={HardDrive} label="Key location" value=".env.local" mono />
+          <Fact icon={HardDrive} label="Key location" value={`.env.local · ${config.keyVar}`} mono />
         </dl>
         {config.configured && (
           <div className="border-t border-line bg-canvas/60 p-5">
@@ -52,9 +54,13 @@ export default function SettingsPage() {
           <ToolRow
             icon={Globe}
             name="Web search"
-            on={webSearchEnabled(process.env)}
+            on={provider.webSearch && webSearchEnabled(process.env)}
             setting="WORKFLOWS_WEB_SEARCH=on"
-            note="Anthropic's web search tool, used by Market Research to find real sources (up to 5 searches per run). Searches are billed by Anthropic on top of tokens."
+            note={
+              provider.webSearch
+                ? "Anthropic's web search tool, used by Market Research to find real sources (up to 5 searches per run). Searches are billed by Anthropic on top of tokens."
+                : `Only available with the Anthropic provider for now. With ${provider.label}, Market Research is skipped.`
+            }
           />
           <ToolRow
             icon={ScanSearch}
@@ -74,13 +80,15 @@ export default function SettingsPage() {
           </h2>
           <ol className="mt-4 space-y-4 text-sm text-ink-700">
             <Step n={1}>
-              Create a key at <span className="font-semibold text-ink-950">console.anthropic.com → Settings → API keys</span>.
+              Create a key with <span className="font-semibold text-ink-950">Anthropic</span> (console.anthropic.com → Settings → API keys) or{" "}
+              <span className="font-semibold text-ink-950">OpenAI</span> (platform.openai.com → API keys).
             </Step>
             <Step n={2}>
-              In the project folder, run
+              For Anthropic, run
               <Code>npm run setup</Code>
-              Paste the key when asked. Input is hidden and the key is written to <code className="font-mono">.env.local</code> with
-              owner-only permissions.
+              and paste the key when asked (input is hidden). For OpenAI, add this line to <code className="font-mono">.env.local</code>:
+              <Code>OPENAI_API_KEY=sk-...</Code>
+              With both keys set, choose with <code className="font-mono">WORKFLOWS_PROVIDER=openai</code> or <code className="font-mono">anthropic</code>.
             </Step>
             <Step n={3}>
               Restart the app: stop <code className="font-mono">npm run dev</code> and start it again. Environment files are read at
@@ -89,7 +97,8 @@ export default function SettingsPage() {
           </ol>
           <p className="mt-4 text-xs text-ink-500">
             Prefer to do it by hand? Copy <code className="font-mono">.env.example</code> to <code className="font-mono">.env.local</code> and set{" "}
-            <code className="font-mono">ANTHROPIC_API_KEY</code>. To verify from the terminal: <code className="font-mono">npm run check:config</code>.
+            <code className="font-mono">ANTHROPIC_API_KEY</code> or <code className="font-mono">OPENAI_API_KEY</code>. To verify from the terminal:{" "}
+            <code className="font-mono">npm run check:config</code>.
           </p>
         </div>
 

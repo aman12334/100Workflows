@@ -12,6 +12,7 @@ export async function chatPageProps() {
   return {
     configured: config.configured,
     configProblem: config.problem,
+    providerLabel: config.providerLabel,
     catalogSize: catalog.workflows.length,
     categoryCounts,
     workflowNames: Object.fromEntries(catalog.workflows.map((w) => [w.id, w.name])),
