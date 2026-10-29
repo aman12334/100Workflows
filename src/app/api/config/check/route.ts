@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { checkConnection, mapModelError } from "@/lib/server/claude";
+import { checkConnection, mapModelError } from "@/lib/server/model-client";
 import { getModelConfig } from "@/lib/server/config";
 import { log } from "@/lib/server/log";
 

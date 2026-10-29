@@ -3,7 +3,7 @@ import { formFields, inputsFor, missingRequired, type MissingInput } from "@/lib
 import { executeWorkflow, type Recorder, type UpstreamOutput } from "@/lib/runtime/engine";
 import { EXECUTORS, runnability } from "@/lib/runtime/executors";
 import type { CreateMessage } from "@/lib/runtime/model";
-import { createMessage as anthropicCreateMessage, mapModelError } from "./claude";
+import { createMessage as providerCreateMessage, mapModelError } from "./model-client";
 import { getModelConfig } from "./config";
 import type { DB } from "./db";
 import {
@@ -116,7 +116,7 @@ export function startRun(db: DB, view: PackageView, deps: { createMessage?: Crea
   active.set(runId, controller);
   log.info("run.started", { runId, packageId: view.pkg.id, workflows: plan.map((p) => `${p.workflowId}:${p.status}`) });
 
-  void executeRun(db, view, runId, workflowRunIds, controller.signal, deps.createMessage ?? anthropicCreateMessage, getModelConfig(env).model)
+  void executeRun(db, view, runId, workflowRunIds, controller.signal, deps.createMessage ?? providerCreateMessage, getModelConfig(env).model)
     .catch((err) => {
       log.error("run.crashed", { runId, error: err });
       finishRun(db, runId, "failed", "The run stopped because of an internal error. Check the terminal log.");

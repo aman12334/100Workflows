@@ -47,6 +47,11 @@ describe("redact", () => {
     expect(out).not.toContain("Bearer abc");
   });
 
+  it("redacts OpenAI keys too", () => {
+    const out = JSON.stringify(redact({ message: "bad key sk-proj-AbCdEfGhIjKlMnOpQrStUvWx" }));
+    expect(out).not.toContain("AbCdEfGh");
+  });
+
   it("keeps errors readable", () => {
     expect(redact(new Error("boom"))).toEqual({ name: "Error", message: "boom" });
   });
@@ -61,7 +66,7 @@ describe("getModelConfig", () => {
   });
   it("never includes the key in its result", () => {
     const result = getModelConfig({ ANTHROPIC_API_KEY: "sk-ant-secret-value", WORKFLOWS_MODEL: "claude-sonnet-5-5" });
-    expect(result).toEqual({ configured: true, model: "claude-sonnet-5-5" });
+    expect(result).toEqual({ configured: true, provider: "anthropic", providerLabel: "Anthropic", model: "claude-sonnet-5-5", keyVar: "ANTHROPIC_API_KEY" });
     expect(JSON.stringify(result)).not.toContain("secret");
   });
 });

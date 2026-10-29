@@ -1,19 +1,14 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { getApiKey, getModelConfig } from "./config";
+import { NotConfiguredError, getApiKey, getModelConfig } from "./config";
 import type { CreateMessage } from "@/lib/runtime/model";
 
-/**
- * The single place that talks to Anthropic. Swapping providers means replacing
- * this file and the `CreateMessage` shape the chat engine consumes.
- */
+/** The single place that talks to Anthropic. model-client.ts picks between this and openai.ts. */
 function client(): Anthropic {
-  const apiKey = getApiKey();
-  if (!apiKey) throw new NotConfiguredError(getModelConfig().problem ?? "Model is not configured.");
+  const apiKey = getApiKey("anthropic");
+  if (!apiKey) throw new NotConfiguredError(getModelConfig().problem ?? "Anthropic is not configured.");
   return new Anthropic({ apiKey, maxRetries: 2, timeout: 120_000 });
 }
-
-export class NotConfiguredError extends Error {}
 
 export const createMessage: CreateMessage = (params, options) => client().beta.messages.create(params, options);
 
@@ -32,9 +27,8 @@ export interface MappedError {
   message: string;
 }
 
-/** Turns SDK errors into messages a user can act on, without echoing request details. */
-export function mapModelError(err: unknown): MappedError {
-  if (err instanceof NotConfiguredError) return { status: 503, code: "not_configured", message: err.message };
+/** Maps Anthropic SDK errors to messages a user can act on. Returns null for errors that aren't Anthropic's. */
+export function mapAnthropicError(err: unknown): MappedError | null {
   if (err instanceof Anthropic.AuthenticationError)
     return { status: 401, code: "invalid_key", message: "Anthropic rejected the API key. Run `npm run setup` to replace it, then restart." };
   if (err instanceof Anthropic.PermissionDeniedError)
@@ -53,7 +47,7 @@ export function mapModelError(err: unknown): MappedError {
     return { status: 502, code: "unreachable", message: "Couldn't reach Anthropic. Check your internet connection." };
   if (err instanceof Anthropic.APIError)
     return { status: 502, code: "provider_error", message: `Anthropic returned an error (${err.status ?? "unknown"}). Try again shortly.` };
-  return { status: 500, code: "internal", message: "Something went wrong on the local server. Check the terminal log." };
+  return null;
 }
 
 function apiMessage(err: InstanceType<typeof Anthropic.APIError>): string {

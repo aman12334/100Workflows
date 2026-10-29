@@ -1,13 +1,14 @@
 import "server-only";
 
-const SECRET_PATTERNS = [/sk-ant-[A-Za-z0-9_\-]{8,}/g, /(x-api-key|authorization)["']?\s*[:=]\s*["']?[^\s"',}]+/gi];
+// Anthropic (sk-ant-...) and OpenAI (sk-..., sk-proj-...) keys.
+const SECRET_PATTERNS = [/sk-[A-Za-z0-9_\-]{16,}/g, /(x-api-key|authorization)["']?\s*[:=]\s*["']?[^\s"',}]+/gi];
 const SECRET_KEYS = /^(api[-_]?key|authorization|x-api-key|password|token|secret)$/i;
 
 /** Removes anything that looks like a credential from strings and nested objects. */
 export function redact(value: unknown, depth = 0): unknown {
   if (depth > 6) return "[truncated]";
   if (typeof value === "string") {
-    return SECRET_PATTERNS.reduce((s, re) => s.replace(re, (m) => (m.startsWith("sk-ant-") ? "sk-ant-[redacted]" : `${m.split(/[:=]/)[0]}: [redacted]`)), value);
+    return SECRET_PATTERNS.reduce((s, re) => s.replace(re, (m) => (m.startsWith("sk-") ? "sk-[redacted]" : `${m.split(/[:=]/)[0]}: [redacted]`)), value);
   }
   if (value instanceof Error) return { name: value.name, message: redact(value.message, depth + 1) };
   if (Array.isArray(value)) return value.map((v) => redact(v, depth + 1));
