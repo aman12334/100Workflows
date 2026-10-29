@@ -1,0 +1,107 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "id": "interview-synthesis",
+  "version": "0.1.1",
+  "name": "Customer Interview Synthesis",
+  "category": "user-research",
+  "summary": "Turns raw interview notes or transcripts into themes, quotes and opportunity statements.",
+  "description": "Clusters observations across interviews into themes, keeps verbatim quotes attached to the interview they came from, and separates what customers said from interpretation. A check rejects any quote that does not appear in the supplied notes.",
+  "status": "planned",
+  "problems": [
+    "I have interview notes but no clear takeaways",
+    "I need to validate a problem with customers",
+    "I want evidence for my product roadmap"
+  ],
+  "tags": [
+    "interviews",
+    "synthesis",
+    "discovery",
+    "jobs-to-be-done",
+    "insights"
+  ],
+  "inputs": [
+    {
+      "use": "research_question",
+      "required": true
+    },
+    {
+      "key": "interview_notes",
+      "label": "Interview notes",
+      "type": "long_text",
+      "required": true,
+      "description": "Paste notes or transcripts, separated by interview.",
+      "example": "Interview 1 (ops lead, 40-person agency): \"We reconcile expenses by hand every Friday...\""
+    },
+    {
+      "use": "product_description",
+      "required": false
+    }
+  ],
+  "outputs": [
+    {
+      "key": "themes",
+      "label": "Themes",
+      "description": "Themes with supporting quotes and counts.",
+      "format": "json"
+    },
+    {
+      "key": "opportunities",
+      "label": "Opportunities",
+      "description": "Opportunity statements ranked by evidence.",
+      "format": "markdown"
+    }
+  ],
+  "steps": [
+    {
+      "id": "code_notes",
+      "name": "Code observations",
+      "kind": "agent",
+      "responsibility": "Tag observations in each interview.",
+      "tools": []
+    },
+    {
+      "id": "cluster",
+      "name": "Cluster themes",
+      "kind": "agent",
+      "responsibility": "Group observations into themes and draft opportunities.",
+      "tools": []
+    },
+    {
+      "id": "verify_quotes",
+      "name": "Verify quotes",
+      "kind": "check",
+      "responsibility": "Confirm every quote appears verbatim in the notes.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "quotes_verbatim",
+        "description": "All quotes appear verbatim in the input notes.",
+        "method": "rule",
+        "critical": true
+      },
+      {
+        "id": "evidence_counts",
+        "description": "Each theme states how many interviews support it.",
+        "method": "rule"
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 240,
+    "maxModelCalls": 6
+  }
+}
