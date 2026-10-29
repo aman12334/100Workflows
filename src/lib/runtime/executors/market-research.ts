@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { CriterionResult, Evaluation } from "../evaluation";
 import { WorkflowFailure, type Confidence, type ExecContext, type Executor } from "../engine";
 import { jsonFormat, parseJson, textOf, type MessageParam } from "../model";
+import { PROVIDERS, resolveProvider } from "@/lib/providers";
 import { contextBlock, list, modelReview, text } from "./shared";
 
 export const SourceSchema = z.object({
@@ -222,6 +223,11 @@ export const marketResearch: Executor<ResearchState, Report> = {
   callsPerAttempt: 2, // write + review
 
   preflight(env) {
+    const provider = PROVIDERS[resolveProvider(env)];
+    if (!provider.webSearch) {
+      return `Market Research needs web search, which 100 Workflows currently provides only through Anthropic. You're using ${provider.label}, so it will be skipped. ` +
+        "Add an ANTHROPIC_API_KEY (with WORKFLOWS_WEB_SEARCH=on) to run it.";
+    }
     return webSearchEnabled(env)
       ? null
       : "Market Research needs a search tool, and web search is off. Set WORKFLOWS_WEB_SEARCH=on in .env.local and restart. " +
