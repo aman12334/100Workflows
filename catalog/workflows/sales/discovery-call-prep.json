@@ -1,0 +1,104 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "id": "discovery-call-prep",
+  "version": "0.1.0",
+  "name": "Discovery Call Prep",
+  "category": "sales",
+  "summary": "Prepares a one-page brief and question plan for a first sales call with a specific prospect.",
+  "description": "Combines what you know about the prospect with your ICP to produce hypotheses about their pains, questions that test those hypotheses, and qualification criteria to listen for. It never presents guesses about the prospect as facts; anything not supplied is labelled a hypothesis.",
+  "status": "planned",
+  "problems": [
+    "I don't know what to ask on a discovery call",
+    "My first calls turn into demos too early",
+    "I need to qualify leads faster"
+  ],
+  "tags": [
+    "discovery",
+    "sales-call",
+    "qualification",
+    "meddic"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "prospect",
+      "label": "Prospect",
+      "type": "text",
+      "required": true,
+      "description": "The company and person you're meeting.",
+      "example": "Dana Lee, COO at Brightline Agency (35 people)"
+    },
+    {
+      "key": "prospect_notes",
+      "label": "What you know",
+      "type": "long_text",
+      "required": false,
+      "description": "Anything you already know: how they found you, what they said, their website.",
+      "example": "Booked after reading our post on month-end close; mentioned spreadsheets."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "brief",
+      "label": "Call brief",
+      "description": "Hypotheses, questions mapped to each, qualification criteria and next-step options.",
+      "format": "markdown"
+    }
+  ],
+  "steps": [
+    {
+      "id": "prepare",
+      "name": "Prepare brief",
+      "kind": "agent",
+      "responsibility": "Draft hypotheses and questions from the prospect notes and ICP.",
+      "tools": []
+    },
+    {
+      "id": "check_labels",
+      "name": "Check labels",
+      "kind": "check",
+      "responsibility": "Ensure statements not grounded in the notes are labelled as hypotheses.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [
+    {
+      "workflowId": "icp-builder",
+      "required": false,
+      "reason": "The ICP's pains and disqualifiers sharpen the questions."
+    }
+  ],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "hypotheses_labelled",
+        "description": "Claims about the prospect that aren't in the notes are labelled hypotheses.",
+        "method": "rule",
+        "critical": true
+      },
+      {
+        "id": "questions_mapped",
+        "description": "Each hypothesis has at least one question that tests it.",
+        "method": "rule",
+        "critical": false
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 120,
+    "maxModelCalls": 4
+  }
+}
