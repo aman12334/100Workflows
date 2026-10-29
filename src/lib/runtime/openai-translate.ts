@@ -4,16 +4,27 @@ import type { CreateMessage, CreateParams, Message, MessageParam } from "./model
 /**
  * Lets the chat engine and the workflow runtime run on OpenAI without changing:
  * Anthropic-shaped requests (system, text, tool_use and tool_result blocks,
- * custom tools, JSON output format) become a Chat Completions request, and the
- * reply comes back in the Anthropic message shape they already handle.
- * Anthropic-only features are refused rather than silently dropped.
+ * custom tools, JSON output format, effort) become an OpenAI Responses API
+ * request, and the reply comes back in the Anthropic message shape they
+ * already handle. Anthropic-only features are refused rather than silently dropped.
+ *
+ * The Responses API (not Chat Completions) is required: OpenAI's reasoning models
+ * reject function tools combined with reasoning on /v1/chat/completions.
  */
 
-type ChatParams = OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming;
-type ChatMessage = OpenAI.Chat.Completions.ChatCompletionMessageParam;
-type Completion = OpenAI.Chat.Completions.ChatCompletion;
+type ResponseParams = OpenAI.Responses.ResponseCreateParamsNonStreaming;
+type InputItem = OpenAI.Responses.ResponseInputItem;
+type OpenAIResponse = OpenAI.Responses.Response;
+type ReasoningItem = OpenAI.Responses.ResponseReasoningItem;
 
 export class UnsupportedFeatureError extends Error {}
+
+/**
+ * Carries OpenAI reasoning between calls within one turn. Reasoning models expect
+ * their (encrypted) reasoning to be sent back alongside the tool calls it produced.
+ * Only the OpenAI translator creates or reads this block.
+ */
+export const REASONING_BLOCK = "openai_reasoning";
 
 type Block = { type: string; [k: string]: unknown };
 
@@ -40,41 +51,53 @@ function systemText(system: CreateParams["system"]): string | null {
   return textOfBlocks(system as unknown as Block[]);
 }
 
-/** Reasoning models take reasoning_effort; others reject it. */
+/** Reasoning models take `reasoning.effort`; others reject it. */
 export function supportsReasoningEffort(model: string): boolean {
   return /^(gpt-[5-9]|o\d)/.test(model) && !model.includes("chat-latest");
 }
 
-export function toOpenAIRequest(params: CreateParams): ChatParams {
-  const messages: ChatMessage[] = [];
+const EFFORT: Record<string, "low" | "medium" | "high" | "xhigh"> = { low: "low", medium: "medium", high: "high", xhigh: "xhigh", max: "xhigh" };
+
+export function toOpenAIRequest(params: CreateParams): ResponseParams {
+  const input: InputItem[] = [];
+  const instructions: string[] = [];
   const system = systemText(params.system);
-  if (system) messages.push({ role: "system", content: system });
+  if (system) instructions.push(system);
 
   for (const m of params.messages) {
+    const list = blocks(m.content);
     if (m.role === "system") {
-      messages.push({ role: "system", content: textOfBlocks(blocks(m.content)) });
+      input.push({ role: "developer", content: textOfBlocks(list) });
       continue;
     }
-    const list = blocks(m.content);
     if (m.role === "user") {
-      // Tool results become "tool" messages; any text alongside them stays a user message.
       for (const b of list.filter((x) => x.type === "tool_result")) {
         const prefix = b.is_error ? "Error: " : "";
-        messages.push({ role: "tool", tool_call_id: String(b.tool_use_id), content: prefix + toolResultText(b.content) });
+        input.push({ type: "function_call_output", call_id: String(b.tool_use_id), output: prefix + toolResultText(b.content) });
       }
       const text = textOfBlocks(list);
-      if (text) messages.push({ role: "user", content: text });
+      if (text) input.push({ role: "user", content: text });
       continue;
     }
-    // Assistant: keep text and tool calls; provider-specific blocks (thinking, server tools) have no OpenAI equivalent.
-    const calls = list
-      .filter((b) => b.type === "tool_use")
-      .map((b) => ({ id: String(b.id), type: "function" as const, function: { name: String(b.name), arguments: JSON.stringify(b.input ?? {}) } }));
-    const text = textOfBlocks(list);
-    messages.push({ role: "assistant", content: text || null, ...(calls.length ? { tool_calls: calls } : {}) });
+    // Assistant: replay reasoning, text and tool calls in their original order.
+    for (const b of list) {
+      if (b.type === REASONING_BLOCK) input.push(b.item as ReasoningItem);
+      else if (b.type === "text" && b.text) input.push({ role: "assistant", content: String(b.text) });
+      else if (b.type === "tool_use") {
+        input.push({ type: "function_call", call_id: String(b.id), name: String(b.name), arguments: JSON.stringify(b.input ?? {}) });
+      }
+      // Other Anthropic blocks (thinking, server tools) have no OpenAI equivalent.
+    }
   }
 
-  const request: ChatParams = { model: params.model, messages, max_completion_tokens: params.max_tokens };
+  const request: ResponseParams = {
+    model: params.model,
+    input,
+    max_output_tokens: params.max_tokens,
+    // Local-first: OpenAI does not keep the conversation; reasoning travels back encrypted instead.
+    store: false,
+  };
+  if (instructions.length) request.instructions = instructions.join("\n\n");
 
   if (params.tools?.length) {
     request.tools = params.tools.map((t) => {
@@ -82,58 +105,61 @@ export function toOpenAIRequest(params: CreateParams): ChatParams {
       if (tool.type && tool.type !== "custom") {
         throw new UnsupportedFeatureError(`The "${tool.name}" tool (${tool.type}) is only available with the Anthropic provider.`);
       }
-      return { type: "function" as const, function: { name: tool.name, description: tool.description, parameters: tool.input_schema } };
+      return { type: "function" as const, name: tool.name, description: tool.description ?? null, parameters: tool.input_schema ?? null, strict: false };
     });
-    const choice = params.tool_choice?.type;
-    request.tool_choice = choice === "none" ? "none" : "auto";
+    request.tool_choice = params.tool_choice?.type === "none" ? "none" : "auto";
   }
 
   const format = params.output_config?.format;
   if (format?.type === "json_schema") {
-    request.response_format = { type: "json_schema", json_schema: { name: "output", schema: format.schema, strict: false } };
+    request.text = { format: { type: "json_schema", name: "output", schema: format.schema, strict: false } };
   }
 
   if (supportsReasoningEffort(params.model)) {
-    if (request.tools?.length) {
-      // Chat Completions rejects function tools combined with reasoning on these models
-      // ("set reasoning_effort to 'none'"); the Responses API would allow both.
-      request.reasoning_effort = "none";
-    } else {
-      const effort = params.output_config?.effort;
-      if (effort) request.reasoning_effort = effort === "xhigh" || effort === "max" ? "high" : effort;
-    }
+    const effort = params.output_config?.effort;
+    request.reasoning = effort ? { effort: EFFORT[effort] ?? "medium" } : {};
+    request.include = ["reasoning.encrypted_content"];
   }
   return request;
 }
 
-const STOP: Record<string, Message["stop_reason"]> = {
-  stop: "end_turn",
-  tool_calls: "tool_use",
-  function_call: "tool_use",
-  length: "max_tokens",
-  content_filter: "refusal",
-};
-
-export function fromOpenAIResponse(res: Completion): Message {
-  const choice = res.choices[0];
-  const msg = choice?.message;
+export function fromOpenAIResponse(res: OpenAIResponse): Message {
   const content: Block[] = [];
-  if (msg?.content) content.push({ type: "text", text: msg.content, citations: null });
-  for (const call of msg?.tool_calls ?? []) {
-    if (call.type !== "function") continue;
-    let input: unknown;
-    try {
-      input = JSON.parse(call.function.arguments || "{}");
-    } catch {
-      // Pass the raw text through: the tool's own input validation reports it back to the model.
-      input = { _unparsed: call.function.arguments };
+  let refused = false;
+
+  // Some models narrate between tool calls ("commentary"); keep only the final answer when there is one.
+  const messages = res.output.filter((o): o is OpenAI.Responses.ResponseOutputMessage => o.type === "message");
+  const hasFinal = messages.some((m) => m.phase === "final_answer");
+
+  for (const item of res.output) {
+    if (item.type === "reasoning") {
+      content.push({ type: REASONING_BLOCK, item: { type: "reasoning", id: item.id, summary: item.summary ?? [], encrypted_content: item.encrypted_content ?? null } });
+    } else if (item.type === "message") {
+      if (hasFinal && item.phase === "commentary") continue;
+      for (const part of item.content) {
+        if (part.type === "refusal") refused = true;
+        else if (part.type === "output_text" && part.text) content.push({ type: "text", text: part.text, citations: null });
+      }
+    } else if (item.type === "function_call") {
+      let input: unknown;
+      try {
+        input = JSON.parse(item.arguments || "{}");
+      } catch {
+        // Pass the raw text through: the tool's own input validation reports it back to the model.
+        input = { _unparsed: item.arguments };
+      }
+      content.push({ type: "tool_use", id: item.call_id, name: item.name, input });
     }
-    content.push({ type: "tool_use", id: call.id, name: call.function.name, input });
   }
 
-  let stop = STOP[choice?.finish_reason ?? "stop"] ?? "end_turn";
-  if (msg?.refusal) stop = "refusal";
-  else if (content.some((b) => b.type === "tool_use")) stop = "tool_use";
+  const reason = res.incomplete_details?.reason;
+  const stop: Message["stop_reason"] = refused || reason === "content_filter"
+    ? "refusal"
+    : content.some((b) => b.type === "tool_use")
+      ? "tool_use"
+      : reason === "max_output_tokens"
+        ? "max_tokens"
+        : "end_turn";
 
   return {
     id: res.id,
@@ -144,8 +170,8 @@ export function fromOpenAIResponse(res: Completion): Message {
     stop_reason: stop,
     stop_sequence: null,
     usage: {
-      input_tokens: res.usage?.prompt_tokens ?? 0,
-      output_tokens: res.usage?.completion_tokens ?? 0,
+      input_tokens: res.usage?.input_tokens ?? 0,
+      output_tokens: res.usage?.output_tokens ?? 0,
       cache_creation_input_tokens: null,
       cache_read_input_tokens: null,
       server_tool_use: null,
@@ -153,11 +179,11 @@ export function fromOpenAIResponse(res: Completion): Message {
   } as unknown as Message;
 }
 
-export interface ChatCompletionsClient {
-  chat: { completions: { create(body: ChatParams, options?: { signal?: AbortSignal; timeout?: number }): Promise<Completion> } };
+export interface ResponsesClient {
+  responses: { create(body: ResponseParams, options?: { signal?: AbortSignal; timeout?: number }): Promise<OpenAIResponse> };
 }
 
 /** A CreateMessage backed by an OpenAI client. The client is injected so tests can pass a fake. */
-export function openAICreateMessage(client: () => ChatCompletionsClient): CreateMessage {
-  return async (params, options) => fromOpenAIResponse(await client().chat.completions.create(toOpenAIRequest(params), options));
+export function openAICreateMessage(client: () => ResponsesClient): CreateMessage {
+  return async (params, options) => fromOpenAIResponse(await client().responses.create(toOpenAIRequest(params), options));
 }

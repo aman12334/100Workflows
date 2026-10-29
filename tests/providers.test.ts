@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { keyProblem, resolveProvider } from "@/lib/providers";
-import { fromOpenAIResponse, openAICreateMessage, supportsReasoningEffort, toOpenAIRequest, UnsupportedFeatureError, type ChatCompletionsClient } from "@/lib/runtime/openai-translate";
+import { REASONING_BLOCK, fromOpenAIResponse, openAICreateMessage, supportsReasoningEffort, toOpenAIRequest, UnsupportedFeatureError, type ResponsesClient } from "@/lib/runtime/openai-translate";
 import type { CreateParams } from "@/lib/runtime/model";
 import { getModelConfig } from "@/lib/server/config";
 import { loadCatalog } from "@/lib/catalog/load";
@@ -38,29 +38,37 @@ describe("provider selection", () => {
 const params = (overrides: Partial<CreateParams> = {}): CreateParams =>
   ({ model: "gpt-6.1-sol", max_tokens: 4000, system: "Be helpful.", messages: [{ role: "user", content: "hi" }], ...overrides }) as CreateParams;
 
-describe("OpenAI request translation", () => {
-  it("maps system, text, tool calls and tool results", () => {
+describe("OpenAI request translation (Responses API)", () => {
+  it("maps system, text, reasoning, tool calls and tool results in order", () => {
+    const reasoning = { type: "reasoning", id: "rs_1", summary: [], encrypted_content: "enc" };
     const req = toOpenAIRequest(
       params({
         messages: [
           { role: "user", content: "find workflows" },
-          { role: "assistant", content: [{ type: "text", text: "Searching." }, { type: "tool_use", id: "t1", name: "search_catalog", input: { query: "sales" } }] },
+          {
+            role: "assistant",
+            content: [{ type: REASONING_BLOCK, item: reasoning }, { type: "text", text: "Searching." }, { type: "tool_use", id: "t1", name: "search_catalog", input: { query: "sales" } }],
+          },
           { role: "user", content: [{ type: "tool_result", tool_use_id: "t1", content: '{"results":[]}' }] },
           { role: "user", content: [{ type: "tool_result", tool_use_id: "t2", content: "bad input", is_error: true }] },
-        ] as CreateParams["messages"],
+        ] as unknown as CreateParams["messages"],
       }),
     );
-    expect(req.messages).toEqual([
-      { role: "system", content: "Be helpful." },
+    expect(req.instructions).toBe("Be helpful.");
+    expect(req.input).toEqual([
       { role: "user", content: "find workflows" },
-      { role: "assistant", content: "Searching.", tool_calls: [{ id: "t1", type: "function", function: { name: "search_catalog", arguments: '{"query":"sales"}' } }] },
-      { role: "tool", tool_call_id: "t1", content: '{"results":[]}' },
-      { role: "tool", tool_call_id: "t2", content: "Error: bad input" },
+      reasoning,
+      { role: "assistant", content: "Searching." },
+      { type: "function_call", call_id: "t1", name: "search_catalog", arguments: '{"query":"sales"}' },
+      { type: "function_call_output", call_id: "t1", output: '{"results":[]}' },
+      { type: "function_call_output", call_id: "t2", output: "Error: bad input" },
     ]);
-    expect(req.max_completion_tokens).toBe(4000);
+    expect(req.max_output_tokens).toBe(4000);
+    expect(req.store).toBe(false);
+    expect(req.include).toEqual(["reasoning.encrypted_content"]);
   });
 
-  it("maps custom tools, tool_choice, JSON output and effort", () => {
+  it("keeps reasoning effort alongside function tools, which Chat Completions rejected", () => {
     const req = toOpenAIRequest(
       params({
         tools: [{ name: "search_catalog", description: "Search", input_schema: { type: "object", properties: {} } }],
@@ -68,16 +76,19 @@ describe("OpenAI request translation", () => {
         output_config: { effort: "medium" },
       }),
     );
-    expect(req.tools).toEqual([{ type: "function", function: { name: "search_catalog", description: "Search", parameters: { type: "object", properties: {} } } }]);
+    expect(req.tools).toEqual([{ type: "function", name: "search_catalog", description: "Search", parameters: { type: "object", properties: {} }, strict: false }]);
     expect(req.tool_choice).toBe("none");
-    // OpenAI rejects function tools with reasoning on Chat Completions for these models.
-    expect(req.reasoning_effort).toBe("none");
+    expect(req.reasoning).toEqual({ effort: "medium" });
+  });
 
-    const structured = toOpenAIRequest(params({ output_config: { effort: "xhigh", format: { type: "json_schema", schema: { type: "object" } } } }));
-    expect(structured.response_format).toEqual({ type: "json_schema", json_schema: { name: "output", schema: { type: "object" }, strict: false } });
-    expect(structured.reasoning_effort).toBe("high");
+  it("maps JSON output and clamps effort to what OpenAI accepts", () => {
+    const req = toOpenAIRequest(params({ output_config: { effort: "max", format: { type: "json_schema", schema: { type: "object" } } } }));
+    expect(req.text).toEqual({ format: { type: "json_schema", name: "output", schema: { type: "object" }, strict: false } });
+    expect(req.reasoning).toEqual({ effort: "xhigh" });
     expect(supportsReasoningEffort("gpt-4.1")).toBe(false);
-    expect(toOpenAIRequest(params({ model: "gpt-4.1", output_config: { effort: "low" } })).reasoning_effort).toBeUndefined();
+    const plain = toOpenAIRequest(params({ model: "gpt-4.1", output_config: { effort: "low" } }));
+    expect(plain.reasoning).toBeUndefined();
+    expect(plain.include).toBeUndefined();
   });
 
   it("refuses Anthropic server tools instead of silently dropping them", () => {
@@ -85,42 +96,55 @@ describe("OpenAI request translation", () => {
   });
 });
 
-const completion = (message: Record<string, unknown>, finish_reason = "stop") =>
-  ({ id: "c1", model: "gpt-6.1-sol", choices: [{ index: 0, finish_reason, message: { role: "assistant", content: null, refusal: null, ...message } }], usage: { prompt_tokens: 12, completion_tokens: 5 } }) as never;
+const response = (output: unknown[], extra: Record<string, unknown> = {}) =>
+  ({ id: "resp_1", model: "gpt-6.1-sol", output, incomplete_details: null, usage: { input_tokens: 12, output_tokens: 5 }, ...extra }) as never;
+const say = (text: string, phase?: string) => ({ type: "message", id: "m", role: "assistant", status: "completed", ...(phase ? { phase } : {}), content: [{ type: "output_text", text, annotations: [] }] });
+const call = (call_id: string, name: string, args: string) => ({ type: "function_call", call_id, name, arguments: args });
 
 describe("OpenAI response translation", () => {
-  it("returns text, tool calls and usage in the Anthropic shape", () => {
-    const m = fromOpenAIResponse(completion({ content: "Here you go." }));
+  it("returns text, tool calls, reasoning and usage in the Anthropic shape", () => {
+    const m = fromOpenAIResponse(response([say("Here you go.")]));
     expect(m.content).toEqual([{ type: "text", text: "Here you go.", citations: null }]);
     expect(m.stop_reason).toBe("end_turn");
     expect(m.usage).toMatchObject({ input_tokens: 12, output_tokens: 5 });
 
-    const t = fromOpenAIResponse(completion({ tool_calls: [{ id: "x", type: "function", function: { name: "search_catalog", arguments: '{"query":"q"}' } }] }, "tool_calls"));
+    const t = fromOpenAIResponse(response([{ type: "reasoning", id: "rs_1", summary: [], encrypted_content: "enc" }, call("x", "search_catalog", '{"query":"q"}')]));
     expect(t.stop_reason).toBe("tool_use");
-    expect(t.content[0]).toMatchObject({ type: "tool_use", id: "x", name: "search_catalog", input: { query: "q" } });
+    expect(t.content).toEqual([
+      { type: REASONING_BLOCK, item: { type: "reasoning", id: "rs_1", summary: [], encrypted_content: "enc" } },
+      { type: "tool_use", id: "x", name: "search_catalog", input: { query: "q" } },
+    ]);
+  });
+
+  it("drops commentary when there is a final answer", () => {
+    const m = fromOpenAIResponse(response([say("Let me look…", "commentary"), say("Final answer.", "final_answer")]));
+    expect(m.content).toEqual([{ type: "text", text: "Final answer.", citations: null }]);
   });
 
   it("maps refusals, length limits and unparseable tool arguments", () => {
-    expect(fromOpenAIResponse(completion({ refusal: "no" })).stop_reason).toBe("refusal");
-    expect(fromOpenAIResponse(completion({ content: "cut" }, "length")).stop_reason).toBe("max_tokens");
-    const bad = fromOpenAIResponse(completion({ tool_calls: [{ id: "x", type: "function", function: { name: "n", arguments: "{oops" } }] }, "tool_calls"));
+    const refusal = { type: "message", id: "m", role: "assistant", status: "completed", content: [{ type: "refusal", refusal: "no" }] };
+    expect(fromOpenAIResponse(response([refusal])).stop_reason).toBe("refusal");
+    expect(fromOpenAIResponse(response([say("cut")], { incomplete_details: { reason: "max_output_tokens" } })).stop_reason).toBe("max_tokens");
+    const bad = fromOpenAIResponse(response([call("x", "n", "{oops")]));
     expect(bad.content[0]).toMatchObject({ input: { _unparsed: "{oops" } });
   });
 });
 
 describe("chat on OpenAI", () => {
-  it("runs a full grounded chat turn through the translator", async () => {
+  it("runs a full grounded chat turn and sends reasoning back with each tool result", async () => {
     const { workflows } = await loadCatalog();
     const replies = [
-      completion({ tool_calls: [{ id: "s", type: "function", function: { name: "search_catalog", arguments: '{"query":"cold email","category":null}' } }] }, "tool_calls"),
-      completion({ tool_calls: [{ id: "r", type: "function", function: { name: "recommend_workflows", arguments: '{"recommendations":[{"workflow_id":"outbound-sequence","reason":"Fits."}]}' } }] }, "tool_calls"),
-      completion({ content: "Start with `outbound-sequence`." }),
+      response([{ type: "reasoning", id: "rs_1", summary: [], encrypted_content: "enc-1" }, call("s", "search_catalog", '{"query":"cold email","category":null}')]),
+      response([call("r", "recommend_workflows", '{"recommendations":[{"workflow_id":"outbound-sequence","reason":"Fits."}]}')]),
+      response([say("Start with `outbound-sequence`.")]),
     ];
-    const sent: unknown[] = [];
-    const fake: ChatCompletionsClient = { chat: { completions: { create: async (body) => (sent.push(body), replies[sent.length - 1]) } } };
+    const sent: Array<{ input: unknown[] }> = [];
+    const fake: ResponsesClient = { responses: { create: async (body) => (sent.push(body as never), replies[sent.length - 1]) } };
     const reply = await runChatTurn({ createMessage: openAICreateMessage(() => fake), model: "gpt-6.1-sol", workflows, history: [{ role: "user", content: "My cold emails get no replies" }] });
+
     expect(reply.recommendations.map((r) => r.workflow.id)).toEqual(["outbound-sequence"]);
     expect(reply.usage).toEqual({ inputTokens: 36, outputTokens: 15, modelCalls: 3 });
-    expect(JSON.stringify(sent[1])).toContain('"role":"tool"');
+    expect(sent[1].input).toContainEqual({ type: "reasoning", id: "rs_1", summary: [], encrypted_content: "enc-1" });
+    expect(sent[1].input).toContainEqual(expect.objectContaining({ type: "function_call_output", call_id: "s" }));
   });
 });
