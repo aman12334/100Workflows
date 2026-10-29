@@ -1,0 +1,422 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "gtm",
+        "marketing",
+        "sales",
+        "finance",
+        "product",
+        "user-research",
+        "operations"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1500
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "available",
+        "planned"
+      ]
+    },
+    "problems": {
+      "minItems": 1,
+      "maxItems": 12,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      }
+    },
+    "tags": {
+      "default": [],
+      "maxItems": 15,
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+      }
+    },
+    "inputs": {
+      "minItems": 1,
+      "maxItems": 30,
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "use": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "required": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "use",
+              "required"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "long_text",
+                  "url",
+                  "number",
+                  "select",
+                  "list"
+                ]
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "shared": {
+                "default": false,
+                "type": "boolean"
+              },
+              "options": {
+                "minItems": 1,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 80
+                }
+              },
+              "example": {
+                "type": "string",
+                "maxLength": 300
+              }
+            },
+            "required": [
+              "key",
+              "label",
+              "type",
+              "required",
+              "description"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "outputs": {
+      "minItems": 1,
+      "maxItems": 15,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "markdown",
+              "json",
+              "table",
+              "list"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "description",
+          "format"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "steps": {
+      "minItems": 1,
+      "maxItems": 12,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "check"
+            ]
+          },
+          "responsibility": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400
+          },
+          "tools": {
+            "default": [],
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "responsibility"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "tools": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "purpose",
+          "required"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "integrations": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "purpose",
+          "required"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "dependencies": {
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "workflowId": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "workflowId",
+          "required",
+          "reason"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "properties": {
+        "criteria": {
+          "minItems": 1,
+          "maxItems": 20,
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 300
+              },
+              "method": {
+                "type": "string",
+                "enum": [
+                  "schema",
+                  "rule",
+                  "model"
+                ]
+              },
+              "critical": {
+                "default": false,
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "description",
+              "method"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "threshold": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "criteria",
+        "threshold"
+      ],
+      "additionalProperties": false
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "maxRetries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 10,
+          "maximum": 1800
+        },
+        "maxModelCalls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        }
+      },
+      "required": [
+        "maxRetries",
+        "timeoutSeconds",
+        "maxModelCalls"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "name",
+    "category",
+    "summary",
+    "description",
+    "status",
+    "problems",
+    "inputs",
+    "outputs",
+    "steps",
+    "evaluation",
+    "limits"
+  ],
+  "additionalProperties": false,
+  "title": "100 Workflows: workflow definition"
+}
