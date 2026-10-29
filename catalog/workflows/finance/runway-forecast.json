@@ -1,0 +1,118 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "id": "runway-forecast",
+  "version": "0.1.1",
+  "name": "Cash Runway Forecast",
+  "category": "finance",
+  "summary": "Projects monthly burn and runway under base, lean and growth scenarios from numbers you provide.",
+  "description": "Calculations are deterministic code, not model output: the model only helps structure your assumptions and explain the result. Produces a month-by-month table and the date cash falls below your safety threshold in each scenario.",
+  "status": "planned",
+  "problems": [
+    "I don't know how many months of runway I have",
+    "I need to plan hiring against cash",
+    "I want scenarios before fundraising"
+  ],
+  "tags": [
+    "runway",
+    "burn",
+    "cash-flow",
+    "forecast",
+    "scenarios"
+  ],
+  "inputs": [
+    {
+      "use": "company_name",
+      "required": true
+    },
+    {
+      "key": "cash_on_hand",
+      "label": "Cash on hand",
+      "type": "number",
+      "required": true,
+      "description": "Current bank balance in your reporting currency."
+    },
+    {
+      "key": "monthly_revenue",
+      "label": "Monthly revenue",
+      "type": "number",
+      "required": true,
+      "description": "Current monthly recurring revenue."
+    },
+    {
+      "key": "monthly_costs",
+      "label": "Monthly costs",
+      "type": "number",
+      "required": true,
+      "description": "Current total monthly operating costs."
+    },
+    {
+      "key": "growth_assumptions",
+      "label": "Growth assumptions",
+      "type": "long_text",
+      "required": false,
+      "description": "Expected revenue growth and planned hires."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "forecast",
+      "label": "Forecast table",
+      "description": "Month-by-month cash per scenario.",
+      "format": "table"
+    },
+    {
+      "key": "summary",
+      "label": "Summary",
+      "description": "Runway per scenario and the main drivers.",
+      "format": "markdown"
+    }
+  ],
+  "steps": [
+    {
+      "id": "structure",
+      "name": "Structure assumptions",
+      "kind": "agent",
+      "responsibility": "Turn free-text assumptions into explicit numeric scenario parameters.",
+      "tools": []
+    },
+    {
+      "id": "calculate",
+      "name": "Calculate",
+      "kind": "check",
+      "responsibility": "Compute the forecast deterministically from the parameters.",
+      "tools": []
+    },
+    {
+      "id": "explain",
+      "name": "Explain",
+      "kind": "agent",
+      "responsibility": "Summarize the result without changing any number.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "numbers_match",
+        "description": "Numbers in the summary match the calculated table.",
+        "method": "rule",
+        "critical": true
+      }
+    ],
+    "threshold": 0.9
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 120,
+    "maxModelCalls": 4
+  }
+}
