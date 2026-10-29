@@ -1,0 +1,98 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "id": "sop-writer",
+  "version": "0.1.0",
+  "name": "SOP Writer",
+  "category": "operations",
+  "summary": "Turns a rough description of a recurring process into a step-by-step standard operating procedure.",
+  "description": "Produces a numbered procedure with owners, inputs, decision points, and checks for each step, plus a short list of the ways the process usually goes wrong. It works only from what you describe and marks every assumption it had to make.",
+  "status": "planned",
+  "problems": [
+    "Our processes live in one person's head",
+    "New hires keep doing recurring tasks differently",
+    "I need to document how we do things before we scale"
+  ],
+  "tags": [
+    "sop",
+    "process",
+    "documentation",
+    "onboarding"
+  ],
+  "inputs": [
+    {
+      "use": "company_name",
+      "required": false
+    },
+    {
+      "key": "process_description",
+      "label": "Process description",
+      "type": "long_text",
+      "required": true,
+      "description": "How the process works today, in your own words. Messy is fine.",
+      "example": "Every month-end, Priya exports invoices from the billing tool, checks them against the contracts sheet..."
+    },
+    {
+      "key": "roles",
+      "label": "Roles involved",
+      "type": "list",
+      "required": false,
+      "description": "People or roles who take part, one per line.",
+      "example": "Finance lead\nAccount manager"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "sop",
+      "label": "Standard operating procedure",
+      "description": "Purpose, scope, roles, numbered steps with owners and checks, and failure modes.",
+      "format": "markdown"
+    }
+  ],
+  "steps": [
+    {
+      "id": "draft",
+      "name": "Draft procedure",
+      "kind": "agent",
+      "responsibility": "Write the SOP from the description and flag assumptions.",
+      "tools": []
+    },
+    {
+      "id": "check_structure",
+      "name": "Check structure",
+      "kind": "check",
+      "responsibility": "Confirm every step has an owner and that assumptions are listed.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "owners_assigned",
+        "description": "Every step names an owner role.",
+        "method": "rule",
+        "critical": true
+      },
+      {
+        "id": "assumptions_listed",
+        "description": "Anything not in the description is listed as an assumption.",
+        "method": "model",
+        "critical": false
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 5
+  }
+}
