@@ -1,0 +1,118 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "id": "feature-prioritization",
+  "version": "0.1.0",
+  "name": "Feature Prioritization",
+  "category": "product",
+  "summary": "Ranks candidate features by evidence of customer need, effort and strategic fit, with the reasoning shown.",
+  "description": "Scores each candidate feature on reach, impact, confidence in the evidence and effort, using the customer evidence you provide (interview themes, requests, usage notes). Shows the scoring inputs next to each rank so you can disagree with them. It does not invent demand: a feature with no supporting evidence is ranked as unvalidated, not low.",
+  "status": "planned",
+  "problems": [
+    "I don't know which feature to build next",
+    "Everyone on the team wants something different on the roadmap",
+    "I need to justify roadmap decisions with evidence"
+  ],
+  "tags": [
+    "roadmap",
+    "prioritization",
+    "rice",
+    "product-strategy"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "candidate_features",
+      "label": "Candidate features",
+      "type": "list",
+      "required": true,
+      "description": "Features you are considering, one per line.",
+      "example": "Bulk invoice import\nSlack alerts for overdue invoices"
+    },
+    {
+      "key": "customer_evidence",
+      "label": "Customer evidence",
+      "type": "long_text",
+      "required": false,
+      "description": "Interview themes, support tickets, requests or usage data that bear on the candidates.",
+      "example": "9 of 12 interviewees mentioned manual imports as their biggest time sink."
+    },
+    {
+      "key": "team_capacity",
+      "label": "Team capacity",
+      "type": "text",
+      "required": false,
+      "description": "Roughly how much the team can build in the next cycle.",
+      "example": "2 engineers for 6 weeks"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "ranking",
+      "label": "Ranked features",
+      "description": "Each feature with reach, impact, evidence confidence, effort and final rank.",
+      "format": "table"
+    },
+    {
+      "key": "rationale",
+      "label": "Rationale",
+      "description": "Why the top items rank where they do and what would change the order.",
+      "format": "markdown"
+    }
+  ],
+  "steps": [
+    {
+      "id": "score",
+      "name": "Score features",
+      "kind": "agent",
+      "responsibility": "Estimate reach, impact and effort for each candidate, citing the evidence used.",
+      "tools": []
+    },
+    {
+      "id": "rank",
+      "name": "Rank",
+      "kind": "check",
+      "responsibility": "Compute scores deterministically from the estimates and sort them.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [
+    {
+      "workflowId": "interview-synthesis",
+      "required": false,
+      "reason": "Interview themes are strong evidence of customer need."
+    }
+  ],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "evidence_cited",
+        "description": "Every score above 'low' confidence cites supplied evidence.",
+        "method": "rule",
+        "critical": true
+      },
+      {
+        "id": "all_ranked",
+        "description": "Every candidate feature appears in the ranking exactly once.",
+        "method": "rule",
+        "critical": false
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 5
+  }
+}
