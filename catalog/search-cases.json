@@ -1,0 +1,86 @@
+{
+  "about": "Queries a user might type, and workflows that must appear in the top results. `npm test` checks every case; `npm run catalog:validate` warns about workflows no case covers.",
+  "limit": 6,
+  "cases": [
+    {
+      "query": "I want to acquire my first 100 B2B customers without a marketing team",
+      "expect": [
+        "icp-builder",
+        "outbound-sequence",
+        "content-calendar"
+      ]
+    },
+    {
+      "query": "how big is the market and who are the main players",
+      "expect": [
+        "market-research"
+      ]
+    },
+    {
+      "query": "who should I sell to first, buyer personas",
+      "expect": [
+        "icp-builder"
+      ]
+    },
+    {
+      "query": "cold emails get no replies",
+      "expect": [
+        "outbound-sequence"
+      ]
+    },
+    {
+      "query": "how do competitors position and price",
+      "expect": [
+        "competitor-teardown"
+      ]
+    },
+    {
+      "query": "what should we post on LinkedIn each week",
+      "expect": [
+        "content-calendar"
+      ]
+    },
+    {
+      "query": "how many months of runway do we have",
+      "expect": [
+        "runway-forecast"
+      ]
+    },
+    {
+      "query": "what should we charge for our product",
+      "expect": [
+        "pricing-analysis"
+      ]
+    },
+    {
+      "query": "turn customer interview notes into themes",
+      "expect": [
+        "interview-synthesis"
+      ]
+    },
+    {
+      "query": "write an unbiased survey for our users",
+      "expect": [
+        "survey-designer"
+      ]
+    },
+    {
+      "query": "which feature should we build next on the roadmap",
+      "expect": [
+        "feature-prioritization"
+      ]
+    },
+    {
+      "query": "document our recurring process for new hires",
+      "expect": [
+        "sop-writer"
+      ]
+    },
+    {
+      "query": "what questions to ask on a discovery call with a prospect",
+      "expect": [
+        "discovery-call-prep"
+      ]
+    }
+  ]
+}
