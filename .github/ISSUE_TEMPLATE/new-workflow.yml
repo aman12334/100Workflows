@@ -1,0 +1,43 @@
+name: Propose a workflow
+description: Suggest a workflow for the catalog
+labels: [workflow-proposal]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Workflow name
+      placeholder: Churn Risk Review
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options: [gtm, marketing, sales, finance, product, user-research, operations]
+    validations:
+      required: true
+  - type: textarea
+    id: problems
+    attributes:
+      label: Problems it solves
+      description: Phrase them the way a user would describe them in chat.
+      placeholder: |
+        - Customers cancel and I don't know why
+        - I want to spot at-risk accounts before renewal
+    validations:
+      required: true
+  - type: textarea
+    id: inputs-outputs
+    attributes:
+      label: Inputs and outputs
+      description: What it needs from the user, and what it produces.
+  - type: textarea
+    id: checks
+    attributes:
+      label: How would we know the output is good?
+      description: At least one check that code can run, not only a model's opinion.
+  - type: textarea
+    id: tools
+    attributes:
+      label: Tools, integrations and side effects
+      description: Does it need web access, a CRM, email? Does it change anything outside 100 Workflows?
