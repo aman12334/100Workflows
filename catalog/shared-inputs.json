@@ -1,0 +1,40 @@
+{
+  "$schema": "./shared-inputs.schema.json",
+  "inputs": [
+    {
+      "key": "company_name",
+      "label": "Company name",
+      "type": "text",
+      "description": "Your company's name, as customers know it.",
+      "example": "Acme Analytics"
+    },
+    {
+      "key": "product_description",
+      "label": "Product description",
+      "type": "long_text",
+      "description": "What you sell, who it is for, and the problem it solves.",
+      "example": "AI bookkeeping that reconciles agency expenses automatically."
+    },
+    {
+      "key": "target_market",
+      "label": "Target market",
+      "type": "text",
+      "description": "The industry, geography and company segment you serve or want to serve.",
+      "example": "US marketing agencies with 10-50 employees"
+    },
+    {
+      "key": "price_point",
+      "label": "Price point",
+      "type": "text",
+      "description": "Approximate price or contract size.",
+      "example": "$400/month per team"
+    },
+    {
+      "key": "research_question",
+      "label": "Research question",
+      "type": "long_text",
+      "description": "What you want to learn from customers.",
+      "example": "Why do trial users not convert to paid?"
+    }
+  ]
+}

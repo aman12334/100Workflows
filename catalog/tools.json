@@ -1,0 +1,19 @@
+{
+  "$schema": "./tools.schema.json",
+  "tools": [
+    {
+      "id": "web-search",
+      "name": "Web search",
+      "description": "Searches the public web and returns pages with citable passages.",
+      "available": true,
+      "setup": "Anthropic's server-side web search tool. Turn on with WORKFLOWS_WEB_SEARCH=on; searches are billed by Anthropic."
+    },
+    {
+      "id": "web-fetch",
+      "name": "Web fetch",
+      "description": "Reads the content of specific public URLs.",
+      "available": false,
+      "setup": "Not provided by the runtime yet."
+    }
+  ]
+}
