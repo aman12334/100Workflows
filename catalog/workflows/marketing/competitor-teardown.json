@@ -1,0 +1,116 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "id": "competitor-teardown",
+  "version": "0.1.1",
+  "name": "Competitor Teardown",
+  "category": "marketing",
+  "summary": "Compares positioning, pricing and messaging of named competitors from their public pages.",
+  "description": "Fetches competitors' public websites with a configured web tool, extracts positioning, pricing and key claims, and produces a comparison table plus differentiation opportunities. Every cell links back to the page it came from.",
+  "status": "planned",
+  "problems": [
+    "I don't know how to position against competitors",
+    "I want to see how competitors price and message",
+    "I need a battlecard for my team"
+  ],
+  "tags": [
+    "competitors",
+    "positioning",
+    "pricing",
+    "battlecard",
+    "messaging"
+  ],
+  "inputs": [
+    {
+      "use": "company_name",
+      "required": true
+    },
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "competitor_urls",
+      "label": "Competitor websites",
+      "type": "list",
+      "required": true,
+      "description": "Homepage URLs of 2\u20135 competitors.",
+      "example": "https://competitor-one.example\nhttps://competitor-two.example"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "comparison",
+      "label": "Comparison table",
+      "description": "Positioning, audience, pricing and claims per competitor.",
+      "format": "table"
+    },
+    {
+      "key": "opportunities",
+      "label": "Differentiation opportunities",
+      "description": "Gaps you can credibly own.",
+      "format": "markdown"
+    }
+  ],
+  "steps": [
+    {
+      "id": "fetch",
+      "name": "Fetch pages",
+      "kind": "agent",
+      "responsibility": "Retrieve homepage and pricing pages for each competitor.",
+      "tools": [
+        "web-fetch"
+      ]
+    },
+    {
+      "id": "extract",
+      "name": "Extract and compare",
+      "kind": "agent",
+      "responsibility": "Extract claims and pricing into the comparison schema.",
+      "tools": []
+    },
+    {
+      "id": "verify",
+      "name": "Verify citations",
+      "kind": "check",
+      "responsibility": "Ensure each cell cites a fetched page.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-fetch",
+      "purpose": "Read competitors' public web pages.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [
+    {
+      "workflowId": "market-research",
+      "required": false,
+      "reason": "Market context helps rank which differences matter."
+    }
+  ],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "cited",
+        "description": "Every comparison cell cites a fetched page.",
+        "method": "rule",
+        "critical": true
+      }
+    ],
+    "threshold": 0.7
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 300,
+    "maxModelCalls": 10
+  }
+}
