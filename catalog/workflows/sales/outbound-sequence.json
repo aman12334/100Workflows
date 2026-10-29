@@ -1,0 +1,127 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "id": "outbound-sequence",
+  "version": "0.1.1",
+  "name": "Cold Outbound Sequence Writer",
+  "category": "sales",
+  "summary": "Drafts a multi-touch email and LinkedIn sequence for one persona. Drafts only \u2014 nothing is sent.",
+  "description": "Writes a 4\u20136 step outbound sequence tailored to a persona from your ICP, with subject lines, personalization hooks and a clear call to action. The workflow produces drafts for you to review; it has no sending integration and never contacts anyone.",
+  "status": "planned",
+  "problems": [
+    "I have no sales team and need to start outbound",
+    "My cold emails get no replies",
+    "I want my first 100 B2B customers",
+    "I need a prospecting sequence for a new segment"
+  ],
+  "tags": [
+    "outbound",
+    "cold-email",
+    "prospecting",
+    "linkedin",
+    "sequence"
+  ],
+  "inputs": [
+    {
+      "use": "company_name",
+      "required": true
+    },
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "target_persona",
+      "label": "Target persona",
+      "type": "text",
+      "required": true,
+      "description": "The role you are writing to.",
+      "example": "Head of Finance at a 50-person agency"
+    },
+    {
+      "key": "tone",
+      "label": "Tone",
+      "type": "select",
+      "required": false,
+      "options": [
+        "Direct",
+        "Friendly",
+        "Formal"
+      ],
+      "description": "Voice of the sequence."
+    },
+    {
+      "key": "proof_points",
+      "label": "Proof points",
+      "type": "list",
+      "required": false,
+      "description": "Results, customers or numbers you can honestly cite."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "sequence",
+      "label": "Sequence",
+      "description": "Ordered touches with channel, timing, subject and body.",
+      "format": "json"
+    }
+  ],
+  "steps": [
+    {
+      "id": "write",
+      "name": "Write sequence",
+      "kind": "agent",
+      "responsibility": "Draft each touch for the persona.",
+      "tools": []
+    },
+    {
+      "id": "review",
+      "name": "Critique",
+      "kind": "agent",
+      "responsibility": "Review drafts for clarity, length and unsupported claims.",
+      "tools": []
+    },
+    {
+      "id": "check_claims",
+      "name": "Check claims",
+      "kind": "check",
+      "responsibility": "Flag any number or customer name not present in the provided proof points.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [
+    {
+      "workflowId": "icp-builder",
+      "required": true,
+      "reason": "The sequence is written for a persona defined in the ICP."
+    }
+  ],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "no_invented_claims",
+        "description": "No proof points beyond those supplied.",
+        "method": "rule",
+        "critical": true
+      },
+      {
+        "id": "length",
+        "description": "Each email body is under 150 words.",
+        "method": "rule"
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 2,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 8
+  }
+}
