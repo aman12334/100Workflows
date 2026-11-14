@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
-import { buildCatalog, expandManifest, type Catalog, type Registry } from "@/lib/catalog/catalog";
+import { buildCatalog, validateGenericDefinition, expandManifest, type Catalog, type Registry } from "@/lib/catalog/catalog";
 import { loadCatalog, loadRegistry } from "@/lib/catalog/load";
 import { stem } from "@/lib/catalog/search";
 import { renderCatalogDocs } from "@/lib/catalog/tooling/docs";
@@ -92,6 +92,28 @@ describe("quality tooling", () => {
     const messages = lintCatalog(built, cases).map((w) => w.message);
     expect(messages.some((m) => /placeholder/.test(m))).toBe(true);
     expect(messages.some((m) => /no search case/.test(m))).toBe(true);
+  });
+
+  it("scaffolds a schema-v2 generic definition that becomes runnable once finished", async () => {
+    const { resolveExecutor, runnability } = await import("@/lib/runtime/executors");
+    const draft = definitionTemplate({ id: "churn-review", name: "Churn Review", category: "operations" });
+    expect(draft).toMatchObject({ schemaVersion: 2, version: "0.1.0", status: "planned", execution: { engine: "generic" } });
+    const built = buildCatalog([{ file: "operations/churn-review.json", data: draft }], registry);
+    expect(built.errors).toEqual([]);
+    const wf = built.workflows[0];
+    expect(validateGenericDefinition(wf)).toEqual([]);
+    expect(runnability(wf, { ANTHROPIC_API_KEY: "sk-ant-test" })).toEqual({ runnable: false, reason: "Definition only. This workflow can't be executed yet." });
+    // Publishing it is a data change: no executor code is needed.
+    const finished = { ...wf, status: "available" as const };
+    expect(resolveExecutor(finished)?.workflowId).toBe("churn-review");
+    expect(runnability(finished, { ANTHROPIC_API_KEY: "sk-ant-test" })).toEqual({ runnable: true });
+  });
+
+  it("keeps the v1 template for workflows that need a hand-written executor", () => {
+    const draft = definitionTemplate({ id: "churn-review", name: "Churn Review", category: "operations", executable: true });
+    expect(Object.hasOwn(draft, "schemaVersion")).toBe(false);
+    expect(Object.hasOwn(draft, "execution")).toBe(false);
+    expect(buildCatalog([{ file: "operations/churn-review.json", data: draft }], registry).errors).toEqual([]);
   });
 
   it("validates scaffold options", () => {

@@ -64,5 +64,8 @@ console.log(`  2. Add a query that should find it to catalog/search-cases.json.`
 if (o.executable) {
   console.log(`  3. Implement src/lib/runtime/executors/${o.id}.ts and register it in src/lib/runtime/executors/index.ts.`);
   console.log(`  4. When it runs, set "status": "available" and bump the version.`);
+} else {
+  console.log(`  3. Shape "outputSchema" and the rule criteria after what a good result must contain (see docs/adding-workflows.md).`);
+  console.log(`  4. Add a run-service test with scripted model responses, then set "status": "available". It runs on the generic executor.`);
 }
-console.log(`  ${o.executable ? 5 : 3}. Run \`npm run catalog:validate -- --strict\`, \`npm run catalog:docs\` and \`npm test\`.`);
+console.log(`  5. Run \`npm run catalog:validate -- --strict\`, \`npm run catalog:docs\` and \`npm test\`.`);
