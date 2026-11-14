@@ -2,9 +2,9 @@
 
 **Describe a business problem in chat, then discover the agentic workflows that solve it.**
 
-100 Workflows is an open-source, local-first app. You run it on your own computer, connect your own Anthropic API key, and talk to an assistant that searches a catalog of workflow definitions across go-to-market, marketing, sales, finance and user research. It explains which workflows fit your goal and what each one needs.
+100 Workflows is an open-source, local-first app. You run it on your own computer, connect your own Anthropic or OpenAI API key, and talk to an assistant that searches a catalog of workflow definitions across go-to-market, marketing, sales, finance, product, user research and operations. It explains which workflows fit your goal and what each one needs.
 
-> **Status: all 5 initial milestones are done.** Chat, grounded recommendations, persistent packages, setup forms, and real execution of two connected workflows (**Market Research Agent** and **Ideal Customer Profile Builder**) with evaluation, bounded retries and saved results. The catalog has 12 workflows across all 7 categories and contributor tooling to grow it. The other 10 workflows are *definition only*, and the app says so wherever they appear.
+> **Status: Phase 0 is done.** Chat, grounded recommendations, persistent packages, setup forms, and real execution of five workflows with evaluation, bounded retries, saved results, and per-run usage with cost estimates where a price is verified. Two are hand-written (**Market Research Agent**, **Ideal Customer Profile Builder**) and three run on the schema-v2 generic executor straight from their JSON definitions (**Survey Designer**, **SOP Writer**, **Discovery Call Prep**). The catalog has 12 workflows across all 7 categories and contributor tooling to grow it. The other 7 workflows are *definition only*, and the app says so wherever they appear.
 
 ---
 
