@@ -1,8 +1,9 @@
 import "server-only";
 import { formFields, inputsFor, missingRequired, type MissingInput } from "@/lib/packages/inputs";
 import { executeWorkflow, type Recorder, type UpstreamOutput } from "@/lib/runtime/engine";
-import { EXECUTORS, runnability } from "@/lib/runtime/executors";
+import { resolveExecutor, runnability } from "@/lib/runtime/executors";
 import type { CreateMessage } from "@/lib/runtime/model";
+import { pricingFor } from "@/lib/runtime/pricing";
 import { createMessage as providerCreateMessage, mapModelError } from "./model-client";
 import { getModelConfig } from "./config";
 import type { DB } from "./db";
@@ -111,12 +112,14 @@ export function startRun(db: DB, view: PackageView, deps: { createMessage?: Crea
     status: (i.state === "ready" ? "pending" : i.state === "skip" ? "skipped" : "blocked") as WorkflowRunStatus,
     reason: i.reason ?? undefined,
   }));
-  const { runId, workflowRunIds } = createRun(db, view.pkg.id, plan);
+  const config = getModelConfig(env);
+  // The price is snapshotted with the run, and only when it is verified (see pricing.ts).
+  const { runId, workflowRunIds } = createRun(db, view.pkg.id, plan, { provider: config.provider, model: config.model, pricing: pricingFor(config.model) });
   const controller = new AbortController();
   active.set(runId, controller);
-  log.info("run.started", { runId, packageId: view.pkg.id, workflows: plan.map((p) => `${p.workflowId}:${p.status}`) });
+  log.info("run.started", { runId, packageId: view.pkg.id, provider: config.provider, model: config.model, workflows: plan.map((p) => `${p.workflowId}:${p.status}`) });
 
-  void executeRun(db, view, runId, workflowRunIds, controller.signal, deps.createMessage ?? providerCreateMessage, getModelConfig(env).model)
+  void executeRun(db, view, runId, workflowRunIds, controller.signal, deps.createMessage ?? providerCreateMessage, config.model)
     .catch((err) => {
       log.error("run.crashed", { runId, error: err });
       finishRun(db, runId, "failed", "The run stopped because of an internal error. Check the terminal log.");
@@ -179,7 +182,8 @@ export async function executeRun(
 
     const outcome = await executeWorkflow({
       workflow: wf,
-      executor: EXECUTORS[wf.id],
+      // preflight() only marks a workflow "pending" when runnability() found an executor.
+      executor: resolveExecutor(wf)!,
       inputs: inputsFor(wf, view.inputs),
       upstream,
       createMessage,
@@ -198,11 +202,23 @@ export async function executeRun(
       score: outcome.qualityScore,
       modelCalls: outcome.usage.modelCalls,
       webSearches: outcome.usage.webSearches,
+      inputTokens: outcome.usage.inputTokens,
+      outputTokens: outcome.usage.outputTokens,
     });
   }
 
   finishRun(db, runId, signal.aborted ? "cancelled" : "completed");
-  log.info("run.finished", { runId, status: signal.aborted ? "cancelled" : "completed" });
+  const { summary } = getRun(db, runId)!;
+  log.info("run.finished", {
+    runId,
+    status: signal.aborted ? "cancelled" : "completed",
+    modelCalls: summary.usage.modelCalls,
+    webSearches: summary.usage.webSearches,
+    inputTokens: summary.usage.inputTokens,
+    outputTokens: summary.usage.outputTokens,
+    durationMs: summary.durationMs,
+    estimatedCostUsd: summary.costUsd,
+  });
 }
 
 /** Signals a running run to stop. The current model call is aborted; finished results are kept. */

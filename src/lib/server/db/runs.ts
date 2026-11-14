@@ -1,8 +1,9 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import type { Usage } from "@/lib/runtime/budget";
+import { addUsage, emptyUsage, type Usage } from "@/lib/runtime/budget";
 import type { Confidence } from "@/lib/runtime/engine";
 import type { EvaluatedCriterion, Evaluation } from "@/lib/runtime/evaluation";
+import { COST_EXCLUSIONS, estimateCostUsd, noPriceReason, type PriceBasis } from "@/lib/runtime/pricing";
 import type { DB } from "./index";
 
 export type RunStatus = "running" | "completed" | "failed" | "cancelled" | "interrupted";
@@ -29,6 +30,10 @@ export interface StepRecord {
   usage: Usage | null;
   startedAt: string;
   finishedAt: string | null;
+  /** Wall-clock time from start to finish; null while running. */
+  durationMs: number | null;
+  /** Estimated US dollars; null when the run has no verified price or the step made no model calls. */
+  costUsd: number | null;
 }
 
 export interface EvaluationRecord {
@@ -58,6 +63,8 @@ export interface WorkflowRunRecord {
   usage: Usage | null;
   startedAt: string | null;
   finishedAt: string | null;
+  durationMs: number | null;
+  costUsd: number | null;
   steps: StepRecord[];
   evaluations: EvaluationRecord[];
 }
@@ -70,7 +77,29 @@ export interface RunRecord {
   createdAt: string;
   startedAt: string | null;
   finishedAt: string | null;
+  /** Provider and model the run was configured with; null for runs recorded before migration 004. */
+  provider: string | null;
+  model: string | null;
+  /** The verified price snapshotted at run start, or null (unknown model, or an older run). */
+  pricing: PriceBasis | null;
+  summary: RunUsageSummary;
   workflows: WorkflowRunRecord[];
+}
+
+/** Totals across every workflow in a run. */
+export interface RunUsageSummary {
+  usage: Usage;
+  durationMs: number | null;
+  /** Null when no verified price applies; see costNote. */
+  costUsd: number | null;
+  /** What the estimate covers, or why there is none. */
+  costNote: string;
+}
+
+export interface RunMeta {
+  provider: string;
+  model: string;
+  pricing: PriceBasis | null;
 }
 
 const now = () => new Date().toISOString();
@@ -80,11 +109,20 @@ export function createRun(
   db: DB,
   packageId: string,
   workflows: Array<{ workflowId: string; version: string; status: WorkflowRunStatus; reason?: string }>,
+  meta?: RunMeta,
 ): { runId: string; workflowRunIds: string[] } {
   const runId = randomUUID();
   const ids = workflows.map(() => randomUUID());
   db.transaction(() => {
-    db.prepare("INSERT INTO runs (id, package_id, status, created_at, started_at) VALUES (?, ?, 'running', ?, ?)").run(runId, packageId, now(), now());
+    db.prepare("INSERT INTO runs (id, package_id, status, created_at, started_at, provider, model, pricing_json) VALUES (?, ?, 'running', ?, ?, ?, ?, ?)").run(
+      runId,
+      packageId,
+      now(),
+      now(),
+      meta?.provider ?? null,
+      meta?.model ?? null,
+      meta?.pricing ? JSON.stringify(meta.pricing) : null,
+    );
     const insert = db.prepare(
       "INSERT INTO workflow_runs (id, run_id, workflow_id, version, position, status, status_reason) VALUES (?, ?, ?, ?, ?, ?, ?)",
     );
@@ -200,59 +238,85 @@ interface WorkflowRunRow {
   finished_at: string | null;
 }
 
+const durationMs = (from: string | null, to: string | null): number | null =>
+  from && to ? Math.max(0, new Date(to).getTime() - new Date(from).getTime()) : null;
+
 export function getRun(db: DB, runId: string): RunRecord | null {
-  const run = db
-    .prepare("SELECT id, package_id AS packageId, status, error, created_at AS createdAt, started_at AS startedAt, finished_at AS finishedAt FROM runs WHERE id = ?")
-    .get(runId) as Omit<RunRecord, "workflows"> | undefined;
-  if (!run) return null;
+  const row = db
+    .prepare(
+      "SELECT id, package_id AS packageId, status, error, created_at AS createdAt, started_at AS startedAt, finished_at AS finishedAt, provider, model, pricing_json FROM runs WHERE id = ?",
+    )
+    .get(runId) as (Omit<RunRecord, "workflows" | "pricing" | "summary"> & { pricing_json: string | null }) | undefined;
+  if (!row) return null;
+  const { pricing_json, ...run } = row;
+  const pricing = json<PriceBasis>(pricing_json);
+  const cost = (usage: Usage | null) => (usage && usage.modelCalls > 0 ? estimateCostUsd(usage, pricing) : pricing && usage ? 0 : null);
   const rows = db.prepare("SELECT * FROM workflow_runs WHERE run_id = ? ORDER BY position").all(runId) as WorkflowRunRow[];
   const steps = db.prepare("SELECT * FROM run_steps WHERE workflow_run_id = ? ORDER BY seq");
   const evals = db.prepare("SELECT * FROM evaluations WHERE workflow_run_id = ? ORDER BY attempt");
-  return {
-    ...run,
-    workflows: rows.map((r) => ({
-      id: r.id,
-      workflowId: r.workflow_id,
-      version: r.version,
-      position: r.position,
-      status: r.status,
-      statusReason: r.status_reason,
-      attempts: r.attempts,
-      qualityScore: r.quality_score,
-      decision: r.decision,
-      confidence: json<Confidence>(r.confidence_json),
-      output: json(r.output_json),
-      markdown: r.output_markdown,
-      usage: json<Usage>(r.usage_json),
-      startedAt: r.started_at,
-      finishedAt: r.finished_at,
-      steps: (steps.all(r.id) as Array<Record<string, unknown>>).map((s) => ({
-        id: s.id as string,
-        seq: s.seq as number,
-        stepId: s.step_id as string,
-        kind: s.kind as "agent" | "check",
-        attempt: s.attempt as number,
-        status: s.status as StepRecord["status"],
-        detail: s.detail as string | null,
-        error: s.error as string | null,
-        usage: json<Usage>(s.usage_json as string | null),
-        startedAt: s.started_at as string,
-        finishedAt: s.finished_at as string | null,
-      })),
-      evaluations: (evals.all(r.id) as Array<Record<string, unknown>>).map((e) => {
-        const body = JSON.parse(e.criteria_json as string) as { criteria: EvaluatedCriterion[]; threshold: number; criticalFailures: string[] };
-        return {
-          attempt: e.attempt as number,
-          score: e.score as number | null,
-          passed: e.passed === 1,
-          decision: e.decision as Evaluation["decision"],
-          criteria: body.criteria,
-          threshold: body.threshold,
-          criticalFailures: body.criticalFailures,
-          createdAt: e.created_at as string,
-        };
-      }),
+  const workflows: WorkflowRunRecord[] = rows.map((r) => ({
+    id: r.id,
+    workflowId: r.workflow_id,
+    version: r.version,
+    position: r.position,
+    status: r.status,
+    statusReason: r.status_reason,
+    attempts: r.attempts,
+    qualityScore: r.quality_score,
+    decision: r.decision,
+    confidence: json<Confidence>(r.confidence_json),
+    output: json(r.output_json),
+    markdown: r.output_markdown,
+    usage: json<Usage>(r.usage_json),
+    startedAt: r.started_at,
+    finishedAt: r.finished_at,
+    durationMs: durationMs(r.started_at, r.finished_at),
+    costUsd: cost(json<Usage>(r.usage_json)),
+    steps: (steps.all(r.id) as Array<Record<string, unknown>>).map((s) => ({
+      id: s.id as string,
+      seq: s.seq as number,
+      stepId: s.step_id as string,
+      kind: s.kind as "agent" | "check",
+      attempt: s.attempt as number,
+      status: s.status as StepRecord["status"],
+      detail: s.detail as string | null,
+      error: s.error as string | null,
+      usage: json<Usage>(s.usage_json as string | null),
+      startedAt: s.started_at as string,
+      finishedAt: s.finished_at as string | null,
+      durationMs: durationMs(s.started_at as string, s.finished_at as string | null),
+      costUsd: cost(json<Usage>(s.usage_json as string | null)),
     })),
+    evaluations: (evals.all(r.id) as Array<Record<string, unknown>>).map((e) => {
+      const body = JSON.parse(e.criteria_json as string) as { criteria: EvaluatedCriterion[]; threshold: number; criticalFailures: string[] };
+      return {
+        attempt: e.attempt as number,
+        score: e.score as number | null,
+        passed: e.passed === 1,
+        decision: e.decision as Evaluation["decision"],
+        criteria: body.criteria,
+        threshold: body.threshold,
+        criticalFailures: body.criticalFailures,
+        createdAt: e.created_at as string,
+      };
+    }),
+  }));
+  return { ...run, pricing, summary: summarize(run, workflows, pricing), workflows };
+}
+
+function summarize(
+  run: { model: string | null; startedAt: string | null; finishedAt: string | null },
+  workflows: WorkflowRunRecord[],
+  pricing: PriceBasis | null,
+): RunUsageSummary {
+  const usage = workflows.reduce((total, w) => (w.usage ? addUsage(total, w.usage) : total), emptyUsage());
+  return {
+    usage,
+    durationMs: durationMs(run.startedAt, run.finishedAt),
+    costUsd: pricing ? estimateCostUsd(usage, pricing) : null,
+    costNote: pricing
+      ? `${COST_EXCLUSIONS} Prices: $${pricing.inputPerMTok} / $${pricing.outputPerMTok} per million input / output tokens for ${pricing.model}.`
+      : noPriceReason(run.model),
   };
 }
 

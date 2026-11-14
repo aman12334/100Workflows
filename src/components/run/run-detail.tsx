@@ -8,6 +8,7 @@ import { Ban, Bot, Check, FileText, Gauge, Info, ListTree, Loader2, Repeat, Scan
 import { api } from "@/lib/api-client";
 import { CATEGORY_STYLES } from "@/lib/catalog/category-style";
 import type { Category } from "@/lib/catalog/schema";
+import { formatUsd } from "@/lib/runtime/pricing";
 import type { EvaluationRecord, RunRecord, StepRecord, WorkflowRunRecord } from "@/lib/server/db/runs";
 import { RunStatusPill } from "./status";
 
@@ -95,12 +96,37 @@ export function RunDetail({ initial, packageName, meta }: { initial: RunRecord; 
         <Legend icon={Info} title="Confidence">A heuristic about the evidence behind the output. It is not a probability of being correct.</Legend>
       </div>
 
+      <UsageSummary run={run} />
+
       <div className="mt-6 space-y-5">
         {run.workflows.map((wr) => (
           <WorkflowRunCard key={wr.id} wr={wr} meta={meta[wr.workflowId]} now={now} />
         ))}
       </div>
     </div>
+  );
+}
+
+/** Run totals. Costs are estimates at verified list prices only; otherwise the reason is shown instead of a number. */
+function UsageSummary({ run }: { run: RunRecord }) {
+  const { usage, costUsd, costNote } = run.summary;
+  return (
+    <section aria-label="Run usage" className="mt-4 rounded-2xl border border-line bg-surface p-4 text-xs text-ink-700">
+      <div className="flex flex-wrap gap-x-6 gap-y-2 font-mono">
+        {run.model && (
+          <span>
+            {run.provider} · {run.model}
+          </span>
+        )}
+        <span>{usage.modelCalls} model calls</span>
+        <span>{usage.webSearches} web searches</span>
+        <span>
+          {usage.inputTokens.toLocaleString()} in · {usage.outputTokens.toLocaleString()} out tokens
+        </span>
+        <span className="font-semibold text-ink-950">{costUsd === null ? "cost not estimated" : `≈ ${formatUsd(costUsd)} estimated`}</span>
+      </div>
+      <p className="mt-2 text-[11px] text-ink-500">{costNote}</p>
+    </section>
   );
 }
 
@@ -176,6 +202,7 @@ function WorkflowRunCard({ wr, meta, now }: { wr: WorkflowRunRecord; meta?: Meta
                 {wr.usage.inputTokens.toLocaleString()} in · {wr.usage.outputTokens.toLocaleString()} out tokens
               </span>
               <span>{duration(wr.startedAt, wr.finishedAt, now)}</span>
+              {wr.costUsd !== null && <span>≈ {formatUsd(wr.costUsd)}</span>}
             </div>
           )}
         </>
@@ -324,6 +351,7 @@ function Trace({ steps, meta, now }: { steps: StepRecord[]; meta?: Meta; now: nu
               <p className="mt-0.5 font-mono text-[11px] text-ink-500">
                 {s.usage.modelCalls} call{s.usage.modelCalls === 1 ? "" : "s"} · {s.usage.inputTokens.toLocaleString()} in · {s.usage.outputTokens.toLocaleString()} out
                 {s.usage.webSearches ? ` · ${s.usage.webSearches} searches` : ""}
+                {s.costUsd !== null ? ` · ≈ ${formatUsd(s.costUsd)}` : ""}
               </p>
             )}
           </div>
