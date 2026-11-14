@@ -1,5 +1,6 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
+import type { JsonSchemaNode } from "@/lib/catalog/output-schema";
 
 export type CreateParams = Anthropic.Beta.Messages.MessageCreateParamsNonStreaming;
 export type Message = Anthropic.Beta.Messages.BetaMessage;
@@ -33,12 +34,36 @@ const UNSUPPORTED = new Set(["$schema", "minLength", "maxLength", "minimum", "ma
 function strip(node: unknown): unknown {
   if (Array.isArray(node)) return node.map(strip);
   if (!node || typeof node !== "object") return node;
-  return Object.fromEntries(Object.entries(node).filter(([k]) => !UNSUPPORTED.has(k)).map(([k, v]) => [k, strip(v)]));
+  return Object.fromEntries(
+    Object.entries(node)
+      .filter(([k]) => !UNSUPPORTED.has(k))
+      // Keys under "properties" are field names, not keywords: a field may be called "format" or "minimum".
+      .map(([k, v]) => [k, k === "properties" && v && typeof v === "object" && !Array.isArray(v) ? stripProperties(v) : strip(v)]),
+  );
+}
+
+function stripProperties(properties: object): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(properties).map(([name, schema]) => [name, strip(schema)]));
+}
+
+export interface JsonOutputFormat {
+  type: "json_schema";
+  schema: Record<string, unknown>;
 }
 
 /** Builds an `output_config.format` from a Zod schema. */
-export function jsonFormat(schema: z.ZodType): { type: "json_schema"; schema: Record<string, unknown> } {
+export function jsonFormat(schema: z.ZodType): JsonOutputFormat {
   return { type: "json_schema", schema: strip(z.toJSONSchema(schema, { target: "draft-7", io: "output" })) as Record<string, unknown> };
+}
+
+/**
+ * Builds an `output_config.format` from a definition's output schema (schema v2).
+ * Anthropic receives it as-is; the OpenAI translator maps it to `text.format`.
+ * Bounds the APIs reject (minItems, maxLength, …) are removed here and still
+ * enforced locally by the Zod validator from `toZod()`.
+ */
+export function jsonFormatFromSpec(spec: JsonSchemaNode): JsonOutputFormat {
+  return { type: "json_schema", schema: strip(spec) as Record<string, unknown> };
 }
 
 export class OutputInvalidError extends Error {
