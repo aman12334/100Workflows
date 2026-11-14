@@ -74,7 +74,7 @@ The app uses whichever key is set. With both set, Anthropic wins, unless you add
 1. In chat, tick recommended workflows and choose **Create package**.
 2. Open **Setup** on the package and answer the questions. Shared business context (company, product, target market) is asked once, and every workflow that declares it reuses the answer.
 3. Choose **Run package**. Before anything starts, the app checks each workflow: it is ready, needs input, will be skipped (definition only, or a tool is off), or is blocked (a workflow it requires can't run). Execution follows dependency order, one workflow at a time.
-4. The **Run details** page refreshes every 2 seconds. It shows the step that is actually running, then each workflow's output, its quality checks per attempt, retries, token and search usage, and the full step trace. You can cancel a run.
+4. The **Run details** page refreshes every 2 seconds. It shows the step that is actually running, then each workflow's output, its quality checks per attempt, retries, the full step trace with each step's duration and token usage, and a usage summary for the whole run. You can cancel a run.
 
 ### Executable workflows
 
@@ -82,6 +82,11 @@ The app uses whichever key is set. With both set, Anthropic wins, unless you add
 | --- | --- | --- |
 | **Market Research Agent** (`market-research@0.2.0`) | Up to 5 web searches, then a structured report in which every finding, player and trend cites a retrieved source. A separate reviewer call grades the report. | `WORKFLOWS_WEB_SEARCH=on` |
 | **Ideal Customer Profile Builder** (`icp-builder@0.2.0`) | Segments, firmographics, triggers, disqualifiers and personas. When Market Research ran first and was accepted, the profile builds on its sourced findings. | Nothing extra |
+| **Survey Designer** (`survey-designer@0.2.0`) | A short survey with a rationale and analysis method for every question, then a bias-review rewrite. Code checks your question limit, missing rationales and repeats. | Nothing extra |
+| **SOP Writer** (`sop-writer@0.2.0`) | A numbered procedure with an owner and a check for every step, failure modes and assumptions. A reviewer call grades whether anything you didn't say is listed as an assumption. | Nothing extra |
+| **Discovery Call Prep** (`discovery-call-prep@0.2.0`) | Facts, hypotheses, questions mapped to each hypothesis, and qualification criteria. A "fact" must quote your notes word for word, so guesses can't pass as facts. Uses an accepted ICP when it ran first. | Nothing extra |
+
+The last three are schema-v2 definitions that run on the generic executor: their prompts, output schema and checks are data in the JSON file, with no workflow-specific code. All five run on either provider except Market Research, which needs Anthropic's web search.
 
 **Web search is opt-in.** Market Research uses Anthropic's server-side web search tool with the same API key, so you don't need another account. Anthropic bills searches separately from tokens, so the tool is off until you add `WORKFLOWS_WEB_SEARCH=on` to `.env.local` and restart. While it is off, Market Research is skipped with that explanation, and it never produces a report without sources. Your Anthropic organization must also allow web search (an admin enables it in the Anthropic Console). If it doesn't, the run fails and shows Anthropic's own error message.
 
@@ -95,7 +100,7 @@ Each workflow run reports three separate things:
 | **Quality score** | The mean of the workflow's evaluation criteria for the chosen attempt: schema, rules and an optional model review. A failed **critical** criterion (for example, a finding citing a source that wasn't retrieved) rejects the attempt regardless of the average. |
 | **Confidence** | A labelled heuristic based on the evidence: number of sources, distinct domains, cited passages, and the reviewer rating. It is not a probability, and the model's own claims about its confidence are never used. |
 
-When an attempt fails its checks, the runtime retries the writing step with the specific failures as feedback, up to the workflow's `maxRetries` (2 for both). Searches are not repeated on a retry. Every model call counts against `maxModelCalls`, and a wall-clock `timeoutSeconds` applies. When retries or budget run out, the best attempt is kept as **Needs review**. Downstream workflows only receive **accepted** outputs.
+When an attempt fails its checks, the runtime retries the writing step with the specific failures as feedback, up to the workflow's `maxRetries` (1 or 2, depending on the workflow). Searches are not repeated on a retry. Every model call counts against `maxModelCalls`, and a wall-clock `timeoutSeconds` applies. When retries or budget run out, the best attempt is kept as **Needs review**. Downstream workflows only receive **accepted** outputs.
 
 ## Local database
 
@@ -157,7 +162,7 @@ src/app/                Pages (chat, packages, library, settings) and API routes
 src/components/         UI components
 src/lib/catalog/        Schema, catalog builder, search (shared by server and browser)
 src/lib/packages/       Package logic: dependencies, ordering, input merging and validation, pin status (pure)
-src/lib/runtime/        Workflow runtime: engine, budget, evaluation, executors for runnable workflows
+src/lib/runtime/        Workflow runtime: engine, budget, evaluation, rules, pricing, generic and hand-written executors
 src/lib/server/         Server-only: config, Anthropic client, chat engine, services, logging
 src/lib/server/db/      SQLite connection, migration runner, repositories
 src/proxy.ts            Localhost and origin guard for /api/*
@@ -174,16 +179,17 @@ docs/                   Architecture, contributor guide, generated catalog index
 | 2 | Recommendations with selection, persistent packages, SQLite with migrations | ✅ done |
 | 3 | Market Research Agent: execution, evaluation, bounded retries, saved results | ✅ done |
 | 4 | Shared input collection, dependency ordering, a second connected workflow | ✅ done |
-| 5 | Contributor tooling and catalog structure for 100+ workflows | ✅ this release |
+| 5 | Contributor tooling and catalog structure for 100+ workflows | ✅ done |
+| 6–10 | Schema v2 and the generic executor, three migrated workflows, run usage and cost estimates | ✅ this release |
 
 ## Known limitations
 
-- Only two workflows can execute. The other 10 are definitions.
+- Five workflows can execute. The other 7 are definitions.
 - Catalog search is keyword-based with light stemming. It is tested by `catalog/search-cases.json` and should hold up to a few hundred workflows. Beyond that, an embedding index may be worth adding.
 - Runs execute inside the dev or production server process. Closing the server interrupts a run, and it can't resume.
 - One run at a time per package. Different packages can run at the same time, which also spends credits in parallel.
-- Cost is bounded by model-call counts, `max_tokens` and time limits per workflow. There is no dollar-denominated budget yet.
-- Neither runnable workflow has external side effects (they only read the web and write text). Human approval gates for actions such as sending email are designed for (definitions declare integrations) but not yet built, so no workflow with side effects is executable.
+- Cost is bounded by model-call counts, `max_tokens` and time limits per workflow. There is no dollar-denominated budget yet. Run details show an **estimated** cost only for models with a verified list price (current Claude models, excluding Haiku 5.5's tiered pricing). It excludes web search charges and caching discounts. OpenAI runs show token usage without a cost estimate, because no verified OpenAI price is recorded.
+- No runnable workflow has external side effects (they only read the web and write text). Human approval gates for actions such as sending email are designed for (definitions declare integrations) but not yet built, so no workflow with side effects is executable.
 - Confidence levels are coarse heuristics. Treat **Accepted** as "passed its checks", not "verified true". Research output is a starting point, not a substitute for expert research.
 - Chat history from Milestone 1 (browser local storage) was not imported, and there is no button for deleting chats yet.
 - Replies and runs are polled, not streamed.

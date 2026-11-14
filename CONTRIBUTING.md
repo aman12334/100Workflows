@@ -19,7 +19,7 @@ npm run new:workflow                     # asks a few questions
 npm run new:workflow -- --id churn-review --name "Churn Review" --category operations
 ```
 
-This creates `catalog/workflows/<category>/<id>.json` full of `TODO`s. The file is schema-valid, so you can open the app and see it in the library straight away. `--strict` validation refuses it until every TODO is replaced.
+This creates `catalog/workflows/<category>/<id>.json` full of `TODO`s. It is a schema-v2 definition for the generic executor, so once it is finished it runs without any TypeScript. The file is schema-valid, so you can open the app and see it in the library straight away. `--strict` validation refuses it until every TODO is replaced.
 
 1. **Fill it in.** Your editor validates the file and offers autocomplete through its `$schema` line. The field guide is in [docs/adding-workflows.md](docs/adding-workflows.md).
 2. **Reuse shared inputs.** Business context such as `company_name`, `product_description` and `target_market` is defined once in `catalog/shared-inputs.json`. Reference it with `{ "use": "company_name", "required": true }`, so a package asks for it only once. To add a new shared field, add it to that file. Redefining a shared key inline is an error.
@@ -42,21 +42,24 @@ This creates `catalog/workflows/<category>/<id>.json` full of `TODO`s. The file 
 | Unknown `use` keys, or shared keys redefined inline | Required free-text input without an example |
 | Tool ids not in `catalog/tools.json` | No critical check besides the schema |
 | Steps using tools they don't declare | Not covered by any search case |
-| | `available` while needing a tool the runtime lacks |
+| Schema v2: an `outputSchema` outside the supported subset | `available` while needing a tool the runtime lacks |
+| Schema v2: unknown rules, rule paths missing from the output schema, unwired steps or reviews, or an attempt that doesn't fit `maxModelCalls` | |
 
 ### Versioning
 
-Packages pin the exact definition a user added, and show *Update to latest* when it changes. Bump the patch version for wording or examples (`0.1.0 → 0.1.1`). Bump the minor version when inputs, outputs, steps or checks change. Executors declare the major.minor line they implement (`"0.2"`), so a patch release runs on the same code.
+Packages pin the exact definition a user added, and show *Update to latest* when it changes. Bump the patch version for wording or examples (`0.1.0 → 0.1.1`). Bump the minor version when inputs, outputs, steps, prompts, the output schema or checks change. Hand-written executors declare the major.minor line they implement (`"0.2"`), so a patch release runs on the same code. Generic definitions carry their own configuration, so any version runs exactly as it was pinned.
 
 ## Making a workflow executable
 
-See [docs/adding-workflows.md § 6](docs/adding-workflows.md#6-making-a-workflow-executable). In short:
+Most workflows need no code: write the schema-v2 `execution`, `outputSchema`, step prompts and rule or review criteria ([docs/adding-workflows.md § 6](docs/adding-workflows.md#6-running-on-the-generic-executor-schema-v2)), add a run-service test with scripted model responses (see `tests/run-service-generic.test.ts`), and set `"status": "available"`.
+
+Workflows that need tools or custom checks get a hand-written executor ([§ 7](docs/adding-workflows.md#7-workflows-that-need-code-hand-written-executors)):
 
 ```bash
 npm run new:workflow -- --id <id> --name "<Name>" --category <category> --executable
 ```
 
-This also creates an executor stub and a test stub. Implement the executor, register it in `src/lib/runtime/executors/index.ts`, set `"status": "available"`, and write tests with the scripted model helpers in `tests/runtime-helpers.ts`.
+This creates a v1 definition, an executor stub and a test stub. Implement the executor, register it in `src/lib/runtime/executors/index.ts`, set `"status": "available"`, and write tests with the scripted model helpers in `tests/runtime-helpers.ts`.
 
 The bar for executable workflows:
 
