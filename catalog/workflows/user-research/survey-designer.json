@@ -1,12 +1,13 @@
 {
   "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
   "id": "survey-designer",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "name": "Survey Designer",
   "category": "user-research",
   "summary": "Designs a short, unbiased survey for a research goal, with question rationale and analysis plan.",
   "description": "Drafts survey questions mapped to the research goal, flags leading or double-barreled wording, and proposes how each answer will be analyzed.",
-  "status": "planned",
+  "status": "available",
   "problems": [
     "I want feedback from many users quickly",
     "I need to measure satisfaction or demand",
@@ -54,19 +55,98 @@
       "format": "markdown"
     }
   ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a survey methodologist. You design short, unbiased surveys that answer one research question for a specific audience. Every question must earn its place: say why it is asked and how its answers will be analyzed.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "questions",
+      "analysis_plan"
+    ],
+    "properties": {
+      "questions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "format",
+            "rationale",
+            "analysis"
+          ],
+          "properties": {
+            "text": {
+              "type": "string",
+              "minLength": 5,
+              "description": "The question exactly as respondents will read it."
+            },
+            "format": {
+              "type": "string",
+              "enum": [
+                "single_choice",
+                "multi_choice",
+                "scale",
+                "open"
+              ],
+              "description": "How respondents answer."
+            },
+            "options": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Answer options for choice and scale questions; omit for open questions."
+            },
+            "rationale": {
+              "type": "string",
+              "description": "Which part of the research question this answers."
+            },
+            "analysis": {
+              "type": "string",
+              "description": "How the answers will be analyzed."
+            }
+          }
+        },
+        "title": "Questions",
+        "minItems": 1,
+        "maxItems": 25
+      },
+      "analysis_plan": {
+        "type": "string",
+        "title": "Analysis plan",
+        "description": "How the results answer the research question, including segments to compare."
+      }
+    }
+  },
   "steps": [
     {
       "id": "draft",
       "name": "Draft survey",
       "kind": "agent",
+      "mode": "generate",
       "responsibility": "Write questions mapped to the research goal.",
+      "prompt": "Write the survey. Keep it as short as the research question allows and respect the maximum number of questions if one is given. Use neutral wording, one idea per question, and balanced answer options. Put screening or behavioral questions before opinion questions.",
       "tools": []
     },
     {
       "id": "bias_review",
       "name": "Bias review",
       "kind": "agent",
+      "mode": "revise",
       "responsibility": "Flag leading, loaded or double-barreled questions and rewrite them.",
+      "prompt": "Review the draft as a skeptical methodologist. Rewrite any question that is leading, loaded, double-barreled, or uses jargon the audience might not know, and make answer options mutually exclusive. Remove questions whose answers would not change a decision. Keep everything else as it is.",
+      "tools": []
+    },
+    {
+      "id": "check_survey",
+      "name": "Check survey",
+      "kind": "check",
+      "responsibility": "Check the question limit, that every question has a rationale and analysis, and that no question repeats.",
       "tools": []
     }
   ],
@@ -85,7 +165,57 @@
         "id": "within_limit",
         "description": "Question count does not exceed the maximum.",
         "method": "rule",
-        "critical": true
+        "critical": true,
+        "rule": {
+          "id": "count",
+          "params": {
+            "path": "questions",
+            "min": 1,
+            "max": 15,
+            "maxFromInput": "max_questions"
+          }
+        }
+      },
+      {
+        "id": "analysis_mapped",
+        "description": "Every question has a rationale and an analysis method.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "required_fields",
+          "params": {
+            "path": "questions[]",
+            "fields": [
+              "rationale",
+              "analysis"
+            ]
+          }
+        }
+      },
+      {
+        "id": "no_repeats",
+        "description": "No question is asked twice.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "questions[].text"
+          }
+        }
+      },
+      {
+        "id": "short_questions",
+        "description": "Each question is short enough to read at a glance (30 words or fewer).",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "questions[].text",
+            "max": 30
+          }
+        }
       }
     ],
     "threshold": 0.7

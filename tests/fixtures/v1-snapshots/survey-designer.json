@@ -1,0 +1,98 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "id": "survey-designer",
+  "version": "0.1.1",
+  "name": "Survey Designer",
+  "category": "user-research",
+  "summary": "Designs a short, unbiased survey for a research goal, with question rationale and analysis plan.",
+  "description": "Drafts survey questions mapped to the research goal, flags leading or double-barreled wording, and proposes how each answer will be analyzed.",
+  "status": "planned",
+  "problems": [
+    "I want feedback from many users quickly",
+    "I need to measure satisfaction or demand",
+    "My surveys get biased answers"
+  ],
+  "tags": [
+    "survey",
+    "questionnaire",
+    "feedback",
+    "nps",
+    "validation"
+  ],
+  "inputs": [
+    {
+      "use": "research_question",
+      "required": true
+    },
+    {
+      "key": "audience",
+      "label": "Audience",
+      "type": "text",
+      "required": true,
+      "description": "Who will receive the survey.",
+      "example": "Trial users who signed up in the last 30 days"
+    },
+    {
+      "key": "max_questions",
+      "label": "Maximum questions",
+      "type": "number",
+      "required": false,
+      "description": "Upper limit on survey length."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "survey",
+      "label": "Survey",
+      "description": "Questions with type, options and rationale.",
+      "format": "json"
+    },
+    {
+      "key": "analysis_plan",
+      "label": "Analysis plan",
+      "description": "How each question will be analyzed.",
+      "format": "markdown"
+    }
+  ],
+  "steps": [
+    {
+      "id": "draft",
+      "name": "Draft survey",
+      "kind": "agent",
+      "responsibility": "Write questions mapped to the research goal.",
+      "tools": []
+    },
+    {
+      "id": "bias_review",
+      "name": "Bias review",
+      "kind": "agent",
+      "responsibility": "Flag leading, loaded or double-barreled questions and rewrite them.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "within_limit",
+        "description": "Question count does not exceed the maximum.",
+        "method": "rule",
+        "critical": true
+      }
+    ],
+    "threshold": 0.7
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 120,
+    "maxModelCalls": 4
+  }
+}

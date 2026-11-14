@@ -1,12 +1,13 @@
 {
   "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
   "id": "discovery-call-prep",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "Discovery Call Prep",
   "category": "sales",
   "summary": "Prepares a one-page brief and question plan for a first sales call with a specific prospect.",
   "description": "Combines what you know about the prospect with your ICP to produce hypotheses about their pains, questions that test those hypotheses, and qualification criteria to listen for. It never presents guesses about the prospect as facts; anything not supplied is labelled a hypothesis.",
-  "status": "planned",
+  "status": "available",
   "problems": [
     "I don't know what to ask on a discovery call",
     "My first calls turn into demos too early",
@@ -48,19 +49,151 @@
       "format": "markdown"
     }
   ],
+  "execution": {
+    "engine": "generic",
+    "system": "You prepare B2B sales reps for a first discovery call. You separate what is known from what is guessed: a fact must quote the prospect information word for word, and everything else, including anything taken from an ideal customer profile, is a hypothesis to test on the call.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "prospect_summary",
+      "facts",
+      "hypotheses",
+      "questions",
+      "qualification_criteria",
+      "next_steps"
+    ],
+    "properties": {
+      "prospect_summary": {
+        "type": "string",
+        "title": "Prospect",
+        "description": "Who the prospect is, in two or three sentences, using only what was supplied."
+      },
+      "facts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "statement",
+            "evidence"
+          ],
+          "properties": {
+            "statement": {
+              "type": "string",
+              "description": "What we know."
+            },
+            "evidence": {
+              "type": "string",
+              "description": "The exact words from the prospect or notes that show it, copied word for word."
+            }
+          }
+        },
+        "title": "What we know"
+      },
+      "hypotheses": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "statement",
+            "basis"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "A short id such as H1."
+            },
+            "statement": {
+              "type": "string",
+              "description": "A guess about their situation or pain."
+            },
+            "basis": {
+              "type": "string",
+              "description": "Why we think so."
+            }
+          }
+        },
+        "title": "Hypotheses to test",
+        "minItems": 1
+      },
+      "questions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "text",
+            "tests"
+          ],
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "An open question to ask."
+            },
+            "tests": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Ids of the hypotheses this question tests."
+            }
+          }
+        },
+        "title": "Questions",
+        "minItems": 1
+      },
+      "qualification_criteria": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "criterion",
+            "listen_for"
+          ],
+          "properties": {
+            "criterion": {
+              "type": "string",
+              "description": "What would qualify or disqualify them."
+            },
+            "listen_for": {
+              "type": "string",
+              "description": "What a qualifying answer sounds like."
+            }
+          }
+        },
+        "title": "Qualification criteria"
+      },
+      "next_steps": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Next-step options",
+        "description": "Options to propose at the end of the call."
+      }
+    }
+  },
   "steps": [
     {
       "id": "prepare",
       "name": "Prepare brief",
       "kind": "agent",
+      "mode": "generate",
       "responsibility": "Draft hypotheses and questions from the prospect notes and ICP.",
+      "prompt": "Prepare the brief. Only list a fact when you can quote its evidence word for word from the prospect or the notes; otherwise make it a hypothesis. Give each hypothesis an id (H1, H2, ...) and write at least one open question that tests each one, listing the ids it tests. Use the ICP, if provided, for hypotheses and qualification criteria, never for facts. Do not suggest demoing in the first call.",
       "tools": []
     },
     {
       "id": "check_labels",
       "name": "Check labels",
       "kind": "check",
-      "responsibility": "Ensure statements not grounded in the notes are labelled as hypotheses.",
+      "responsibility": "Ensure every stated fact quotes the notes and every hypothesis is tested by a question.",
       "tools": []
     }
   ],
@@ -83,15 +216,45 @@
       },
       {
         "id": "hypotheses_labelled",
-        "description": "Claims about the prospect that aren't in the notes are labelled hypotheses.",
+        "description": "Claims about the prospect that aren't in the notes are labelled hypotheses: every fact quotes the prospect or notes word for word.",
         "method": "rule",
-        "critical": true
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "facts[].evidence",
+            "inputs": [
+              "prospect",
+              "prospect_notes"
+            ]
+          }
+        }
       },
       {
         "id": "questions_mapped",
         "description": "Each hypothesis has at least one question that tests it.",
         "method": "rule",
-        "critical": false
+        "critical": false,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "questions[].tests[]",
+            "to": "hypotheses[].id",
+            "everyTargetReferenced": true
+          }
+        }
+      },
+      {
+        "id": "distinct_hypotheses",
+        "description": "Hypothesis ids are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "hypotheses[].id"
+          }
+        }
       }
     ],
     "threshold": 0.75
