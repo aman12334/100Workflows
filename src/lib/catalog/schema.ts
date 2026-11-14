@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { OutputSchemaSpec } from "./output-schema";
 
 /**
  * Workflow definitions are plain JSON data. They never contain executable code;
@@ -73,6 +74,14 @@ export const StepSchema = z
     kind: z.enum(["agent", "check"]),
     responsibility: text(400),
     tools: z.array(id).default([]),
+    /** Schema v2, agent steps only: what this step asks the model to do. */
+    prompt: text(4000).optional(),
+    /**
+     * Schema v2, agent steps only. "generate" writes the output from the inputs;
+     * "revise" rewrites the previous step's output in the same schema. Agent steps
+     * without a mode are review steps used by model-graded criteria.
+     */
+    mode: z.enum(["generate", "revise"]).optional(),
   })
   .strict();
 
@@ -102,6 +111,27 @@ export const DependencySchema = z
   })
   .strict();
 
+/** Schema v2: which deterministic rule checks a criterion (see src/lib/runtime/rules). */
+export const RuleRefSchema = z
+  .object({
+    id: z.string().regex(/^[a-z][a-z0-9_]*$/, "must be a rule id, e.g. required_fields"),
+    /** The check step to trace this rule under. Defaults to the first check step. */
+    step: key.optional(),
+    params: z.record(z.string(), z.unknown()),
+  })
+  .strict();
+
+/** Schema v2: how a model-graded criterion is reviewed. */
+export const ReviewSpecSchema = z
+  .object({
+    /** An agent step without a mode, used to trace the review call. */
+    step: key,
+    rubric: text(400),
+    /** Lowest 1-5 rating that passes. Defaults to 3. */
+    passAt: z.number().int().min(1).max(5).optional(),
+  })
+  .strict();
+
 export const EvaluationCriterionSchema = z
   .object({
     id: key,
@@ -109,6 +139,23 @@ export const EvaluationCriterionSchema = z
     method: z.enum(["schema", "rule", "model"]),
     /** A critical failure fails the run regardless of the aggregate score. */
     critical: z.boolean().default(false),
+    /** Schema v2, "rule" criteria: the deterministic rule that checks it. */
+    rule: RuleRefSchema.optional(),
+    /** Schema v2, "model" criteria: the review that grades it. */
+    review: ReviewSpecSchema.optional(),
+  })
+  .strict();
+
+/** Schema v2: how the generic executor runs this workflow. */
+export const ExecutionSchema = z
+  .object({
+    engine: z.literal("generic"),
+    /** Standing instructions for every model step of this workflow. */
+    system: text(2000),
+    /** Per model call. Defaults to 4000. */
+    maxOutputTokens: z.number().int().min(256).max(16000).optional(),
+    /** Defaults to "medium". */
+    effort: z.enum(["low", "medium", "high"]).optional(),
   })
   .strict();
 
@@ -143,6 +190,12 @@ const workflowShape = {
         maxModelCalls: z.number().int().min(1).max(50),
       })
       .strict(),
+    // Schema v2. All optional with no defaults, so a v1 definition parses to exactly
+    // the same object as before and keeps its fingerprint (definitionHash).
+    /** Absent means version 1. */
+    schemaVersion: z.literal(2).optional(),
+    execution: ExecutionSchema.optional(),
+    outputSchema: OutputSchemaSpec.optional(),
 };
 
 /** A fully expanded definition: what packages pin, the runtime executes and the UI shows. */
@@ -165,6 +218,26 @@ export const WorkflowSchema = z
     if (wf.dependencies.some((d) => d.workflowId === wf.id)) {
       ctx.addIssue({ code: "custom", message: "a workflow cannot depend on itself", path: ["dependencies"] });
     }
+    // Schema-v2 fields belong together and only in v2 definitions. Deeper checks that
+    // need the rule registry live in validateGenericDefinition() (catalog.ts).
+    if (wf.schemaVersion === 2) {
+      if (!wf.execution) ctx.addIssue({ code: "custom", message: "schemaVersion 2 definitions need an \"execution\" section", path: ["execution"] });
+      if (!wf.outputSchema) ctx.addIssue({ code: "custom", message: "schemaVersion 2 definitions need an \"outputSchema\"", path: ["outputSchema"] });
+    } else {
+      const v2only = (path: Array<string | number>, field: string) =>
+        ctx.addIssue({ code: "custom", message: `"${field}" requires "schemaVersion": 2`, path });
+      if (wf.execution) v2only(["execution"], "execution");
+      if (wf.outputSchema) v2only(["outputSchema"], "outputSchema");
+      wf.steps.forEach((st, i) => {
+        if (st.prompt !== undefined) v2only(["steps", i, "prompt"], "prompt");
+        if (st.mode !== undefined) v2only(["steps", i, "mode"], "mode");
+      });
+      wf.evaluation.criteria.forEach((c, i) => {
+        if (c.rule) v2only(["evaluation", "criteria", i, "rule"], "rule");
+        if (c.review) v2only(["evaluation", "criteria", i, "review"], "review");
+      });
+    }
+
     const declaredTools = new Set(wf.tools.map((t) => t.id));
     for (const step of wf.steps) {
       for (const tool of step.tools) {

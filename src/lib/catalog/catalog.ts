@@ -1,3 +1,5 @@
+import { RULES, validateRuleRef } from "@/lib/runtime/rules/registry";
+import { callsPerAttempt, producerSteps } from "@/lib/runtime/executors/generic";
 import { InputRefSchema, WorkflowSchema, type SharedInputDef, type ToolDef, type Workflow } from "./schema";
 
 export interface CatalogError {
@@ -63,6 +65,92 @@ export function expandManifest(data: unknown, registry: Registry | null): { data
   return { data: { ...rest, inputs }, errors };
 }
 
+const SCHEMA_CRITERION = "schema_valid";
+
+/**
+ * Checks a schema-v2 definition for everything the generic executor relies on
+ * and the schema alone can't see: steps that make sense in order, every
+ * criterion wired to a known rule or review, rule paths and inputs that exist,
+ * and an attempt that fits the model-call budget. Returns problems; empty means
+ * the generic executor can run it. v1 definitions return no problems.
+ */
+export function validateGenericDefinition(wf: Workflow): string[] {
+  if (wf.schemaVersion !== 2 || !wf.execution || !wf.outputSchema) return [];
+  const problems: string[] = [];
+  const steps = new Map(wf.steps.map((s) => [s.id, s]));
+
+  // Phase 0 scope: no tools, no integrations, no side effects.
+  if (wf.tools.length) problems.push("generic workflows can't use tools yet; remove \"tools\" or use a hand-written executor");
+  if (wf.integrations.length) problems.push("generic workflows can't use integrations yet; remove \"integrations\"");
+  for (const st of wf.steps) {
+    if (st.tools.length) problems.push(`step "${st.id}" lists tools, which generic workflows can't use yet`);
+    if (st.kind === "check" && (st.mode || st.prompt)) problems.push(`step "${st.id}" is a check step, so it can't have a mode or prompt`);
+  }
+
+  const producers = producerSteps(wf);
+  if (!producers.length || producers[0].mode !== "generate") {
+    problems.push('the first producing step must have "mode": "generate"');
+  }
+  if (producers.slice(1).some((s) => s.mode === "generate")) problems.push('only one step can "generate"; later producing steps must "revise"');
+
+  const reviewSteps = new Set<string>();
+  const checkStepsUsed = new Set<string>();
+  const firstCheck = wf.steps.find((s) => s.kind === "check");
+  const inputKeys = wf.inputs.map((i) => i.key);
+
+  const schemaCriterion = wf.evaluation.criteria.find((c) => c.id === SCHEMA_CRITERION);
+  if (!schemaCriterion || schemaCriterion.method !== "schema" || !schemaCriterion.critical) {
+    problems.push(`generic workflows need a critical "${SCHEMA_CRITERION}" criterion with method "schema"`);
+  }
+
+  for (const c of wf.evaluation.criteria) {
+    const where = `criterion "${c.id}"`;
+    if (c.method === "schema") {
+      if (c.id !== SCHEMA_CRITERION) problems.push(`${where}: only "${SCHEMA_CRITERION}" can use method "schema"`);
+      if (c.rule || c.review) problems.push(`${where}: a schema criterion can't have a rule or review`);
+      continue;
+    }
+    if (c.method === "rule") {
+      if (c.review) problems.push(`${where}: a rule criterion can't have a review`);
+      if (!c.rule) {
+        problems.push(`${where}: method "rule" needs a "rule" (one of ${Object.keys(RULES).sort().join(", ")})`);
+        continue;
+      }
+      problems.push(...validateRuleRef(c.rule, { outputSchema: wf.outputSchema, inputKeys }).map((p) => `${where}: ${p}`));
+      const stepId = c.rule.step ?? firstCheck?.id;
+      const step = stepId ? steps.get(stepId) : undefined;
+      if (!stepId) problems.push(`${where}: rules run in a "check" step, and this workflow has none`);
+      else if (!step) problems.push(`${where}: rule step "${stepId}" is not declared`);
+      else if (step.kind !== "check") problems.push(`${where}: rule step "${stepId}" must be a "check" step`);
+      else checkStepsUsed.add(stepId);
+      continue;
+    }
+    // method === "model"
+    if (c.rule) problems.push(`${where}: a model criterion can't have a rule`);
+    if (!c.review) {
+      problems.push(`${where}: method "model" needs a "review" with a step and rubric`);
+      continue;
+    }
+    const step = steps.get(c.review.step);
+    if (!step) problems.push(`${where}: review step "${c.review.step}" is not declared`);
+    else if (step.kind !== "agent" || step.mode) problems.push(`${where}: review step "${c.review.step}" must be an agent step without a mode`);
+    else reviewSteps.add(step.id);
+  }
+
+  for (const st of wf.steps) {
+    if (st.kind === "agent" && !st.mode && !reviewSteps.has(st.id)) {
+      problems.push(`agent step "${st.id}" has no mode and no review uses it; give it "mode" or remove it`);
+    }
+    if (st.kind === "check" && !checkStepsUsed.has(st.id)) problems.push(`check step "${st.id}" runs no rules; remove it or point a rule at it`);
+  }
+
+  const calls = callsPerAttempt(wf);
+  if (calls > wf.limits.maxModelCalls) {
+    problems.push(`one attempt needs ${calls} model calls, but limits.maxModelCalls is ${wf.limits.maxModelCalls}`);
+  }
+  return problems;
+}
+
 function basename(file: string) {
   return file.split("/").pop() ?? file;
 }
@@ -98,6 +186,11 @@ export function buildCatalog(entries: RawEntry[], registry: Registry | null = nu
     }
     if (entry.file.includes("/") && entry.file.split("/").at(-2) !== wf.category) {
       errors.push({ file: entry.file, message: `category "${wf.category}" doesn't match its folder; move it to ${wf.category}/${wf.id}.json` });
+      continue;
+    }
+    const genericProblems = validateGenericDefinition(wf);
+    if (genericProblems.length) {
+      for (const message of genericProblems) errors.push({ file: entry.file, message });
       continue;
     }
     const unknownTools = registry ? wf.tools.filter((t) => !toolIds.has(t.id)).map((t) => t.id) : [];

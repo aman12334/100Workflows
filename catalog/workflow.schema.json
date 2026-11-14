@@ -225,6 +225,18 @@
               "type": "string",
               "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
             }
+          },
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "generate",
+              "revise"
+            ]
           }
         },
         "required": [
@@ -353,6 +365,55 @@
               "critical": {
                 "default": false,
                 "type": "boolean"
+              },
+              "rule": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]*$"
+                  },
+                  "step": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]*$"
+                  },
+                  "params": {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string"
+                    },
+                    "additionalProperties": {}
+                  }
+                },
+                "required": [
+                  "id",
+                  "params"
+                ],
+                "additionalProperties": false
+              },
+              "review": {
+                "type": "object",
+                "properties": {
+                  "step": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_]*$"
+                  },
+                  "rubric": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 400
+                  },
+                  "passAt": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  }
+                },
+                "required": [
+                  "step",
+                  "rubric"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [
@@ -400,7 +461,44 @@
         "maxModelCalls"
       ],
       "additionalProperties": false
-    }
+    },
+    "schemaVersion": {
+      "type": "number",
+      "const": 2
+    },
+    "execution": {
+      "type": "object",
+      "properties": {
+        "engine": {
+          "type": "string",
+          "const": "generic"
+        },
+        "system": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "maxOutputTokens": {
+          "type": "integer",
+          "minimum": 256,
+          "maximum": 16000
+        },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      },
+      "required": [
+        "engine",
+        "system"
+      ],
+      "additionalProperties": false
+    },
+    "outputSchema": {}
   },
   "required": [
     "id",
