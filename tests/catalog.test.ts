@@ -14,14 +14,16 @@ describe("shipped catalog", () => {
   });
 
   it("marks a workflow available only when the runtime has an executor for that exact version", async () => {
-    const { EXECUTORS, implementsVersion } = await import("@/lib/runtime/executors");
+    // resolveExecutor covers both hand-written executors and schema-v2 generic definitions.
+    const { resolveExecutor, implementsVersion } = await import("@/lib/runtime/executors");
     const catalog = await loadCatalog();
     for (const wf of catalog.workflows) {
-      const executor = EXECUTORS[wf.id];
+      const executor = resolveExecutor(wf);
       const implemented = Boolean(executor && implementsVersion(executor, wf.version));
       expect(implemented, `${wf.id}@${wf.version} is ${wf.status}`).toBe(wf.status === "available");
     }
-    expect(catalog.workflows.find((w) => w.id === "market-research")?.status).toBe("available");
+    const available = catalog.workflows.filter((w) => w.status === "available").map((w) => w.id).sort();
+    expect(available).toEqual(["discovery-call-prep", "icp-builder", "market-research", "sop-writer", "survey-designer"]);
   });
 
   it("executors only use steps and criteria their definitions declare", async () => {
