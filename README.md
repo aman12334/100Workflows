@@ -10,13 +10,13 @@
 
 ## Quick start
 
-**Prerequisites:** Node.js 20.9 or newer, npm, and an [Anthropic API key](https://console.anthropic.com/settings/keys). No database, Docker or other accounts are needed.
+**Prerequisites:** Node.js 20.9 or newer, npm, and an [Anthropic API key](https://console.anthropic.com/settings/keys) or an [OpenAI API key](https://platform.openai.com/api-keys). No database, Docker or other accounts are needed.
 
 ```bash
-git clone https://github.com/<your-username>/100-workflows.git
-cd 100-workflows
+git clone https://github.com/aman12334/100Workflows.git
+cd 100Workflows
 npm install
-npm run setup      # paste your Anthropic key; it is saved to .env.local
+npm run setup      # paste your Anthropic key; it is saved to .env.local (for OpenAI, see below)
 npm run dev        # creates and migrates the local database on first use
 ```
 
