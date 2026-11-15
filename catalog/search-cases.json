@@ -183,6 +183,12 @@
       "expect": [
         "ad-copy-variants"
       ]
+    },
+    {
+      "query": "how should we position our product against alternatives",
+      "expect": [
+        "positioning-statement"
+      ]
     }
   ]
 }

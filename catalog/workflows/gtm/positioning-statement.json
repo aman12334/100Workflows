@@ -1,0 +1,247 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "positioning-statement",
+  "version": "0.1.0",
+  "name": "Positioning Workshop",
+  "category": "gtm",
+  "summary": "Works out positioning: competitive alternatives, unique attributes, the value they enable, best-fit buyers and category.",
+  "description": "Runs a positioning exercise in the order that works in practice: what buyers would use if you did not exist, what you have that those alternatives lack, the value those attributes enable, who cares most about that value, and the market category that makes the value obvious. Every value theme must trace back to a unique attribute, and the final positioning statement is kept short. Who it's for: founders and product marketers repositioning a product or preparing a launch. Limitations: it reasons from what you tell it about alternatives; it does not research competitors. Validate the result with buyers before rewriting your website.",
+  "status": "available",
+  "problems": [
+    "People don't understand what our product is",
+    "We sound like every competitor",
+    "I need a positioning statement"
+  ],
+  "tags": [
+    "positioning",
+    "messaging",
+    "differentiation",
+    "value-proposition",
+    "category"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "use": "target_market",
+      "required": false
+    },
+    {
+      "key": "alternatives",
+      "label": "Alternatives buyers consider",
+      "type": "long_text",
+      "required": true,
+      "description": "What buyers use instead of you today, including spreadsheets or doing nothing.",
+      "example": "Spreadsheets and a part-time bookkeeper; QuickBooks with manual matching"
+    },
+    {
+      "key": "differentiators",
+      "label": "What you believe is different",
+      "type": "long_text",
+      "required": false,
+      "description": "Capabilities or facts you think set you apart.",
+      "example": "Learns agency-specific categories; reconciles nightly"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "positioning",
+      "label": "Positioning",
+      "description": "Alternatives, unique attributes, value themes, best-fit buyers, category and statement.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a positioning strategist. Positioning starts from the real alternatives buyers have, not from competitors' marketing. Unique attributes must be things the product actually has according to the inputs; value is what those attributes enable for the buyer.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "alternatives",
+      "unique_attributes",
+      "value_themes",
+      "best_fit_buyers",
+      "market_category",
+      "positioning_statement",
+      "risks"
+    ],
+    "properties": {
+      "alternatives": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "title": "Competitive alternatives"
+      },
+      "unique_attributes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "attribute",
+            "basis"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Attribute id such as A1."
+            },
+            "attribute": {
+              "type": "string"
+            },
+            "basis": {
+              "type": "string",
+              "enum": [
+                "supplied",
+                "inferred"
+              ]
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 6,
+        "title": "Unique attributes"
+      },
+      "value_themes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "value",
+            "attribute_ids",
+            "proof_needed"
+          ],
+          "properties": {
+            "value": {
+              "type": "string"
+            },
+            "attribute_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "proof_needed": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 4,
+        "title": "Value"
+      },
+      "best_fit_buyers": {
+        "type": "string",
+        "description": "Who cares most about this value, and why.",
+        "title": "Best-fit buyers"
+      },
+      "market_category": {
+        "type": "string",
+        "title": "Market category"
+      },
+      "positioning_statement": {
+        "type": "string",
+        "description": "For <best-fit buyer> who <need>, <product> is a <category> that <value>. Unlike <alternative>, it <unique attribute>.",
+        "title": "Positioning statement"
+      },
+      "risks": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "What could make this positioning fail"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "position",
+      "name": "Work out positioning",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Work through alternatives, attributes, value, buyers and category.",
+      "prompt": "Work through the steps in order. Give unique attributes ids A1, A2, ... and mark whether each was supplied or inferred. Every value theme lists the attribute ids it comes from. Keep the positioning statement under 60 words.",
+      "tools": []
+    },
+    {
+      "id": "check_chain",
+      "name": "Check chain",
+      "kind": "check",
+      "responsibility": "Value traces to real attributes; the statement is short.",
+      "tools": []
+    },
+    {
+      "id": "review",
+      "name": "Review differentiation",
+      "kind": "agent",
+      "responsibility": "Grade whether the statement differentiates from the alternatives.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "value_from_attributes",
+        "description": "Every value theme traces to a declared unique attribute.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "value_themes[].attribute_ids[]",
+            "to": "unique_attributes[].id"
+          }
+        }
+      },
+      {
+        "id": "statement_length",
+        "description": "The positioning statement is 60 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "positioning_statement",
+            "max": 60
+          }
+        }
+      },
+      {
+        "id": "differentiates",
+        "description": "The statement clearly differentiates from the named alternatives.",
+        "method": "model",
+        "critical": false,
+        "review": {
+          "step": "review",
+          "rubric": "Would a buyer who uses the named alternatives understand from the statement why this product is different and for whom? 5 = specific buyer, clear contrast with a named alternative; 1 = generic claims any competitor could make."
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 4
+  }
+}
