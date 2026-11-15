@@ -207,6 +207,12 @@
       "expect": [
         "battlecard-builder"
       ]
+    },
+    {
+      "query": "how to respond to sales objections like too expensive",
+      "expect": [
+        "objection-handling-guide"
+      ]
     }
   ]
 }
