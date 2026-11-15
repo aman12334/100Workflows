@@ -1,0 +1,265 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "call-follow-up",
+  "version": "0.1.0",
+  "name": "Sales Call Follow-up",
+  "category": "sales",
+  "summary": "Turns raw sales call notes into a call summary, agreed next steps with owners, CRM fields and a follow-up email.",
+  "description": "Reads your notes from a sales or discovery call and produces what you need right after it: a short summary, the prospect's stated needs and commitments quoted from the notes, next steps with an owner (you, them or both) and date if one was mentioned, suggested CRM field updates, and a follow-up email under 180 words that confirms the next step. Who it's for: account executives and founders who run calls and need to follow up quickly and accurately. Limitations: it only knows what is in the notes; it marks fields as unknown rather than guessing, and does not send the email or update the CRM.",
+  "status": "available",
+  "problems": [
+    "I take messy notes during sales calls",
+    "Follow-up emails after calls take me too long",
+    "Next steps from calls get forgotten"
+  ],
+  "tags": [
+    "call-notes",
+    "follow-up-email",
+    "crm",
+    "next-steps",
+    "meeting-summary"
+  ],
+  "inputs": [
+    {
+      "key": "call_notes",
+      "label": "Call notes",
+      "type": "long_text",
+      "required": true,
+      "description": "Your notes or transcript from the call.",
+      "example": "Dana (COO) - month-end takes 3 days. Wants pilot with 2 entities. Will intro CFO by Friday. We send security doc."
+    },
+    {
+      "key": "prospect",
+      "label": "Prospect",
+      "type": "text",
+      "required": true,
+      "description": "Company and main contact.",
+      "example": "Brightline Agency, Dana Lee (COO)"
+    },
+    {
+      "key": "your_name",
+      "label": "Your name",
+      "type": "text",
+      "required": false,
+      "description": "For the email sign-off.",
+      "example": "Sam"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "follow_up",
+      "label": "Call follow-up",
+      "description": "Summary, needs, next steps, CRM updates and an email draft.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are an account executive's assistant. Capture exactly what was said and agreed. Commitments must quote the notes. If something was not discussed, say unknown. The email should confirm, not sell.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "summary",
+      "stated_needs",
+      "next_steps",
+      "crm_updates",
+      "email"
+    ],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "description": "Three sentences or fewer.",
+        "title": "Summary"
+      },
+      "stated_needs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "need",
+            "quote"
+          ],
+          "properties": {
+            "need": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied word for word from the notes."
+            }
+          }
+        },
+        "title": "What they need"
+      },
+      "next_steps": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "step",
+            "owner",
+            "due",
+            "quote"
+          ],
+          "properties": {
+            "step": {
+              "type": "string"
+            },
+            "owner": {
+              "type": "string",
+              "enum": [
+                "us",
+                "them",
+                "both"
+              ]
+            },
+            "due": {
+              "type": "string",
+              "description": "As stated in the notes, or \"not agreed\"."
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied word for word from the notes."
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Next steps"
+      },
+      "crm_updates": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "field",
+            "value"
+          ],
+          "properties": {
+            "field": {
+              "type": "string",
+              "enum": [
+                "stage",
+                "next_step",
+                "close_date",
+                "decision_maker",
+                "budget",
+                "pain",
+                "competitor"
+              ]
+            },
+            "value": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "CRM updates"
+      },
+      "email": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subject",
+          "body"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          }
+        },
+        "title": "Follow-up email"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "write",
+      "name": "Write follow-up",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Summarise, extract commitments, draft the email.",
+      "prompt": "Summarise the call. Copy the exact words behind each stated need and next step into quote. Use \"not agreed\" for due dates that were not discussed. Draft a follow-up email under 180 words that recaps the next steps and confirms the next meeting; no new pitch.",
+      "tools": []
+    },
+    {
+      "id": "check_follow_up",
+      "name": "Check follow-up",
+      "kind": "check",
+      "responsibility": "Commitments are quoted; the email is short.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "steps_quoted",
+        "description": "Every next step quotes the call notes word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "next_steps[].quote",
+            "inputs": [
+              "call_notes"
+            ],
+            "minChars": 8
+          }
+        }
+      },
+      {
+        "id": "needs_quoted",
+        "description": "Every stated need quotes the call notes word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "stated_needs[].quote",
+            "inputs": [
+              "call_notes"
+            ],
+            "minChars": 8
+          }
+        }
+      },
+      {
+        "id": "short_email",
+        "description": "The email body is 180 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "email.body",
+            "max": 180
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

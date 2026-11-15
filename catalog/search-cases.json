@@ -213,6 +213,12 @@
       "expect": [
         "objection-handling-guide"
       ]
+    },
+    {
+      "query": "write a follow up email after a sales call from my notes",
+      "expect": [
+        "call-follow-up"
+      ]
     }
   ]
 }
