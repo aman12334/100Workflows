@@ -1,0 +1,200 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "rfp-responder",
+  "version": "0.1.0",
+  "name": "RFP & Questionnaire Responder",
+  "category": "sales",
+  "summary": "Drafts answers to RFP or vendor questionnaire questions from your product facts, flagging what needs an expert.",
+  "description": "Answers each question in an RFP, security or vendor questionnaire using only the product and company facts you supply. Each answer says whether you comply fully, partially or not, quotes the fact it relies on, and anything the facts do not cover is marked needs_input for a subject-matter expert instead of being guessed. Who it's for: sales engineers, founders and bid managers filling in RFPs and security questionnaires. Limitations: it never claims a certification or capability that is not in your facts; a person must review every answer before submission.",
+  "status": "available",
+  "problems": [
+    "We have a long RFP due this week",
+    "Security questionnaires take forever to fill in",
+    "I need consistent answers to vendor questionnaires"
+  ],
+  "tags": [
+    "rfp",
+    "security-questionnaire",
+    "vendor-assessment",
+    "bid",
+    "compliance"
+  ],
+  "inputs": [
+    {
+      "key": "questions",
+      "label": "Questions",
+      "type": "long_text",
+      "required": true,
+      "description": "The questions to answer, one per line.",
+      "example": "Do you support SSO via SAML?\nWhere is customer data stored?\nAre you SOC 2 Type II certified?"
+    },
+    {
+      "key": "facts",
+      "label": "Product and company facts",
+      "type": "long_text",
+      "required": true,
+      "description": "Approved facts about your product, security and company.",
+      "example": "SSO via SAML 2.0 on the Business plan. Data stored in AWS eu-west-1. SOC 2 Type I completed March; Type II audit in progress."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "responses",
+      "label": "Responses",
+      "description": "An answer per question with compliance level and the fact used.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You draft RFP and security questionnaire responses. Accuracy matters more than sounding complete: answer only from the facts supplied, state partial compliance honestly, and mark anything uncovered as needs_input.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "answers",
+      "needs_expert"
+    ],
+    "properties": {
+      "answers": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "question",
+            "compliance",
+            "answer"
+          ],
+          "properties": {
+            "question": {
+              "type": "string",
+              "description": "Copied word for word from the questions."
+            },
+            "compliance": {
+              "type": "string",
+              "enum": [
+                "yes",
+                "partial",
+                "no",
+                "needs_input"
+              ]
+            },
+            "answer": {
+              "type": "string"
+            },
+            "supporting_fact": {
+              "type": "string",
+              "description": "The fact used, copied word for word. Omit when needs_input."
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 80,
+        "title": "Answers"
+      },
+      "needs_expert": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Needs a subject-matter expert"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "answer",
+      "name": "Draft answers",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Answer each question from the facts.",
+      "prompt": "Answer every question in order, copying the question word for word. Copy the fact each answer relies on exactly into supporting_fact. If the facts do not answer a question, set compliance to needs_input, omit supporting_fact and list it under needs_expert. Keep answers under 80 words.",
+      "tools": []
+    },
+    {
+      "id": "check_answers",
+      "name": "Check answers",
+      "kind": "check",
+      "responsibility": "Questions and facts are quoted exactly; no question is answered twice.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "facts_quoted",
+        "description": "Every supporting fact is copied from your facts word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "answers[].supporting_fact",
+            "inputs": [
+              "facts"
+            ]
+          }
+        }
+      },
+      {
+        "id": "questions_quoted",
+        "description": "Every question is copied from the RFP word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "answers[].question",
+            "inputs": [
+              "questions"
+            ]
+          }
+        }
+      },
+      {
+        "id": "no_duplicate_answers",
+        "description": "No question is answered twice.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "answers[].question"
+          }
+        }
+      },
+      {
+        "id": "concise_answers",
+        "description": "Answers are 80 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "answers[].answer",
+            "max": 80
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

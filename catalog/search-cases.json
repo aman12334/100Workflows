@@ -231,6 +231,12 @@
       "expect": [
         "proposal-writer"
       ]
+    },
+    {
+      "query": "answer an RFP security questionnaire",
+      "expect": [
+        "rfp-responder"
+      ]
     }
   ]
 }
