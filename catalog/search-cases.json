@@ -153,6 +153,12 @@
       "expect": [
         "persona-builder"
       ]
+    },
+    {
+      "query": "write the headline and copy for our landing page",
+      "expect": [
+        "landing-page-copy"
+      ]
     }
   ]
 }

@@ -1,0 +1,251 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "landing-page-copy",
+  "version": "0.1.0",
+  "name": "Landing Page Copywriter",
+  "category": "marketing",
+  "summary": "Writes landing page copy: headline, subhead, benefit sections, proof and FAQ, using only claims you can back up.",
+  "description": "Drafts conversion-focused copy for one landing page and audience, then edits it for clarity and unsupported claims. Proof points (numbers, customer names, testimonials) must be copied from the proof you supply, so the page never carries a statistic or quote you cannot stand behind. Headlines are kept short enough to scan. Who it's for: founders and marketers launching a product, feature or campaign page without a copywriter. Limitations: copy only, no design or A/B testing; it will not invent social proof, so pages with no proof supplied will have none.",
+  "status": "available",
+  "problems": [
+    "I need copy for our landing page",
+    "Our homepage doesn't explain what we do",
+    "Our website headline is vague"
+  ],
+  "tags": [
+    "landing-page",
+    "copywriting",
+    "website",
+    "conversion",
+    "headline"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "audience",
+      "label": "Page audience",
+      "type": "text",
+      "required": true,
+      "description": "Who lands on this page and why.",
+      "example": "Agency owners coming from a Google ad about month-end close"
+    },
+    {
+      "key": "proof",
+      "label": "Proof you can use",
+      "type": "long_text",
+      "required": false,
+      "description": "Real numbers, customer names and testimonials you have permission to use.",
+      "example": "Brightline cut month-end from 3 days to 4 hours.\n\"We closed March in an afternoon.\" - Dana Lee, COO"
+    },
+    {
+      "key": "cta",
+      "label": "Call to action",
+      "type": "text",
+      "required": true,
+      "description": "What visitors should do.",
+      "example": "Start a 14-day trial"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "page_copy",
+      "label": "Landing page copy",
+      "description": "Headline, subhead, sections, proof, FAQ and calls to action.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a direct-response copywriter. Clear beats clever. Lead with the outcome the audience wants, use their words, and back claims with the proof supplied. Never invent statistics, customer names, logos or testimonials.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "headline",
+      "subheadline",
+      "sections",
+      "proof_points",
+      "faq",
+      "cta_variants"
+    ],
+    "properties": {
+      "headline": {
+        "type": "string",
+        "title": "Headline"
+      },
+      "subheadline": {
+        "type": "string",
+        "title": "Subheadline"
+      },
+      "sections": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "heading",
+            "body",
+            "benefit"
+          ],
+          "properties": {
+            "heading": {
+              "type": "string"
+            },
+            "body": {
+              "type": "string"
+            },
+            "benefit": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 2,
+        "maxItems": 6,
+        "title": "Benefit sections"
+      },
+      "proof_points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "claim",
+            "placement"
+          ],
+          "properties": {
+            "claim": {
+              "type": "string",
+              "description": "Copied word for word from the proof supplied."
+            },
+            "placement": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Proof"
+      },
+      "faq": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "question",
+            "answer"
+          ],
+          "properties": {
+            "question": {
+              "type": "string"
+            },
+            "answer": {
+              "type": "string"
+            }
+          }
+        },
+        "maxItems": 8,
+        "title": "FAQ"
+      },
+      "cta_variants": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "maxItems": 3,
+        "title": "Call-to-action variants"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "draft",
+      "name": "Draft copy",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the page copy.",
+      "prompt": "Write copy for this audience. Headline 10 words or fewer. Use only proof from the supplied proof, copied word for word into proof_points; if none is supplied, leave proof_points empty. Answer the objections this audience is likely to have in the FAQ.",
+      "tools": []
+    },
+    {
+      "id": "edit",
+      "name": "Edit copy",
+      "kind": "agent",
+      "mode": "revise",
+      "responsibility": "Tighten copy and remove unsupported claims.",
+      "prompt": "Edit the draft: cut filler, replace vague words with specifics from the inputs, remove any claim that the inputs do not support, and keep the headline 10 words or fewer. Return the complete revised copy.",
+      "tools": []
+    },
+    {
+      "id": "check_copy",
+      "name": "Check copy",
+      "kind": "check",
+      "responsibility": "Proof is copied from the inputs; headline is short; sections are distinct.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "proof_supplied",
+        "description": "Every proof point is copied from the proof you supplied.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "proof_points[].claim",
+            "inputs": [
+              "proof"
+            ]
+          }
+        }
+      },
+      {
+        "id": "short_headline",
+        "description": "The headline is 10 words or fewer.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "headline",
+            "max": 10
+          }
+        }
+      },
+      {
+        "id": "distinct_sections",
+        "description": "Section headings are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "sections[].heading"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 4
+  }
+}
