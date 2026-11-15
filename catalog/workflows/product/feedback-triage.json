@@ -1,0 +1,220 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "feedback-triage",
+  "version": "0.1.0",
+  "name": "Feedback Triage",
+  "category": "product",
+  "summary": "Sorts raw user feedback into bugs, feature requests and UX issues, with urgency and the owner to route each to.",
+  "description": "Takes a batch of raw feedback (support tickets, NPS comments, sales notes) and classifies each item by type, product area and urgency, routes it to a team, and groups repeated requests. Each item keeps the customer's exact words, so the triage never paraphrases a complaint into something the customer did not say. Who it's for: product operations, support leads and PMs who review incoming feedback weekly. Limitations: it classifies what it is given and does not deduplicate against your existing backlog or tracker; urgency is a judgment from the text, not from account value.",
+  "status": "available",
+  "problems": [
+    "I have a pile of user feedback and no time to sort it",
+    "Bugs and feature requests are mixed together in our inbox",
+    "Feedback never reaches the right owner"
+  ],
+  "tags": [
+    "feedback",
+    "triage",
+    "support-tickets",
+    "nps",
+    "product-ops"
+  ],
+  "inputs": [
+    {
+      "key": "feedback",
+      "label": "Feedback",
+      "type": "long_text",
+      "required": true,
+      "description": "Paste the feedback items, one per line or paragraph.",
+      "example": "Export to CSV crashes when I pick last quarter.\nWould love a dark mode!\nI can never find where to change my billing email."
+    },
+    {
+      "key": "product_areas",
+      "label": "Product areas",
+      "type": "list",
+      "required": false,
+      "description": "Your product areas, one per line, to classify against.",
+      "example": "Billing\nReporting\nIntegrations"
+    },
+    {
+      "key": "teams",
+      "label": "Teams",
+      "type": "list",
+      "required": false,
+      "description": "Teams that feedback can be routed to, one per line.",
+      "example": "Core platform\nGrowth\nSupport"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "triage",
+      "label": "Triage",
+      "description": "Each item classified and routed, with patterns across items.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a product operations analyst triaging customer feedback. Keep the customer's exact words for every item. Classify conservatively: when unsure between bug and UX issue, choose the one that the text supports.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "items",
+      "patterns",
+      "summary"
+    ],
+    "properties": {
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "quote",
+            "type",
+            "product_area",
+            "urgency",
+            "route_to",
+            "note"
+          ],
+          "properties": {
+            "quote": {
+              "type": "string",
+              "description": "The feedback item, copied word for word."
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "bug",
+                "feature_request",
+                "ux_issue",
+                "question",
+                "pricing",
+                "praise",
+                "other"
+              ]
+            },
+            "product_area": {
+              "type": "string"
+            },
+            "urgency": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "route_to": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 60,
+        "title": "Triaged items"
+      },
+      "patterns": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pattern",
+            "item_count",
+            "suggested_action"
+          ],
+          "properties": {
+            "pattern": {
+              "type": "string"
+            },
+            "item_count": {
+              "type": "integer",
+              "minimum": 2
+            },
+            "suggested_action": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Patterns",
+        "description": "Themes that appear in two or more items."
+      },
+      "summary": {
+        "type": "string",
+        "title": "Summary"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "triage",
+      "name": "Triage feedback",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Classify and route every item.",
+      "prompt": "Triage every feedback item. Copy each item word for word into quote (split multi-point items into separate entries, each quoting its own part). Use the given product areas and teams when supplied. Mark urgency high only for data loss, security, payment or blocking bugs. Add patterns only for themes in two or more items.",
+      "tools": []
+    },
+    {
+      "id": "check_items",
+      "name": "Check items",
+      "kind": "check",
+      "responsibility": "Quotes are exact and not duplicated.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "quotes_exact",
+        "description": "Every item quotes the feedback word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "items[].quote",
+            "inputs": [
+              "feedback"
+            ]
+          }
+        }
+      },
+      {
+        "id": "no_duplicates",
+        "description": "No feedback item appears twice.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "items[].quote"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
