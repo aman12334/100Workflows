@@ -1,0 +1,218 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "meeting-notes-to-actions",
+  "version": "0.1.0",
+  "name": "Meeting Notes to Actions",
+  "category": "operations",
+  "summary": "Turns meeting notes or a transcript into decisions, action items with owners and dates, and open questions.",
+  "description": "Reads raw meeting notes or a transcript and extracts what matters afterwards: decisions made, action items with an owner and due date (only if stated), open questions and parked topics, plus a short recap you can paste into Slack or email. Decisions and actions quote the notes, so nothing is recorded as agreed that was only discussed. Who it's for: anyone who runs meetings: managers, project leads, founders, chiefs of staff. Limitations: owners and dates are left as \"unassigned\" or \"no date\" when the notes do not state them; it does not create tasks in your tools.",
+  "status": "available",
+  "problems": [
+    "Nobody remembers what we agreed in meetings",
+    "Action items from meetings get lost",
+    "I need a meeting summary with owners"
+  ],
+  "tags": [
+    "meeting-notes",
+    "action-items",
+    "decisions",
+    "minutes",
+    "recap"
+  ],
+  "inputs": [
+    {
+      "key": "notes",
+      "label": "Notes or transcript",
+      "type": "long_text",
+      "required": true,
+      "description": "The meeting notes or transcript.",
+      "example": "Agreed to move launch to 19 June. Priya to update the help center by Friday. Still unclear who owns the Xero partnership."
+    },
+    {
+      "key": "meeting",
+      "label": "Meeting",
+      "type": "text",
+      "required": false,
+      "description": "Meeting name and date.",
+      "example": "Launch sync, 5 June"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "actions",
+      "label": "Meeting outcomes",
+      "description": "Decisions, action items, open questions and a recap.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a meticulous chief of staff. Record only what the notes show was decided or assigned, quoting the notes. Discussion is not a decision. Leave owners and dates blank rather than guessing.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "recap",
+      "decisions",
+      "action_items",
+      "open_questions",
+      "parked"
+    ],
+    "properties": {
+      "recap": {
+        "type": "string",
+        "description": "Three sentences or fewer.",
+        "title": "Recap"
+      },
+      "decisions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "quote"
+          ],
+          "properties": {
+            "decision": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied word for word from the notes."
+            }
+          }
+        },
+        "title": "Decisions"
+      },
+      "action_items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action",
+            "owner",
+            "due",
+            "quote"
+          ],
+          "properties": {
+            "action": {
+              "type": "string"
+            },
+            "owner": {
+              "type": "string",
+              "description": "Name or role from the notes, or \"unassigned\"."
+            },
+            "due": {
+              "type": "string",
+              "description": "As stated, or \"no date\"."
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied word for word from the notes."
+            }
+          }
+        },
+        "title": "Action items"
+      },
+      "open_questions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Open questions"
+      },
+      "parked": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Parked topics"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "extract",
+      "name": "Extract outcomes",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Pull decisions, actions and questions from the notes.",
+      "prompt": "Extract decisions and action items, copying the supporting words exactly into quote. Use \"unassigned\" and \"no date\" when the notes do not state them. Put unresolved points under open_questions. Keep the recap to three sentences.",
+      "tools": []
+    },
+    {
+      "id": "check_outcomes",
+      "name": "Check outcomes",
+      "kind": "check",
+      "responsibility": "Decisions and actions quote the notes; the recap is short.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "decisions_quoted",
+        "description": "Every decision quotes the notes word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "decisions[].quote",
+            "inputs": [
+              "notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "actions_quoted",
+        "description": "Every action item quotes the notes word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "action_items[].quote",
+            "inputs": [
+              "notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "short_recap",
+        "description": "The recap is 70 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "recap",
+            "max": 70
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

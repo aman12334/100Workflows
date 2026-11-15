@@ -291,6 +291,12 @@
       "expect": [
         "incident-postmortem"
       ]
+    },
+    {
+      "query": "turn meeting notes into action items and decisions",
+      "expect": [
+        "meeting-notes-to-actions"
+      ]
     }
   ]
 }
