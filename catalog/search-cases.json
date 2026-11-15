@@ -201,6 +201,12 @@
       "expect": [
         "win-loss-analysis"
       ]
+    },
+    {
+      "query": "create a sales battlecard against a competitor",
+      "expect": [
+        "battlecard-builder"
+      ]
     }
   ]
 }

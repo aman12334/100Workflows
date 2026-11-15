@@ -1,0 +1,228 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "battlecard-builder",
+  "version": "0.1.0",
+  "name": "Competitive Battlecard",
+  "category": "sales",
+  "summary": "Builds a one-page battlecard against a named rival from what your team knows, with landmines, traps and objection responses.",
+  "description": "Turns your team's own knowledge of a competitor (call notes, lost-deal notes, what reps hear) into a sales battlecard: when you win and lose against them, their strengths and weaknesses, landmine questions to plant, how to respond when they come up, and proof points. Every claim about the competitor quotes the notes, so the card does not spread rumours. Who it's for: sales reps and sales enablement preparing for competitive deals. Limitations: it does not browse the competitor's site; claims are only as current as your notes. Competitor Teardown is the research-based workflow for public pages.",
+  "status": "available",
+  "problems": [
+    "Reps don't know how to handle a specific rival in deals",
+    "We need talking points against a competitor",
+    "Prospects keep comparing us to the same alternative"
+  ],
+  "tags": [
+    "battlecard",
+    "competitive-selling",
+    "sales-enablement",
+    "objections",
+    "rival"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "competitor",
+      "label": "Competitor",
+      "type": "text",
+      "required": true,
+      "description": "The competitor this card is about.",
+      "example": "LedgerLoop"
+    },
+    {
+      "key": "competitor_notes",
+      "label": "What your team knows",
+      "type": "long_text",
+      "required": true,
+      "description": "Notes from calls, lost deals and reps about this competitor.",
+      "example": "Prospects say LedgerLoop \"has a nicer mobile app\". Lost Brightline because LedgerLoop was \"$20 cheaper per seat\". LedgerLoop has no Xero sync."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "battlecard",
+      "label": "Battlecard",
+      "description": "Win/loss situations, strengths, weaknesses, landmines, responses and proof.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a sales enablement lead. Battlecards must be accurate and usable in a live call: short lines, no rumours. Every claim about the competitor must quote the notes supplied.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "quick_take",
+      "competitor_claims",
+      "we_win_when",
+      "we_lose_when",
+      "landmine_questions",
+      "responses",
+      "gaps_to_verify"
+    ],
+    "properties": {
+      "quick_take": {
+        "type": "string",
+        "description": "Two sentences a rep can read before a call.",
+        "title": "Quick take"
+      },
+      "competitor_claims": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "claim",
+            "quote"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "strength",
+                "weakness",
+                "pricing",
+                "positioning"
+              ]
+            },
+            "claim": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Supporting words copied exactly from the notes."
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "What we know about them"
+      },
+      "we_win_when": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "title": "We win when"
+      },
+      "we_lose_when": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "title": "We lose when"
+      },
+      "landmine_questions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 2,
+        "maxItems": 6,
+        "title": "Landmine questions"
+      },
+      "responses": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "they_say",
+            "we_say"
+          ],
+          "properties": {
+            "they_say": {
+              "type": "string"
+            },
+            "we_say": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "If they say..."
+      },
+      "gaps_to_verify": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Verify before relying on"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "build",
+      "name": "Build battlecard",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the card from the notes.",
+      "prompt": "Build the battlecard. For every claim about the competitor, copy the supporting words from the notes exactly into quote. Keep each response under 40 words so it can be said in a call. List anything you would need to verify.",
+      "tools": []
+    },
+    {
+      "id": "check_claims",
+      "name": "Check claims",
+      "kind": "check",
+      "responsibility": "Competitor claims are quoted; responses are short.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "claims_quoted",
+        "description": "Every claim about the competitor quotes your notes word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "competitor_claims[].quote",
+            "inputs": [
+              "competitor_notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "short_responses",
+        "description": "Each response is 40 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "responses[].we_say",
+            "max": 40
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
