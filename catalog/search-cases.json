@@ -147,6 +147,12 @@
       "expect": [
         "usability-test-plan"
       ]
+    },
+    {
+      "query": "create personas from our interview research",
+      "expect": [
+        "persona-builder"
+      ]
     }
   ]
 }

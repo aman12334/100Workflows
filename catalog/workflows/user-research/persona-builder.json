@@ -1,0 +1,227 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "persona-builder",
+  "version": "0.1.0",
+  "name": "Evidence-Based Persona Builder",
+  "category": "user-research",
+  "summary": "Builds user personas from research notes, where every goal, behavior and frustration is backed by a quote.",
+  "description": "Clusters the people in your research notes into 2-4 personas. Each persona lists goals, behaviors and frustrations, and every one of those carries a word-for-word quote from the notes, plus the participants it is based on. Traits that the notes do not support are not allowed, which keeps personas from turning into fiction. Who it's for: designers, researchers and product teams who need personas the whole company can trust. Limitations: personas are only as broad as the notes; small samples produce provisional personas, and demographics are left out unless the notes state them.",
+  "status": "available",
+  "problems": [
+    "Our personas are made up and nobody uses them",
+    "I want personas based on real research",
+    "I need to turn interview notes into user types"
+  ],
+  "tags": [
+    "personas",
+    "user-research",
+    "segmentation",
+    "jobs-to-be-done",
+    "evidence"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": false
+    },
+    {
+      "key": "research_notes",
+      "label": "Research notes",
+      "type": "long_text",
+      "required": true,
+      "description": "Interview or observation notes, labelled by participant where possible.",
+      "example": "P1 (office manager): \"I chase receipts on Slack every Friday.\"\nP2 (founder): \"I only look at the numbers once a quarter.\""
+    },
+    {
+      "key": "max_personas",
+      "label": "Maximum personas",
+      "type": "number",
+      "required": false,
+      "description": "Upper limit, usually 2-4."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "personas",
+      "label": "Personas",
+      "description": "Personas with quoted goals, behaviors and frustrations, plus open questions.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a UX researcher synthesising personas. A persona is a pattern across participants, not an invented character. Every trait must be supported by a quote from the notes. Do not invent names, ages or demographics.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "personas",
+      "unclustered_participants",
+      "open_questions"
+    ],
+    "properties": {
+      "personas": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "label",
+            "based_on",
+            "traits",
+            "design_implications"
+          ],
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "A descriptive label, e.g. \"The Friday receipt chaser\". No invented personal names."
+            },
+            "based_on": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "description": "Participant labels from the notes."
+            },
+            "traits": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "trait",
+                  "quote"
+                ],
+                "properties": {
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "goal",
+                      "behavior",
+                      "frustration",
+                      "motivation"
+                    ]
+                  },
+                  "trait": {
+                    "type": "string"
+                  },
+                  "quote": {
+                    "type": "string",
+                    "description": "Copied word for word from the notes."
+                  }
+                }
+              },
+              "minItems": 3,
+              "maxItems": 12
+            },
+            "design_implications": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "title": "Personas"
+      },
+      "unclustered_participants": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Did not fit a persona"
+      },
+      "open_questions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Open questions"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "build",
+      "name": "Build personas",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Cluster participants and evidence each trait.",
+      "prompt": "Cluster participants into personas (2-4, or fewer if a maximum is given). For every trait, copy the supporting words from the notes exactly into quote. Use descriptive labels, not personal names. List participants who do not fit any persona.",
+      "tools": []
+    },
+    {
+      "id": "check_evidence",
+      "name": "Check evidence",
+      "kind": "check",
+      "responsibility": "Every trait is quoted; persona count is within the limit; labels are unique.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "traits_quoted",
+        "description": "Every persona trait quotes the notes word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "personas[].traits[].quote",
+            "inputs": [
+              "research_notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "persona_count",
+        "description": "There are 1-4 personas, within the maximum if given.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "count",
+          "params": {
+            "path": "personas",
+            "min": 1,
+            "max": 4,
+            "maxFromInput": "max_personas"
+          }
+        }
+      },
+      {
+        "id": "distinct_labels",
+        "description": "Persona labels are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "personas[].label"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
