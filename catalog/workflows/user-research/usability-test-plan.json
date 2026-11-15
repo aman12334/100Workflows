@@ -1,0 +1,224 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "usability-test-plan",
+  "version": "0.1.0",
+  "name": "Usability Test Plan",
+  "category": "user-research",
+  "summary": "Writes a moderated usability test: realistic task scenarios, success criteria, observation notes and debrief questions.",
+  "description": "Creates a ready-to-run usability test for a flow or prototype: participant profile, 3-8 task scenarios written without leading wording, a measurable success criterion for each task, what to observe, and debrief questions. Scenarios are short enough to read aloud and do not name the UI elements the participant should find. Who it's for: designers and product managers testing a prototype or a live flow with 5-8 participants. Limitations: it plans the session; it does not recruit, moderate or analyse results. Task success criteria assume you can observe the screen.",
+  "status": "available",
+  "problems": [
+    "I want to test our prototype with users",
+    "Our usability tests give us vague results",
+    "I need task scenarios that don't lead the participant"
+  ],
+  "tags": [
+    "usability-testing",
+    "prototype",
+    "ux-research",
+    "task-scenarios",
+    "moderated-test"
+  ],
+  "inputs": [
+    {
+      "key": "flow",
+      "label": "Flow or prototype",
+      "type": "long_text",
+      "required": true,
+      "description": "What will be tested and what users should be able to do.",
+      "example": "New bulk-approval screen: select expenses, approve, undo."
+    },
+    {
+      "key": "learning_goals",
+      "label": "What you want to learn",
+      "type": "long_text",
+      "required": true,
+      "description": "The questions this test should answer.",
+      "example": "Can admins find bulk approve? Do they trust the undo?"
+    },
+    {
+      "key": "max_tasks",
+      "label": "Maximum tasks",
+      "type": "number",
+      "required": false,
+      "description": "Upper limit on tasks for the session length."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "test_plan",
+      "label": "Usability test plan",
+      "description": "Participant profile, tasks with success criteria, observations and debrief.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a UX researcher writing a moderated usability test. Scenarios describe a realistic goal in the participant's words and never name the button, label or menu they should use. Each task has an observable success criterion.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "participant_profile",
+      "warm_up_questions",
+      "tasks",
+      "debrief_questions",
+      "metrics"
+    ],
+    "properties": {
+      "participant_profile": {
+        "type": "string",
+        "title": "Participants"
+      },
+      "warm_up_questions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 4,
+        "title": "Warm-up questions"
+      },
+      "tasks": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "scenario",
+            "success_criterion",
+            "learning_goal",
+            "observe"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Task id such as T1."
+            },
+            "scenario": {
+              "type": "string",
+              "description": "Read aloud to the participant."
+            },
+            "success_criterion": {
+              "type": "string",
+              "description": "Observable end state."
+            },
+            "learning_goal": {
+              "type": "string"
+            },
+            "observe": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "title": "Tasks"
+      },
+      "debrief_questions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 2,
+        "maxItems": 6,
+        "title": "Debrief questions"
+      },
+      "metrics": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "task_success",
+            "time_on_task",
+            "errors",
+            "confidence_rating",
+            "ease_rating"
+          ]
+        },
+        "title": "Metrics to record"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "plan",
+      "name": "Write test",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write tasks, success criteria and debrief.",
+      "prompt": "Write the test plan. Write 3-8 tasks (fewer if a maximum is given) with ids T1, T2, ... Keep each scenario under 45 words, in the participant's language, without naming UI elements. Give each task an observable success criterion and the learning goal it serves.",
+      "tools": []
+    },
+    {
+      "id": "check_tasks",
+      "name": "Check tasks",
+      "kind": "check",
+      "responsibility": "Task count is within limits; scenarios are short and distinct.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "task_count",
+        "description": "The plan has 3-8 tasks, within the maximum if given.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "count",
+          "params": {
+            "path": "tasks",
+            "min": 3,
+            "max": 8,
+            "maxFromInput": "max_tasks"
+          }
+        }
+      },
+      {
+        "id": "short_scenarios",
+        "description": "Each scenario is 45 words or fewer.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "tasks[].scenario",
+            "max": 45
+          }
+        }
+      },
+      {
+        "id": "distinct_scenarios",
+        "description": "No scenario is repeated.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "tasks[].scenario"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

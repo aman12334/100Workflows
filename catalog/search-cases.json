@@ -141,6 +141,12 @@
       "expect": [
         "journey-map"
       ]
+    },
+    {
+      "query": "write usability test tasks for our prototype",
+      "expect": [
+        "usability-test-plan"
+      ]
     }
   ]
 }
