@@ -1,0 +1,207 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "job-description-writer",
+  "version": "0.1.0",
+  "name": "Job Description Writer",
+  "category": "operations",
+  "summary": "Writes an inclusive job description from the hiring need: outcomes for the first year, a short must-have list and honest details.",
+  "description": "Turns a hiring manager's description of the need into a job post: what the person will achieve in the first 6-12 months, responsibilities, a short list of must-have requirements (no more than six), nice-to-haves, and practical details you supply (location, salary range, process). A second pass removes exclusionary or inflated requirements and gendered or jargon-heavy wording. Who it's for: founders, hiring managers and recruiters opening a role. Limitations: salary, location and benefits appear only if you supply them; it does not check employment law in your jurisdiction.",
+  "status": "available",
+  "problems": [
+    "I need to write a job description for a new role",
+    "Our job posts attract the wrong candidates",
+    "Our job ads list too many requirements"
+  ],
+  "tags": [
+    "job-description",
+    "hiring",
+    "recruiting",
+    "job-post",
+    "inclusive-language"
+  ],
+  "inputs": [
+    {
+      "use": "company_name",
+      "required": true
+    },
+    {
+      "key": "role_need",
+      "label": "Why you are hiring",
+      "type": "long_text",
+      "required": true,
+      "description": "What this person needs to achieve and why the role exists.",
+      "example": "We need someone to own customer support end to end; response times doubled and the founders still answer tickets."
+    },
+    {
+      "key": "details",
+      "label": "Practical details",
+      "type": "long_text",
+      "required": false,
+      "description": "Location, salary range, hours, hiring process.",
+      "example": "Remote (UK/EU), £45-55k, 4 interview stages"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "job_post",
+      "label": "Job description",
+      "description": "Role summary, outcomes, responsibilities, requirements and details.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write clear, inclusive job descriptions. Describe outcomes, not a laundry list. Keep must-haves to what is truly required on day one, avoid gendered or exclusionary wording, years-of-experience inflation and jargon, and never invent salary or benefits.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "title",
+      "summary",
+      "outcomes",
+      "responsibilities",
+      "must_have",
+      "nice_to_have",
+      "details"
+    ],
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "summary": {
+        "type": "string",
+        "title": "About the role"
+      },
+      "outcomes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 2,
+        "maxItems": 6,
+        "title": "What you will achieve"
+      },
+      "responsibilities": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 3,
+        "maxItems": 10,
+        "title": "Responsibilities"
+      },
+      "must_have": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Must have"
+      },
+      "nice_to_have": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 6,
+        "title": "Nice to have"
+      },
+      "details": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Details",
+        "description": "Only details supplied by the user."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "draft",
+      "name": "Draft post",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the job description.",
+      "prompt": "Write the job description. Lead with outcomes for the first 6-12 months. Keep must_have to six items or fewer; move everything else to nice_to_have. Include only practical details that were supplied.",
+      "tools": []
+    },
+    {
+      "id": "inclusive_edit",
+      "name": "Inclusive edit",
+      "kind": "agent",
+      "mode": "revise",
+      "responsibility": "Remove exclusionary or inflated requirements and wording.",
+      "prompt": "Edit the draft: remove gendered or exclusionary wording, degree or years-of-experience requirements that the role does not need, and jargon. Keep must_have to six items or fewer. Return the complete revised job description.",
+      "tools": []
+    },
+    {
+      "id": "check_post",
+      "name": "Check post",
+      "kind": "check",
+      "responsibility": "Must-haves are limited; the summary is short.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "short_must_have",
+        "description": "There are six or fewer must-have requirements.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "count",
+          "params": {
+            "path": "must_have",
+            "min": 1,
+            "max": 6
+          }
+        }
+      },
+      {
+        "id": "short_summary",
+        "description": "The role summary is 80 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "summary",
+            "max": 80
+          }
+        }
+      },
+      {
+        "id": "distinct_requirements",
+        "description": "Requirements are not repeated.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "must_have[]"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 4
+  }
+}

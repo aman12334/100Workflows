@@ -297,6 +297,12 @@
       "expect": [
         "meeting-notes-to-actions"
       ]
+    },
+    {
+      "query": "write a job description for a new hire",
+      "expect": [
+        "job-description-writer"
+      ]
     }
   ]
 }
