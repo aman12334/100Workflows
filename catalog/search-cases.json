@@ -345,6 +345,12 @@
       "expect": [
         "okr-drafter"
       ]
+    },
+    {
+      "query": "compare software vendors and pick one",
+      "expect": [
+        "vendor-evaluation"
+      ]
     }
   ]
 }

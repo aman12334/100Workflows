@@ -1,0 +1,268 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "vendor-evaluation",
+  "version": "0.1.0",
+  "name": "Vendor Evaluation Scorecard",
+  "category": "operations",
+  "summary": "Compares vendors you are considering against your criteria, scoring each from the notes you have, and recommends one.",
+  "description": "Builds a scorecard for choosing a vendor or tool: your criteria with weights, a 1-5 score for every vendor on every criterion with the evidence quoted from your notes (or \"no evidence\"), deal-breakers, questions to ask each vendor, and a recommendation. Scores may only refer to declared criteria, and evidence must come from your notes, not from the model's memory of the vendor. Who it's for: operations leads, founders and procurement teams choosing software or service providers. Limitations: it does not research vendors or check current pricing; the comparison is only as good as your notes and demos. Weighted totals are not calculated; the recommendation explains the trade-off instead.",
+  "status": "available",
+  "problems": [
+    "I need to choose between several software vendors",
+    "We pick tools based on the best demo",
+    "I need a vendor comparison for approval"
+  ],
+  "tags": [
+    "vendor-selection",
+    "procurement",
+    "scorecard",
+    "tool-evaluation",
+    "comparison"
+  ],
+  "inputs": [
+    {
+      "key": "need",
+      "label": "What you need",
+      "type": "long_text",
+      "required": true,
+      "description": "The problem the vendor must solve and your must-haves.",
+      "example": "Payroll provider for 25 staff in UK and Ireland; must integrate with Xero."
+    },
+    {
+      "key": "vendor_notes",
+      "label": "Vendor notes",
+      "type": "long_text",
+      "required": true,
+      "description": "Notes from demos, sites and calls, labelled by vendor.",
+      "example": "PayFlow: \"Native Xero sync\", £6/employee/month, no Irish payroll.\nStaffPay: Ireland and UK supported, £9/employee/month, Xero via CSV export only."
+    },
+    {
+      "key": "criteria",
+      "label": "Criteria",
+      "type": "list",
+      "required": false,
+      "description": "Criteria to evaluate on, one per line.",
+      "example": "Country coverage\nXero integration\nPrice"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "scorecard",
+      "label": "Vendor scorecard",
+      "description": "Criteria, evidence-based scores, deal-breakers, questions and recommendation.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You run fair vendor evaluations. Score only on evidence in the notes, quoting it; when there is none, score is null and evidence is \"no evidence\". Deal-breakers override scores. Recommend the vendor that best meets the must-haves, explaining the trade-off.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "criteria",
+      "vendors",
+      "recommendation"
+    ],
+    "properties": {
+      "criteria": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "criterion",
+            "weight"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Criterion id such as K1."
+            },
+            "criterion": {
+              "type": "string"
+            },
+            "weight": {
+              "type": "string",
+              "enum": [
+                "must_have",
+                "high",
+                "medium",
+                "low"
+              ]
+            }
+          }
+        },
+        "minItems": 2,
+        "maxItems": 10,
+        "title": "Criteria"
+      },
+      "vendors": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "vendor",
+            "scores",
+            "deal_breakers",
+            "questions_to_ask"
+          ],
+          "properties": {
+            "vendor": {
+              "type": "string"
+            },
+            "scores": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "criterion_id",
+                  "score",
+                  "evidence"
+                ],
+                "properties": {
+                  "criterion_id": {
+                    "type": "string"
+                  },
+                  "score": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  },
+                  "evidence": {
+                    "type": "string",
+                    "description": "Copied word for word from the vendor notes."
+                  }
+                }
+              },
+              "minItems": 1
+            },
+            "deal_breakers": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "questions_to_ask": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "minItems": 2,
+        "maxItems": 6,
+        "title": "Vendors"
+      },
+      "recommendation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "vendor",
+          "rationale",
+          "risks"
+        ],
+        "properties": {
+          "vendor": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "risks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Recommendation"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "evaluate",
+      "name": "Evaluate vendors",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Score each vendor on each criterion from the notes.",
+      "prompt": "Define criteria (K1, ...) from the need and any criteria supplied; mark must-haves. Score each vendor 1-5 only where the notes give evidence, copying it exactly into evidence; leave out scores without evidence and turn them into questions_to_ask. Flag deal-breakers and recommend one vendor.",
+      "tools": []
+    },
+    {
+      "id": "check_scores",
+      "name": "Check scores",
+      "kind": "check",
+      "responsibility": "Scores use declared criteria and quote the notes.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "evidence_quoted",
+        "description": "Every score quotes the vendor notes word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "vendors[].scores[].evidence",
+            "inputs": [
+              "vendor_notes"
+            ],
+            "minChars": 6
+          }
+        }
+      },
+      {
+        "id": "criteria_declared",
+        "description": "Every score is for a declared criterion.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "vendors[].scores[].criterion_id",
+            "to": "criteria[].id"
+          }
+        }
+      },
+      {
+        "id": "distinct_vendors",
+        "description": "Each vendor appears once.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "vendors[].vendor"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
