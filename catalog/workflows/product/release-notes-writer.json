@@ -1,0 +1,256 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "release-notes-writer",
+  "version": "0.1.0",
+  "name": "Release Notes Writer",
+  "category": "product",
+  "summary": "Turns a raw list of shipped changes into customer-facing release notes, without inventing features.",
+  "description": "Rewrites engineering change lists into release notes customers understand: a headline, highlights with the benefit to the user, fixes, and anything that requires action. Every item quotes the change it came from, so nothing appears in the notes that was not in your list. Who it's for: product managers, product marketers and support teams publishing changelogs or update emails. Limitations: it only describes changes you list; it cannot verify that they shipped, and it drops internal-only changes rather than guessing their customer impact.",
+  "status": "available",
+  "problems": [
+    "I need to write release notes for this sprint",
+    "Our changelog is full of engineering jargon",
+    "Users don't notice what we ship"
+  ],
+  "tags": [
+    "release-notes",
+    "changelog",
+    "product-updates",
+    "launch-communication"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": false
+    },
+    {
+      "key": "changes",
+      "label": "Shipped changes",
+      "type": "long_text",
+      "required": true,
+      "description": "The changes in this release, as engineers wrote them (PR titles, tickets, notes).",
+      "example": "Added bulk approve endpoint and UI for expenses\nFixed currency rounding in CSV export\nDeprecated v1 receipts API (removal on 1 Sept)"
+    },
+    {
+      "key": "audience",
+      "label": "Audience",
+      "type": "select",
+      "required": true,
+      "description": "Who reads these notes.",
+      "options": [
+        "end users",
+        "admins",
+        "developers"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "key": "release_notes",
+      "label": "Release notes",
+      "description": "Headline, highlights, fixes and required actions, each tied to a listed change.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write clear, specific release notes for software customers. Describe what changed and why it matters to the reader, in plain language. Never add a feature, number or date that is not in the change list.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "headline",
+      "highlights",
+      "fixes",
+      "action_required",
+      "omitted"
+    ],
+    "properties": {
+      "headline": {
+        "type": "string",
+        "description": "One line summarising the release.",
+        "title": "Headline"
+      },
+      "highlights": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "title",
+            "benefit",
+            "source_change"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "benefit": {
+              "type": "string",
+              "description": "What the reader can now do, in plain language."
+            },
+            "source_change": {
+              "type": "string",
+              "description": "The change line this comes from, copied word for word."
+            }
+          }
+        },
+        "maxItems": 6,
+        "title": "Highlights"
+      },
+      "fixes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "description",
+            "source_change"
+          ],
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "source_change": {
+              "type": "string",
+              "description": "Copied word for word from the change list."
+            }
+          }
+        },
+        "title": "Fixes"
+      },
+      "action_required": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action",
+            "deadline",
+            "source_change"
+          ],
+          "properties": {
+            "action": {
+              "type": "string"
+            },
+            "deadline": {
+              "type": "string",
+              "description": "Only if stated in the change list; otherwise \"none stated\"."
+            },
+            "source_change": {
+              "type": "string",
+              "description": "Copied word for word from the change list."
+            }
+          }
+        },
+        "title": "Action required"
+      },
+      "omitted": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Left out",
+        "description": "Changes left out as internal-only, with the reason."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "write",
+      "name": "Write notes",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Rewrite changes for the chosen audience.",
+      "prompt": "Write release notes for the audience. For every highlight, fix and action, copy the original change line word for word into source_change. Lead with the change that matters most to this audience. Keep each benefit under 35 words. Put breaking changes and deprecations under action_required.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Every item quotes a listed change; benefits are short.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "highlights_sourced",
+        "description": "Every highlight quotes a change from the list word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "highlights[].source_change",
+            "inputs": [
+              "changes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "fixes_sourced",
+        "description": "Every fix quotes a change from the list word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "fixes[].source_change",
+            "inputs": [
+              "changes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "actions_sourced",
+        "description": "Every required action quotes a change from the list word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "action_required[].source_change",
+            "inputs": [
+              "changes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "short_benefits",
+        "description": "Each benefit is 35 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "highlights[].benefit",
+            "max": 35
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

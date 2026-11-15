@@ -93,6 +93,12 @@
       "expect": [
         "user-story-splitter"
       ]
+    },
+    {
+      "query": "turn our changelog into customer release notes",
+      "expect": [
+        "release-notes-writer"
+      ]
     }
   ]
 }
