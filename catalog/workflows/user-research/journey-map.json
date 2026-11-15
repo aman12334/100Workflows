@@ -1,0 +1,276 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "journey-map",
+  "version": "0.1.0",
+  "name": "Journey Map Builder",
+  "category": "user-research",
+  "summary": "Maps the end-to-end user journey by stage: goals, touchpoints, pain points backed by quotes, and opportunities.",
+  "description": "Builds a journey map from your research notes: the stages a user goes through, their goal and touchpoints at each stage, pain points that quote the notes, and opportunities that point to the pain points they address. Stages without evidence are flagged so you know where research is thin. Who it's for: designers, product managers and researchers turning interview or support notes into a shared picture of the experience. Limitations: it maps only what the notes support; it cannot fill gaps with real data, and emotional curves are qualitative.",
+  "status": "available",
+  "problems": [
+    "I want to map the user journey from our research",
+    "We don't see where users struggle end to end",
+    "I need a journey map for a workshop"
+  ],
+  "tags": [
+    "journey-map",
+    "user-journey",
+    "experience-map",
+    "pain-points",
+    "service-design"
+  ],
+  "inputs": [
+    {
+      "key": "journey",
+      "label": "Journey to map",
+      "type": "text",
+      "required": true,
+      "description": "Which journey, from where to where.",
+      "example": "From signing up to the first month-end close"
+    },
+    {
+      "key": "research_notes",
+      "label": "Research notes",
+      "type": "long_text",
+      "required": true,
+      "description": "Interview notes, support tickets or observations, pasted as written.",
+      "example": "P3: \"I gave up connecting the bank the first night, the 2FA kept timing out.\"\nP5: \"Month-end still took me a full day.\""
+    },
+    {
+      "key": "persona",
+      "label": "User type",
+      "type": "text",
+      "required": false,
+      "description": "The user whose journey this is.",
+      "example": "Agency office manager"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "journey_map",
+      "label": "Journey map",
+      "description": "Stages with goals, touchpoints, evidenced pain points and opportunities.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a service designer building an evidence-based journey map. Pain points must come from the research notes, quoted exactly. Separate what the user supplied from your own assumptions; never present an assumption as a supplied fact.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "stages",
+      "pain_points",
+      "opportunities",
+      "research_gaps"
+    ],
+    "properties": {
+      "stages": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "stage",
+            "user_goal",
+            "touchpoints",
+            "feeling",
+            "evidence_level"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Stage id such as ST1."
+            },
+            "stage": {
+              "type": "string"
+            },
+            "user_goal": {
+              "type": "string"
+            },
+            "touchpoints": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "feeling": {
+              "type": "string",
+              "enum": [
+                "positive",
+                "neutral",
+                "negative",
+                "unknown"
+              ]
+            },
+            "evidence_level": {
+              "type": "string",
+              "enum": [
+                "strong",
+                "some",
+                "none"
+              ]
+            }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 10,
+        "title": "Stages"
+      },
+      "pain_points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "stage_id",
+            "pain",
+            "quote"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Pain id such as P1."
+            },
+            "stage_id": {
+              "type": "string"
+            },
+            "pain": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied word for word from the research notes."
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Pain points"
+      },
+      "opportunities": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "opportunity",
+            "pain_ids",
+            "impact"
+          ],
+          "properties": {
+            "opportunity": {
+              "type": "string"
+            },
+            "pain_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "impact": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            }
+          }
+        },
+        "title": "Opportunities"
+      },
+      "research_gaps": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Research gaps"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "map",
+      "name": "Map journey",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Build stages, evidenced pains and opportunities.",
+      "prompt": "Map the journey in 3-10 stages with ids ST1, ST2, ... For each pain point, copy the supporting note word for word into quote and give its stage_id. Each opportunity lists the pain ids it addresses. Mark stages with no supporting notes as evidence_level none and list them as research gaps.",
+      "tools": []
+    },
+    {
+      "id": "check_map",
+      "name": "Check map",
+      "kind": "check",
+      "responsibility": "Pain quotes are exact; pains sit in real stages; opportunities address real pains.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "pains_quoted",
+        "description": "Every pain point quotes the research notes word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "pain_points[].quote",
+            "inputs": [
+              "research_notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "pains_in_stages",
+        "description": "Every pain point belongs to a stage in the map.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "pain_points[].stage_id",
+            "to": "stages[].id"
+          }
+        }
+      },
+      {
+        "id": "opportunities_address_pains",
+        "description": "Every opportunity addresses a pain point in the map.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "opportunities[].pain_ids[]",
+            "to": "pain_points[].id"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

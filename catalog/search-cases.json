@@ -135,6 +135,12 @@
       "expect": [
         "research-plan"
       ]
+    },
+    {
+      "query": "create a user journey map with pain points",
+      "expect": [
+        "journey-map"
+      ]
     }
   ]
 }
