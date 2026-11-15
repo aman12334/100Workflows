@@ -1,0 +1,209 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "content-repurposer",
+  "version": "0.1.0",
+  "name": "Content Repurposer",
+  "category": "marketing",
+  "summary": "Turns one long piece (article, talk, podcast transcript) into channel-ready posts, each built on a quote from the source.",
+  "description": "Takes a long piece of content you already published and produces a set of posts for LinkedIn, X, newsletter and short video scripts. Each post is built around a passage copied from the source, so the posts stay faithful to what was actually said, and post lengths respect each channel. Who it's for: content marketers, founders and creators who want more mileage from existing content. Limitations: it works from the text you paste; it does not schedule or publish posts, and it does not add facts beyond the source.",
+  "status": "available",
+  "problems": [
+    "I want to turn a blog post into social posts",
+    "We spend hours on one article and post it once",
+    "I need LinkedIn posts from our podcast transcript"
+  ],
+  "tags": [
+    "repurposing",
+    "social-media",
+    "linkedin",
+    "newsletter",
+    "content"
+  ],
+  "inputs": [
+    {
+      "key": "source",
+      "label": "Source content",
+      "type": "long_text",
+      "required": true,
+      "description": "The article, talk or transcript to repurpose.",
+      "example": "Most agencies lose a day a month to reconciliation. The fix is not more discipline; it is fewer manual steps."
+    },
+    {
+      "key": "channels",
+      "label": "Channels",
+      "type": "list",
+      "required": false,
+      "description": "Channels to write for, one per line (LinkedIn, X, newsletter, short video).",
+      "example": "LinkedIn\nX"
+    },
+    {
+      "key": "voice",
+      "label": "Voice",
+      "type": "text",
+      "required": false,
+      "description": "How you sound.",
+      "example": "Direct, practical, a bit dry"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "posts",
+      "label": "Posts",
+      "description": "Posts per channel, each anchored to a source passage.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You repurpose long-form content into native posts for each channel. Each post makes one point from the source and is anchored to an exact passage from it. Match the channel's conventions; never add claims the source does not make.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "core_ideas",
+      "posts"
+    ],
+    "properties": {
+      "core_ideas": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "maxItems": 8,
+        "title": "Core ideas"
+      },
+      "posts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "channel",
+            "hook",
+            "body",
+            "source_passage"
+          ],
+          "properties": {
+            "channel": {
+              "type": "string",
+              "enum": [
+                "linkedin",
+                "x",
+                "newsletter",
+                "short_video_script"
+              ]
+            },
+            "hook": {
+              "type": "string",
+              "description": "First line."
+            },
+            "body": {
+              "type": "string"
+            },
+            "source_passage": {
+              "type": "string",
+              "description": "The passage this post is built on, copied word for word."
+            }
+          }
+        },
+        "minItems": 2,
+        "maxItems": 12,
+        "title": "Posts"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "repurpose",
+      "name": "Repurpose",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write posts anchored to source passages.",
+      "prompt": "Pull out the core ideas, then write posts for the channels (all four if none are given). Copy the passage each post is built on word for word into source_passage. Keep each body under 220 words (X posts far shorter) and each hook under 15 words.",
+      "tools": []
+    },
+    {
+      "id": "check_posts",
+      "name": "Check posts",
+      "kind": "check",
+      "responsibility": "Posts are anchored to the source; lengths fit; hooks are distinct.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "anchored",
+        "description": "Every post is anchored to a passage copied from the source.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "posts[].source_passage",
+            "inputs": [
+              "source"
+            ]
+          }
+        }
+      },
+      {
+        "id": "post_length",
+        "description": "Post bodies are 220 words or fewer.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "posts[].body",
+            "max": 220
+          }
+        }
+      },
+      {
+        "id": "short_hooks",
+        "description": "Hooks are 15 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "posts[].hook",
+            "max": 15
+          }
+        }
+      },
+      {
+        "id": "distinct_hooks",
+        "description": "Hooks are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "posts[].hook"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

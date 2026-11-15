@@ -171,6 +171,12 @@
       "expect": [
         "case-study-writer"
       ]
+    },
+    {
+      "query": "turn a blog post into social media posts",
+      "expect": [
+        "content-repurposer"
+      ]
     }
   ]
 }
