@@ -129,6 +129,12 @@
       "expect": [
         "metric-tree-builder"
       ]
+    },
+    {
+      "query": "plan a user research study and choose methods",
+      "expect": [
+        "research-plan"
+      ]
     }
   ]
 }

@@ -1,0 +1,252 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "research-plan",
+  "version": "0.1.0",
+  "name": "User Research Plan",
+  "category": "user-research",
+  "summary": "Plans a user research study: objectives, the method for each, participant criteria, screener and timeline.",
+  "description": "Turns a decision you need to make into a research plan: specific learning objectives, the methods that answer each one, who to recruit (with screener questions), session guide topics and a timeline. Every method must answer at least one objective and every objective must be covered, so the study can actually inform the decision. Who it's for: product managers, designers and researchers scoping a study before recruiting. Limitations: it does not recruit participants or estimate incentives for your market; sample sizes are qualitative guidance, not statistical calculations.",
+  "status": "available",
+  "problems": [
+    "I need to plan user research for a product decision",
+    "I don't know which research method to use",
+    "Our research doesn't answer the question we actually had"
+  ],
+  "tags": [
+    "research-plan",
+    "user-research",
+    "screener",
+    "usability",
+    "interviews"
+  ],
+  "inputs": [
+    {
+      "use": "research_question",
+      "required": true
+    },
+    {
+      "key": "decision",
+      "label": "Decision this informs",
+      "type": "text",
+      "required": true,
+      "description": "What you will decide with the results.",
+      "example": "Whether to build a mobile receipt app this year"
+    },
+    {
+      "key": "constraints",
+      "label": "Constraints",
+      "type": "text",
+      "required": false,
+      "description": "Time, budget or access limits.",
+      "example": "Two weeks, no budget for a panel"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "plan",
+      "label": "Research plan",
+      "description": "Objectives, methods mapped to them, participants, screener and timeline.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a senior UX researcher. You choose the lightest method that answers each objective, and you are explicit about what each method cannot tell you. Prefer behavior over stated preference.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "objectives",
+      "methods",
+      "participant_criteria",
+      "screener_questions",
+      "guide_topics",
+      "timeline"
+    ],
+    "properties": {
+      "objectives": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "objective"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Objective id such as O1."
+            },
+            "objective": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 6,
+        "title": "Objectives"
+      },
+      "methods": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "method",
+            "objective_ids",
+            "participants",
+            "why",
+            "limitations"
+          ],
+          "properties": {
+            "method": {
+              "type": "string",
+              "enum": [
+                "interviews",
+                "usability_test",
+                "survey",
+                "diary_study",
+                "card_sort",
+                "analytics_review",
+                "concept_test",
+                "field_observation"
+              ]
+            },
+            "objective_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "participants": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Number of participants or responses."
+            },
+            "why": {
+              "type": "string"
+            },
+            "limitations": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 4,
+        "title": "Methods"
+      },
+      "participant_criteria": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Who to recruit"
+      },
+      "screener_questions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 2,
+        "maxItems": 8,
+        "title": "Screener questions"
+      },
+      "guide_topics": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Session guide topics"
+      },
+      "timeline": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "week",
+            "activity"
+          ],
+          "properties": {
+            "week": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "activity": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Timeline"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "plan",
+      "name": "Plan study",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the research plan.",
+      "prompt": "Write the plan. Give objectives ids O1, O2, ... Map every method to the objectives it answers and make sure every objective is covered by a method. Say what each method cannot tell you. Fit the timeline to the constraints.",
+      "tools": []
+    },
+    {
+      "id": "check_coverage",
+      "name": "Check coverage",
+      "kind": "check",
+      "responsibility": "Every method answers a real objective and every objective is covered.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "objectives_covered",
+        "description": "Methods map to declared objectives, and every objective is covered.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "methods[].objective_ids[]",
+            "to": "objectives[].id",
+            "everyTargetReferenced": true
+          }
+        }
+      },
+      {
+        "id": "unique_objectives",
+        "description": "Objective ids are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "objectives[].id"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
