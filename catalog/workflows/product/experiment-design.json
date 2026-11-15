@@ -1,0 +1,279 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "experiment-design",
+  "version": "0.1.0",
+  "name": "A/B Test Designer",
+  "category": "product",
+  "summary": "Designs an A/B test: falsifiable hypothesis, primary and guardrail metrics, variants and pre-agreed decision rules.",
+  "description": "Turns a product change you want to test into an experiment plan: a falsifiable hypothesis, one primary metric, guardrail metrics, a control and up to three variants, the audience, and decision rules written before the test runs. Decision rules must refer to metrics defined in the plan. Who it's for: product managers, growth teams and designers who want to test a change instead of shipping on opinion. Limitations: it does not calculate sample size or test duration; use a power calculator with your baseline conversion rate. It cannot check that your analytics actually track the chosen metrics.",
+  "status": "available",
+  "problems": [
+    "I want to A/B test a change but don't know how to set it up",
+    "Our experiments end without a clear decision",
+    "We keep arguing about test results after the fact"
+  ],
+  "tags": [
+    "ab-test",
+    "experiment",
+    "growth",
+    "hypothesis",
+    "metrics"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": false
+    },
+    {
+      "key": "change",
+      "label": "Change to test",
+      "type": "long_text",
+      "required": true,
+      "description": "What you want to change and why you think it will help.",
+      "example": "Show annual pricing first on the pricing page because annual plans retain better."
+    },
+    {
+      "key": "current_metrics",
+      "label": "Current numbers",
+      "type": "long_text",
+      "required": false,
+      "description": "Baselines you know, such as conversion or traffic.",
+      "example": "Pricing page to checkout: 4.1%. About 9,000 visitors a month."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "experiment_plan",
+      "label": "Experiment plan",
+      "description": "Hypothesis, metrics, variants, audience and decision rules.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are an experimentation lead. You design tests that can be decided cleanly: one primary metric, guardrails that protect the business, and decision rules agreed before launch. Do not compute sample sizes; say what inputs a power calculation would need.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "hypothesis",
+      "metrics",
+      "variants",
+      "audience",
+      "decision_rules",
+      "power_inputs_needed",
+      "risks"
+    ],
+    "properties": {
+      "hypothesis": {
+        "type": "string",
+        "description": "If <change> then <metric> will <direction> because <reason>.",
+        "title": "Hypothesis"
+      },
+      "metrics": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "name",
+            "role",
+            "definition"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Metric id such as M1."
+            },
+            "name": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string",
+              "enum": [
+                "primary",
+                "guardrail",
+                "secondary"
+              ]
+            },
+            "definition": {
+              "type": "string",
+              "description": "Exactly how it is measured."
+            }
+          }
+        },
+        "minItems": 2,
+        "maxItems": 6,
+        "title": "Metrics"
+      },
+      "variants": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "description"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Variant id: control, B, C ..."
+            },
+            "description": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Variants",
+        "description": "The control plus one to three variants."
+      },
+      "audience": {
+        "type": "string",
+        "description": "Who is included and excluded.",
+        "title": "Audience"
+      },
+      "decision_rules": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "metric_id",
+            "condition",
+            "decision"
+          ],
+          "properties": {
+            "metric_id": {
+              "type": "string"
+            },
+            "condition": {
+              "type": "string"
+            },
+            "decision": {
+              "type": "string",
+              "enum": [
+                "ship",
+                "iterate",
+                "stop"
+              ]
+            }
+          }
+        },
+        "minItems": 2,
+        "title": "Decision rules"
+      },
+      "power_inputs_needed": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Inputs for a sample-size calculation"
+      },
+      "risks": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Risks"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "design",
+      "name": "Design test",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the experiment plan.",
+      "prompt": "Design the experiment. Define exactly one primary metric and at least one guardrail, with ids M1, M2, ... Include a control variant. Write decision rules that reference metric ids and say what result leads to ship, iterate or stop. List what a sample-size calculation would need instead of computing one.",
+      "tools": []
+    },
+    {
+      "id": "check_plan",
+      "name": "Check plan",
+      "kind": "check",
+      "responsibility": "Decision rules use defined metrics; variants are unique and include a control.",
+      "tools": []
+    },
+    {
+      "id": "review",
+      "name": "Review hypothesis",
+      "kind": "agent",
+      "responsibility": "Grade whether the hypothesis is falsifiable and matches the primary metric.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "rules_use_metrics",
+        "description": "Decision rules only use metrics defined in the plan.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "decision_rules[].metric_id",
+            "to": "metrics[].id"
+          }
+        }
+      },
+      {
+        "id": "two_or_more_variants",
+        "description": "The test has a control and at most three variants.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "count",
+          "params": {
+            "path": "variants",
+            "min": 2,
+            "max": 4
+          }
+        }
+      },
+      {
+        "id": "unique_variants",
+        "description": "Variant ids are unique.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "variants[].id"
+          }
+        }
+      },
+      {
+        "id": "falsifiable",
+        "description": "The hypothesis is falsifiable and measured by the primary metric.",
+        "method": "model",
+        "critical": false,
+        "review": {
+          "step": "review",
+          "rubric": "Could the experiment prove the hypothesis wrong, and does the primary metric directly measure the predicted effect? 5 = clear direction and mechanism measured by the primary metric; 1 = vague or unmeasurable."
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 4
+  }
+}

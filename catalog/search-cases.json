@@ -99,6 +99,12 @@
       "expect": [
         "release-notes-writer"
       ]
+    },
+    {
+      "query": "set up an A/B test with a hypothesis and success metric",
+      "expect": [
+        "experiment-design"
+      ]
     }
   ]
 }
