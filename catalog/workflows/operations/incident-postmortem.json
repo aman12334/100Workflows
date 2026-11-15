@@ -1,0 +1,245 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "incident-postmortem",
+  "version": "0.1.0",
+  "name": "Incident Postmortem",
+  "category": "operations",
+  "summary": "Writes a blameless postmortem from incident notes: impact, timeline from the record, root causes and owned action items.",
+  "description": "Turns a Slack thread, ticket or notes from an incident into a blameless postmortem: summary, impact, a timeline whose events quote the record, root causes and contributing factors, what went well, and action items that each address a root cause and have an owner role and priority. Every root cause must have at least one action item. Who it's for: engineering, operations and support leads running incident reviews. Limitations: it reconstructs only what the notes record; timestamps and impact numbers are never estimated. It names roles, not people, to keep the review blameless.",
+  "status": "available",
+  "problems": [
+    "We had an outage and need a postmortem",
+    "The same incidents keep happening",
+    "Our incident reviews turn into blame"
+  ],
+  "tags": [
+    "postmortem",
+    "incident",
+    "outage",
+    "root-cause",
+    "blameless"
+  ],
+  "inputs": [
+    {
+      "key": "incident_notes",
+      "label": "Incident record",
+      "type": "long_text",
+      "required": true,
+      "description": "The Slack thread, ticket or notes, pasted as written.",
+      "example": "09:12 alerts: sync queue at 40k\n09:30 on-call restarts workers, no change\n10:05 found expired Xero API token\n10:20 token rotated, queue drains by 11:00"
+    },
+    {
+      "key": "impact",
+      "label": "Known impact",
+      "type": "long_text",
+      "required": false,
+      "description": "Affected accounts, duration, data or money involved.",
+      "example": "About 300 accounts saw stale data for 2 hours."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "postmortem",
+      "label": "Postmortem",
+      "description": "Summary, impact, timeline, root causes, what went well and action items.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write blameless postmortems. Focus on systems and process, not individuals. Reconstruct the timeline only from the record, quoting it. Every root cause gets at least one concrete, owned action.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "summary",
+      "impact",
+      "timeline",
+      "root_causes",
+      "what_went_well",
+      "action_items"
+    ],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "title": "Summary"
+      },
+      "impact": {
+        "type": "string",
+        "description": "As stated in the inputs; \"unknown\" where not stated.",
+        "title": "Impact"
+      },
+      "timeline": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "time",
+            "event",
+            "record"
+          ],
+          "properties": {
+            "time": {
+              "type": "string"
+            },
+            "event": {
+              "type": "string"
+            },
+            "record": {
+              "type": "string",
+              "description": "The line from the incident record, copied word for word."
+            }
+          }
+        },
+        "minItems": 2,
+        "title": "Timeline"
+      },
+      "root_causes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "cause",
+            "type"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Cause id such as RC1."
+            },
+            "cause": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "root_cause",
+                "contributing_factor"
+              ]
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 8,
+        "title": "Causes"
+      },
+      "what_went_well": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "What went well"
+      },
+      "action_items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action",
+            "cause_ids",
+            "owner_role",
+            "priority"
+          ],
+          "properties": {
+            "action": {
+              "type": "string"
+            },
+            "cause_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "owner_role": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "p0",
+                "p1",
+                "p2"
+              ]
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Action items"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "write",
+      "name": "Write postmortem",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Reconstruct the incident and plan actions.",
+      "prompt": "Write the postmortem. Build the timeline only from the record, copying each line exactly into record. Separate root causes from contributing factors (ids RC1, ...). Give every cause at least one action item with an owner role and priority. Refer to roles, never named people.",
+      "tools": []
+    },
+    {
+      "id": "check_postmortem",
+      "name": "Check postmortem",
+      "kind": "check",
+      "responsibility": "Timeline quotes the record; every cause has an action.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "timeline_from_record",
+        "description": "Every timeline event quotes the incident record word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "timeline[].record",
+            "inputs": [
+              "incident_notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "causes_have_actions",
+        "description": "Actions address real causes, and every cause has an action.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "action_items[].cause_ids[]",
+            "to": "root_causes[].id",
+            "everyTargetReferenced": true
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

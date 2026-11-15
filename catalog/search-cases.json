@@ -285,6 +285,12 @@
       "expect": [
         "business-case"
       ]
+    },
+    {
+      "query": "write a blameless postmortem for an outage",
+      "expect": [
+        "incident-postmortem"
+      ]
     }
   ]
 }
