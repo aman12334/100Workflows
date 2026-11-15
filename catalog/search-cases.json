@@ -255,6 +255,12 @@
       "expect": [
         "qbr-prep"
       ]
+    },
+    {
+      "query": "this account might cancel at renewal, what should we do",
+      "expect": [
+        "churn-risk-review"
+      ]
     }
   ]
 }

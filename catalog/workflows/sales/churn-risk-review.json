@@ -1,0 +1,241 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "churn-risk-review",
+  "version": "0.1.0",
+  "name": "Churn Risk Review",
+  "category": "sales",
+  "summary": "Assesses an account's churn risk from the signals you have, and builds a save plan where each action targets a signal.",
+  "description": "Weighs the warning signs you have about an account (usage changes, support tickets, sponsor changes, stated complaints) and rates the churn risk. Every signal quotes the notes it comes from, and every save-plan action names the signals it addresses, with an owner and timing, so the plan targets the actual reasons rather than generic check-ins. Who it's for: customer success managers and account managers ahead of renewals or in health reviews. Limitations: the risk rating is a judgment from the signals supplied, not a predictive score; missing data (like usage) is listed instead of assumed.",
+  "status": "available",
+  "problems": [
+    "An account might cancel at renewal",
+    "Usage dropped and I don't know what to do",
+    "I need a save plan for an at-risk account"
+  ],
+  "tags": [
+    "churn",
+    "retention",
+    "renewal",
+    "account-health",
+    "save-plan"
+  ],
+  "inputs": [
+    {
+      "key": "account",
+      "label": "Account",
+      "type": "text",
+      "required": true,
+      "description": "Account and renewal date.",
+      "example": "Northpeak, renews 30 Sept"
+    },
+    {
+      "key": "signals",
+      "label": "What you are seeing",
+      "type": "long_text",
+      "required": true,
+      "description": "Usage, tickets, emails and anything else, as written.",
+      "example": "Weekly active users fell from 12 to 4 since July. Champion Lee left in August. Ticket: \"the Xero sync keeps duplicating invoices\"."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "churn_review",
+      "label": "Churn review",
+      "description": "Risk rating, evidenced signals, save plan and missing data.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a retention-focused customer success lead. Base the assessment only on the signals supplied, quote them, and design actions that address the specific causes. Distinguish symptoms (low usage) from causes (lost champion, product issue).",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "risk",
+      "risk_summary",
+      "signals",
+      "save_plan",
+      "missing_data"
+    ],
+    "properties": {
+      "risk": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high",
+          "critical"
+        ]
+      },
+      "risk_summary": {
+        "type": "string",
+        "title": "Summary"
+      },
+      "signals": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "signal",
+            "evidence",
+            "type",
+            "weight",
+            "kind"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Signal id such as SG1."
+            },
+            "signal": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": "string",
+              "description": "Copied word for word from the notes."
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "usage",
+                "relationship",
+                "product",
+                "support",
+                "commercial",
+                "other"
+              ]
+            },
+            "weight": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "cause",
+                "symptom"
+              ]
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Signals"
+      },
+      "save_plan": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action",
+            "signal_ids",
+            "owner",
+            "by_when"
+          ],
+          "properties": {
+            "action": {
+              "type": "string"
+            },
+            "signal_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "owner": {
+              "type": "string"
+            },
+            "by_when": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Save plan"
+      },
+      "missing_data": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Missing data"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "assess",
+      "name": "Assess risk",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Extract signals and build the save plan.",
+      "prompt": "List each signal with id SG1, ..., copying its evidence exactly from the notes and saying whether it is a cause or a symptom. Rate overall risk. Write save-plan actions that each name the signal ids they address, prioritising causes. List data you would want but do not have.",
+      "tools": []
+    },
+    {
+      "id": "check_review",
+      "name": "Check review",
+      "kind": "check",
+      "responsibility": "Signals are quoted and actions target real signals.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "signals_quoted",
+        "description": "Every signal quotes the notes word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "signals[].evidence",
+            "inputs": [
+              "signals"
+            ]
+          }
+        }
+      },
+      {
+        "id": "actions_target_signals",
+        "description": "Every save-plan action targets a listed signal.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "save_plan[].signal_ids[]",
+            "to": "signals[].id"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
