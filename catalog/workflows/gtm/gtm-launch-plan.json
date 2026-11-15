@@ -1,0 +1,282 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "gtm-launch-plan",
+  "version": "0.1.0",
+  "name": "Launch Plan",
+  "category": "gtm",
+  "summary": "Plans a product or feature launch: tier, audiences, messages, and a dated milestone plan with owners and dependencies.",
+  "description": "Builds a launch plan sized to the launch tier: audiences and the message for each, channels, and a week-by-week milestone plan with owner roles and dependencies on earlier milestones. Dependencies must point to milestones in the same plan and messages must target a declared audience, so the plan can be loaded straight into a project tracker. Who it's for: product marketers, PMs and founders coordinating a launch across product, marketing, sales and support. Limitations: it plans; it does not book channels or write all launch assets. Dates are relative weeks you map onto your calendar.",
+  "status": "available",
+  "problems": [
+    "We have a launch coming and no plan",
+    "Our launches go out with no announcement",
+    "I need a launch checklist with owners"
+  ],
+  "tags": [
+    "launch-plan",
+    "product-launch",
+    "go-to-market",
+    "announcement",
+    "milestones"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "launch",
+      "label": "What is launching",
+      "type": "long_text",
+      "required": true,
+      "description": "The product, feature or change, and why it matters.",
+      "example": "Bulk approvals: admins approve a week of expenses in one click."
+    },
+    {
+      "key": "launch_week",
+      "label": "Weeks until launch",
+      "type": "number",
+      "required": true,
+      "description": "How many weeks you have."
+    },
+    {
+      "key": "resources",
+      "label": "People and channels",
+      "type": "long_text",
+      "required": false,
+      "description": "Who can help and which channels you own.",
+      "example": "One PMM, support lead; newsletter (4k), LinkedIn, in-app banner"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "launch_plan",
+      "label": "Launch plan",
+      "description": "Tier, audiences and messages, channels, milestones with owners and dependencies.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a product marketing lead planning a launch. Size the effort to the launch tier: a small feature does not get a press tour. Every milestone has one owner role and only depends on earlier milestones.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "tier",
+      "tier_rationale",
+      "audiences",
+      "messages",
+      "milestones",
+      "success_metrics",
+      "risks"
+    ],
+    "properties": {
+      "tier": {
+        "type": "string",
+        "enum": [
+          "tier_1_major",
+          "tier_2_notable",
+          "tier_3_minor"
+        ],
+        "description": "Launch size."
+      },
+      "tier_rationale": {
+        "type": "string",
+        "title": "Why this tier"
+      },
+      "audiences": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "audience",
+            "what_they_care_about"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Audience id such as AU1."
+            },
+            "audience": {
+              "type": "string"
+            },
+            "what_they_care_about": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 5,
+        "title": "Audiences"
+      },
+      "messages": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "audience_id",
+            "message",
+            "channels"
+          ],
+          "properties": {
+            "audience_id": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "channels": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Messages"
+      },
+      "milestones": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "week",
+            "milestone",
+            "owner_role",
+            "depends_on"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Milestone id such as MS1."
+            },
+            "week": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 52,
+              "description": "Week number, 1 = first week of the plan."
+            },
+            "milestone": {
+              "type": "string"
+            },
+            "owner_role": {
+              "type": "string"
+            },
+            "depends_on": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Ids of earlier milestones."
+            }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 30,
+        "title": "Milestones"
+      },
+      "success_metrics": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "title": "Success metrics"
+      },
+      "risks": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Risks"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "plan",
+      "name": "Plan launch",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Choose the tier and build the plan.",
+      "prompt": "Pick the launch tier and justify it. Define audiences (AU1, ...) and write one message per audience. Lay out milestones (MS1, ...) by week within the time available, each with one owner role and dependencies only on earlier milestones. End with launch-day and post-launch follow-up milestones.",
+      "tools": []
+    },
+    {
+      "id": "check_plan",
+      "name": "Check plan",
+      "kind": "check",
+      "responsibility": "Dependencies and audiences exist; milestone names are unique.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "dependencies_exist",
+        "description": "Every milestone dependency exists in the plan.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "milestones[].depends_on[]",
+            "to": "milestones[].id"
+          }
+        }
+      },
+      {
+        "id": "messages_target_audiences",
+        "description": "Every message targets a declared audience, and every audience gets a message.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "messages[].audience_id",
+            "to": "audiences[].id",
+            "everyTargetReferenced": true
+          }
+        }
+      },
+      {
+        "id": "unique_milestones",
+        "description": "Milestone ids are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "milestones[].id"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

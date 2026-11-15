@@ -189,6 +189,12 @@
       "expect": [
         "positioning-statement"
       ]
+    },
+    {
+      "query": "plan the launch of our new feature with owners and dates",
+      "expect": [
+        "gtm-launch-plan"
+      ]
     }
   ]
 }
