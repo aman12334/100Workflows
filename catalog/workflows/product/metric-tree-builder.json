@@ -1,0 +1,225 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "metric-tree-builder",
+  "version": "0.1.0",
+  "name": "Metric Tree Builder",
+  "category": "product",
+  "summary": "Builds a north-star metric tree: input metrics that drive it, each with a precise definition and owner.",
+  "description": "Proposes a north-star metric for your product and breaks it down into input metrics a team can influence, with exact definitions, the direction each should move, a suggested owner and leading or lagging type. Every metric except the north star names its parent, and parents must exist in the tree, so the result is a real hierarchy you can put on a dashboard. Who it's for: product leaders, analysts and founders aligning teams on what to measure. Limitations: definitions are proposals to check against what your analytics can track; it does not set targets or pull data.",
+  "status": "available",
+  "problems": [
+    "We track too many metrics and none of them matter",
+    "I need a north star metric for our product",
+    "Teams don't know which numbers they can move"
+  ],
+  "tags": [
+    "metrics",
+    "north-star",
+    "kpi",
+    "analytics",
+    "metric-tree"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "business_model",
+      "label": "Business model",
+      "type": "text",
+      "required": true,
+      "description": "How you make money.",
+      "example": "Per-seat SaaS subscription, monthly or annual"
+    },
+    {
+      "key": "current_metrics",
+      "label": "Metrics you track today",
+      "type": "list",
+      "required": false,
+      "description": "Existing metrics, one per line.",
+      "example": "MRR\nWeekly active users\nTrial conversion"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "metric_tree",
+      "label": "Metric tree",
+      "description": "North star, input metrics with definitions and parents, and gaps.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a product analytics lead. A good metric tree has one north star that reflects customer value, and input metrics that teams can move within weeks. Definitions must be precise enough to implement in SQL: event, unit, time window and filters.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "north_star_rationale",
+      "metrics",
+      "existing_metrics_review",
+      "instrumentation_gaps"
+    ],
+    "properties": {
+      "north_star_rationale": {
+        "type": "string",
+        "description": "Why the north star reflects the value customers get.",
+        "title": "Why this north star"
+      },
+      "metrics": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "name",
+            "definition",
+            "type",
+            "direction",
+            "suggested_owner"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "\"NS\" for the north star; M1, M2, ... for input metrics."
+            },
+            "name": {
+              "type": "string"
+            },
+            "definition": {
+              "type": "string"
+            },
+            "parent_id": {
+              "type": "string",
+              "description": "Id of the metric this one drives. Omit only for the north star."
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "north_star",
+                "leading",
+                "lagging"
+              ]
+            },
+            "direction": {
+              "type": "string",
+              "enum": [
+                "increase",
+                "decrease"
+              ]
+            },
+            "suggested_owner": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 4,
+        "maxItems": 16,
+        "title": "Metric tree"
+      },
+      "existing_metrics_review": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "metric",
+            "keep",
+            "reason"
+          ],
+          "properties": {
+            "metric": {
+              "type": "string"
+            },
+            "keep": {
+              "type": "string",
+              "enum": [
+                "keep",
+                "drop",
+                "redefine"
+              ]
+            },
+            "reason": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Your current metrics"
+      },
+      "instrumentation_gaps": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Instrumentation to check"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "build",
+      "name": "Build tree",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Propose the north star and input metrics.",
+      "prompt": "List the north star first, with id \"NS\", type north_star and no parent_id. Then list 3-15 input metrics with ids M1, M2, ..., each naming its parent_id: \"NS\" or another input metric. Write definitions with event, unit, window and filters. Review the metrics the user tracks today, if given.",
+      "tools": []
+    },
+    {
+      "id": "check_tree",
+      "name": "Check tree",
+      "kind": "check",
+      "responsibility": "Every parent exists; metric names are unique.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "parents_exist",
+        "description": "Every parent named in the tree exists in the tree.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "metrics[].parent_id",
+            "to": "metrics[].id"
+          }
+        }
+      },
+      {
+        "id": "unique_names",
+        "description": "Metric names are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "metrics[].name"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

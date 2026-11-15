@@ -123,6 +123,12 @@
       "expect": [
         "feedback-triage"
       ]
+    },
+    {
+      "query": "define a north star metric and the metrics that drive it",
+      "expect": [
+        "metric-tree-builder"
+      ]
     }
   ]
 }
