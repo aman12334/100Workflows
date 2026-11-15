@@ -1,0 +1,223 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "budget-variance-review",
+  "version": "0.1.0",
+  "name": "Budget Variance Review",
+  "category": "finance",
+  "summary": "Explains budget-vs-actual variances line by line from your numbers, with likely drivers and questions for owners.",
+  "description": "Takes your budget-versus-actual figures (pasted as text, with the variances already computed) and writes the commentary finance and leadership need: for each material line, the variance quoted from your data, likely drivers labelled as hypotheses, questions for the budget owner and a recommended action. It flags lines that need a reforecast. Who it's for: finance leads, founders and FP&A analysts writing monthly or quarterly variance commentary. Limitations: it does no arithmetic: variances must already be in the data, and drivers are hypotheses to confirm with owners. It does not read spreadsheets directly; paste the figures as text.",
+  "status": "available",
+  "problems": [
+    "I need to explain why we're over budget",
+    "Writing monthly variance commentary takes days",
+    "Leadership asks why spend differs from plan"
+  ],
+  "tags": [
+    "budget",
+    "variance",
+    "fpa",
+    "monthly-close",
+    "commentary"
+  ],
+  "inputs": [
+    {
+      "key": "variance_data",
+      "label": "Budget vs actual",
+      "type": "long_text",
+      "required": true,
+      "description": "Line items with budget, actual and variance, pasted as text.",
+      "example": "Software: budget $8,000, actual $11,200, variance +$3,200 (+40%)\nContractors: budget $20,000, actual $14,500, variance -$5,500 (-28%)"
+    },
+    {
+      "key": "context",
+      "label": "Context",
+      "type": "long_text",
+      "required": false,
+      "description": "Known events this period.",
+      "example": "Annual Figma renewal landed in March; one contractor contract ended early."
+    },
+    {
+      "key": "materiality",
+      "label": "Materiality threshold",
+      "type": "text",
+      "required": false,
+      "description": "Which variances matter.",
+      "example": "Over $2,000 or 10%"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "commentary",
+      "label": "Variance commentary",
+      "description": "Material lines with variance, drivers, questions and actions.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are an FP&A analyst writing variance commentary. Do not recalculate anything; quote each line's figures exactly as given. Separate explained drivers (from the context) from hypotheses to confirm.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "overview",
+      "lines",
+      "reforecast_flags"
+    ],
+    "properties": {
+      "overview": {
+        "type": "string",
+        "title": "Overview"
+      },
+      "lines": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "line_item",
+            "variance",
+            "direction",
+            "drivers",
+            "questions_for_owner",
+            "action"
+          ],
+          "properties": {
+            "line_item": {
+              "type": "string",
+              "description": "As named in the data."
+            },
+            "variance": {
+              "type": "string",
+              "description": "The figures, copied word for word from the data."
+            },
+            "direction": {
+              "type": "string",
+              "enum": [
+                "over",
+                "under"
+              ]
+            },
+            "drivers": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "driver",
+                  "basis"
+                ],
+                "properties": {
+                  "driver": {
+                    "type": "string"
+                  },
+                  "basis": {
+                    "type": "string",
+                    "enum": [
+                      "from_context",
+                      "hypothesis"
+                    ]
+                  }
+                }
+              },
+              "minItems": 1
+            },
+            "questions_for_owner": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "none",
+                "monitor",
+                "reforecast",
+                "cut",
+                "investigate"
+              ]
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Material variances"
+      },
+      "reforecast_flags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Lines to reforecast"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "explain",
+      "name": "Explain variances",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Comment on each material line.",
+      "prompt": "Comment on every line above the materiality threshold (or every line if none is given). Copy each line's variance figures exactly into variance; do not compute new numbers. Label each driver as from_context or hypothesis, and ask the owner what you would need to confirm it.",
+      "tools": []
+    },
+    {
+      "id": "check_lines",
+      "name": "Check lines",
+      "kind": "check",
+      "responsibility": "Figures are quoted exactly; lines are not repeated.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "figures_quoted",
+        "description": "Every variance quotes the data word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "lines[].variance",
+            "inputs": [
+              "variance_data"
+            ],
+            "minChars": 4
+          }
+        }
+      },
+      {
+        "id": "unique_lines",
+        "description": "Each line item appears once.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "lines[].line_item"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
