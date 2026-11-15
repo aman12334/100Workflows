@@ -1,0 +1,243 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "win-loss-analysis",
+  "version": "0.1.0",
+  "name": "Win/Loss Analysis",
+  "category": "gtm",
+  "summary": "Finds why deals are won and lost from deal notes and buyer quotes, and turns the reasons into actions.",
+  "description": "Reads notes from won and lost deals (CRM loss reasons, call notes, buyer interviews) and finds the recurring reasons on both sides. Each reason cites quotes from the notes and how many deals mention it; each recommended action names the reasons it addresses, so the analysis leads to changes in product, pricing, messaging or sales process. Who it's for: founders, sales leaders and product marketers reviewing a quarter of deals. Limitations: counts come from the notes you paste, so the result is only as representative as that sample; CRM loss-reason fields are often unreliable and are treated as weaker evidence than buyer quotes.",
+  "status": "available",
+  "problems": [
+    "I don't know why we lose deals",
+    "We keep losing to the same competitor",
+    "I want to learn from won and lost deals"
+  ],
+  "tags": [
+    "win-loss",
+    "deal-analysis",
+    "sales-insights",
+    "churned-deals",
+    "competitive"
+  ],
+  "inputs": [
+    {
+      "key": "deal_notes",
+      "label": "Deal notes",
+      "type": "long_text",
+      "required": true,
+      "description": "Notes from won and lost deals, labelled won or lost where possible.",
+      "example": "LOST Brightline: \"Too expensive for 12 seats compared to a part-time bookkeeper.\"\nWON Northpeak: \"The Xero sync was the deciding factor.\""
+    },
+    {
+      "key": "period",
+      "label": "Period",
+      "type": "text",
+      "required": false,
+      "description": "The time range covered.",
+      "example": "Q2"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "win_loss",
+      "label": "Win/loss analysis",
+      "description": "Reasons for wins and losses with quotes, patterns and actions.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a win/loss analyst. Separate what buyers said from what reps assumed. Quote buyers exactly, count how many deals mention each reason, and recommend changes that address the strongest reasons.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "reasons",
+      "actions",
+      "data_quality_notes"
+    ],
+    "properties": {
+      "reasons": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "outcome",
+            "reason",
+            "category",
+            "deals_mentioning",
+            "quotes"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Reason id such as R1."
+            },
+            "outcome": {
+              "type": "string",
+              "enum": [
+                "won",
+                "lost"
+              ]
+            },
+            "reason": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string",
+              "enum": [
+                "product",
+                "price",
+                "competitor",
+                "process",
+                "timing",
+                "relationship",
+                "other"
+              ]
+            },
+            "deals_mentioning": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "quotes": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "Copied word for word from the notes."
+              },
+              "minItems": 1
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 15,
+        "title": "Reasons"
+      },
+      "actions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action",
+            "owner",
+            "reason_ids"
+          ],
+          "properties": {
+            "action": {
+              "type": "string"
+            },
+            "owner": {
+              "type": "string",
+              "enum": [
+                "product",
+                "marketing",
+                "sales",
+                "pricing",
+                "leadership"
+              ]
+            },
+            "reason_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Actions"
+      },
+      "data_quality_notes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Limits of this sample"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "analyse",
+      "name": "Analyse deals",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Extract reasons with quotes and recommend actions.",
+      "prompt": "Extract the reasons deals were won and lost, with ids R1, R2, ... Copy supporting quotes exactly from the notes. Count deals mentioning each reason. Recommend actions that each name the reason ids they address. Note any weakness in the sample.",
+      "tools": []
+    },
+    {
+      "id": "check_reasons",
+      "name": "Check reasons",
+      "kind": "check",
+      "responsibility": "Quotes are exact; actions address real reasons.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "quotes_exact",
+        "description": "Every quote is copied word for word from the deal notes.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "reasons[].quotes[]",
+            "inputs": [
+              "deal_notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "actions_address_reasons",
+        "description": "Every action addresses a reason in the analysis.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "actions[].reason_ids[]",
+            "to": "reasons[].id"
+          }
+        }
+      },
+      {
+        "id": "unique_reasons",
+        "description": "Reasons are not repeated.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "reasons[].reason"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

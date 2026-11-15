@@ -195,6 +195,12 @@
       "expect": [
         "gtm-launch-plan"
       ]
+    },
+    {
+      "query": "why are we losing deals, win loss analysis",
+      "expect": [
+        "win-loss-analysis"
+      ]
     }
   ]
 }
