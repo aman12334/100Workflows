@@ -219,6 +219,12 @@
       "expect": [
         "call-follow-up"
       ]
+    },
+    {
+      "query": "qualify this deal with MEDDICC before pipeline review",
+      "expect": [
+        "deal-review"
+      ]
     }
   ]
 }

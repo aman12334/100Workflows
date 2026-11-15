@@ -1,0 +1,201 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "deal-review",
+  "version": "0.1.0",
+  "name": "Deal Qualification Review",
+  "category": "sales",
+  "summary": "Reviews a deal against MEDDICC from your notes: what is known, what is missing, the risk, and questions to close each gap.",
+  "description": "Scores an open deal element by element (metrics, economic buyer, decision criteria, decision process, paper process, identified pain, champion, competition). Each element is known, partial or unknown, and anything marked known or partial must quote the deal notes. Gaps come with the question that would close them and an overall risk with a recommended next action. Who it's for: account executives preparing for a pipeline review, and sales managers inspecting deals. Limitations: it assesses the notes, not the buyer; a deal with thin notes will look riskier than it may be. It does not forecast close probability.",
+  "status": "available",
+  "problems": [
+    "I don't know if this deal will actually close",
+    "Our forecast is full of deals that slip",
+    "I need to prepare for a pipeline review"
+  ],
+  "tags": [
+    "meddicc",
+    "deal-review",
+    "qualification",
+    "pipeline",
+    "forecast"
+  ],
+  "inputs": [
+    {
+      "key": "deal_notes",
+      "label": "Deal notes",
+      "type": "long_text",
+      "required": true,
+      "description": "Everything you know about the deal: calls, emails, CRM notes.",
+      "example": "Champion: Dana (COO), says \"this is my top priority for Q3\". CFO not met yet. Competing with LedgerLoop. Pain: month-end takes 3 days."
+    },
+    {
+      "key": "deal",
+      "label": "Deal",
+      "type": "text",
+      "required": true,
+      "description": "Account, value and stage.",
+      "example": "Brightline, $14k ARR, evaluation"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "deal_review",
+      "label": "Deal review",
+      "description": "MEDDICC elements with evidence, gaps, risk and next actions.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a sales manager running a rigorous deal review. Be skeptical: an element is only \"known\" if the notes show it. Quote the evidence. Turn every gap into a specific question the rep can ask.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "elements",
+      "risk",
+      "risk_reasons",
+      "next_actions"
+    ],
+    "properties": {
+      "elements": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "element",
+            "status",
+            "gap_question"
+          ],
+          "properties": {
+            "element": {
+              "type": "string",
+              "enum": [
+                "metrics",
+                "economic_buyer",
+                "decision_criteria",
+                "decision_process",
+                "paper_process",
+                "identified_pain",
+                "champion",
+                "competition"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "known",
+                "partial",
+                "unknown"
+              ]
+            },
+            "evidence": {
+              "type": "string",
+              "description": "Copied word for word from the notes. Omit when unknown."
+            },
+            "gap_question": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 8,
+        "maxItems": 8,
+        "title": "MEDDICC"
+      },
+      "risk": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ]
+      },
+      "risk_reasons": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "title": "Why"
+      },
+      "next_actions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "maxItems": 5,
+        "title": "Next actions"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "review",
+      "name": "Review deal",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Assess each element from the notes.",
+      "prompt": "Assess all eight elements once each. Mark an element known or partial only if the notes show it, and copy those exact words into evidence; omit evidence for unknown elements. Write a specific gap question for every element that is not fully known. Rate overall risk and recommend next actions.",
+      "tools": []
+    },
+    {
+      "id": "check_review",
+      "name": "Check review",
+      "kind": "check",
+      "responsibility": "Evidence is quoted; each element appears once.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "evidence_quoted",
+        "description": "Every piece of evidence quotes the deal notes word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "elements[].evidence",
+            "inputs": [
+              "deal_notes"
+            ],
+            "minChars": 6
+          }
+        }
+      },
+      {
+        "id": "each_element_once",
+        "description": "Each MEDDICC element is assessed once.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "elements[].element"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
