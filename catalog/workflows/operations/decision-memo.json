@@ -1,0 +1,299 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "decision-memo",
+  "version": "0.1.0",
+  "name": "Decision Memo",
+  "category": "operations",
+  "summary": "Structures a hard decision into a memo: options, criteria, an option-by-criterion assessment and a recommendation.",
+  "description": "Frames a decision you are facing: the question, the options (including the status quo), the criteria that matter with their relative importance, an assessment of every option against every criterion, the reversibility of the decision, and a recommendation that names one option. Assessments may only refer to listed options and criteria, and a reviewer checks the recommendation follows from them. Who it's for: founders, managers and anyone preparing a decision for a leadership meeting or written approval. Limitations: it reasons from what you provide and general knowledge; it does not gather data. Scores are qualitative ratings, not a weighted calculation.",
+  "status": "available",
+  "problems": [
+    "I'm stuck between several options",
+    "Our team argues in circles about a decision",
+    "I need to write up a decision for leadership"
+  ],
+  "tags": [
+    "decision-making",
+    "decision-memo",
+    "options",
+    "trade-offs",
+    "strategy"
+  ],
+  "inputs": [
+    {
+      "key": "decision",
+      "label": "Decision",
+      "type": "long_text",
+      "required": true,
+      "description": "The decision and the context.",
+      "example": "Should we build a mobile app this year, or invest in the Xero integration first?"
+    },
+    {
+      "key": "options",
+      "label": "Options you are considering",
+      "type": "long_text",
+      "required": false,
+      "description": "Options already on the table.",
+      "example": "Mobile app; deeper Xero integration; both with a contractor"
+    },
+    {
+      "key": "constraints",
+      "label": "Constraints",
+      "type": "long_text",
+      "required": false,
+      "description": "Budget, people, deadlines.",
+      "example": "Two engineers; runway 19 months"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "memo",
+      "label": "Decision memo",
+      "description": "Question, options, criteria, assessment, reversibility and recommendation.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write decision memos for busy leaders. Make the trade-offs explicit, include the status quo, rate every option against every criterion, and recommend one option with the conditions that would change your mind.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "question",
+      "options",
+      "criteria",
+      "assessment",
+      "reversibility",
+      "recommendation"
+    ],
+    "properties": {
+      "question": {
+        "type": "string",
+        "title": "Decision question"
+      },
+      "options": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "option"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Option id such as OPT1."
+            },
+            "option": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 2,
+        "maxItems": 5,
+        "title": "Options"
+      },
+      "criteria": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "criterion",
+            "importance"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Criterion id such as CR1."
+            },
+            "criterion": {
+              "type": "string"
+            },
+            "importance": {
+              "type": "string",
+              "enum": [
+                "critical",
+                "high",
+                "medium",
+                "low"
+              ]
+            }
+          }
+        },
+        "minItems": 2,
+        "maxItems": 7,
+        "title": "Criteria"
+      },
+      "assessment": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "option_id",
+            "criterion_id",
+            "rating",
+            "note"
+          ],
+          "properties": {
+            "option_id": {
+              "type": "string"
+            },
+            "criterion_id": {
+              "type": "string"
+            },
+            "rating": {
+              "type": "string",
+              "enum": [
+                "strong",
+                "acceptable",
+                "weak",
+                "unknown"
+              ]
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 4,
+        "title": "Assessment"
+      },
+      "reversibility": {
+        "type": "string",
+        "enum": [
+          "easily_reversible",
+          "costly_to_reverse",
+          "irreversible"
+        ]
+      },
+      "recommendation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "option_id",
+          "rationale",
+          "would_change_if"
+        ],
+        "properties": {
+          "option_id": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "would_change_if": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          }
+        },
+        "title": "Recommendation"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "frame",
+      "name": "Frame decision",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Lay out options and criteria, assess, recommend.",
+      "prompt": "Frame the decision. List options (OPT1, ...) including the status quo, and criteria (CR1, ...) with importance. Rate every option against every criterion, using only these ids. Say how reversible the decision is. Recommend one option id and what would change your mind.",
+      "tools": []
+    },
+    {
+      "id": "check_memo",
+      "name": "Check memo",
+      "kind": "check",
+      "responsibility": "Assessments and the recommendation use listed options and criteria.",
+      "tools": []
+    },
+    {
+      "id": "review",
+      "name": "Review recommendation",
+      "kind": "agent",
+      "responsibility": "Grade whether the recommendation follows from the assessment.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "assessed_options",
+        "description": "Assessments refer to listed options, and every option is assessed.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "assessment[].option_id",
+            "to": "options[].id",
+            "everyTargetReferenced": true
+          }
+        }
+      },
+      {
+        "id": "assessed_criteria",
+        "description": "Assessments refer to listed criteria, and every criterion is used.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "assessment[].criterion_id",
+            "to": "criteria[].id",
+            "everyTargetReferenced": true
+          }
+        }
+      },
+      {
+        "id": "recommends_an_option",
+        "description": "The recommendation names a listed option.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "recommendation.option_id",
+            "to": "options[].id"
+          }
+        }
+      },
+      {
+        "id": "follows_from_assessment",
+        "description": "The recommendation follows from the assessment.",
+        "method": "model",
+        "critical": false,
+        "review": {
+          "step": "review",
+          "rubric": "Given the ratings and criterion importance, does the recommended option follow, with its weaknesses acknowledged? 5 = clearly follows; 1 = contradicts the assessment."
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 4
+  }
+}

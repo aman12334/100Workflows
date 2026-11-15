@@ -321,6 +321,12 @@
       "expect": [
         "raci-matrix"
       ]
+    },
+    {
+      "query": "help me decide between options and write a decision memo",
+      "expect": [
+        "decision-memo"
+      ]
     }
   ]
 }
