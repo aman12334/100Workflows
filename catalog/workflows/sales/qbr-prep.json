@@ -1,0 +1,286 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "qbr-prep",
+  "version": "0.1.0",
+  "name": "Quarterly Business Review Prep",
+  "category": "sales",
+  "summary": "Prepares a QBR for an account: results against their goals backed by your numbers, issues, next-quarter plan and asks.",
+  "description": "Builds the outline and talking points for a quarterly business review from the account's goals, your usage and results data, and notes from the quarter. Every result quotes the data you supplied, issues are acknowledged rather than hidden, and the next-quarter plan ties each initiative to a goal. It ends with the asks (expansion, references, renewal timing) appropriate to the account's health. Who it's for: customer success managers and account managers running QBRs or executive business reviews. Limitations: it does not pull data from your product or CRM; results are only those you paste, and it will not compute ROI from incomplete numbers.",
+  "status": "available",
+  "problems": [
+    "I have a QBR next week and nothing prepared",
+    "Our business reviews are just usage reports",
+    "I need to show an account the value they got this quarter"
+  ],
+  "tags": [
+    "qbr",
+    "business-review",
+    "customer-success",
+    "account-management",
+    "renewal"
+  ],
+  "inputs": [
+    {
+      "key": "account",
+      "label": "Account",
+      "type": "text",
+      "required": true,
+      "description": "The account and attendees.",
+      "example": "Brightline Agency; Dana (COO), CFO"
+    },
+    {
+      "key": "goals",
+      "label": "Their goals",
+      "type": "long_text",
+      "required": true,
+      "description": "What the account wanted to achieve.",
+      "example": "Close month-end in one day; cut bookkeeper overtime."
+    },
+    {
+      "key": "results_data",
+      "label": "Results and usage data",
+      "type": "long_text",
+      "required": true,
+      "description": "Numbers and facts from the quarter.",
+      "example": "Month-end close: 3 days in Q1, 1.5 days in Q2. 2,140 expenses auto-matched. 2 support tickets, both resolved."
+    },
+    {
+      "key": "quarter_notes",
+      "label": "Notes from the quarter",
+      "type": "long_text",
+      "required": false,
+      "description": "Issues, wins, changes on their side.",
+      "example": "New CFO joined in May; Xero sync outage on 3 June."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "qbr",
+      "label": "QBR outline",
+      "description": "Results against goals, issues, next-quarter plan and asks.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a strategic customer success manager preparing an executive business review. Lead with outcomes against the account's goals, quote your data exactly, acknowledge problems openly, and make the next-quarter plan specific.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "headline",
+      "goals",
+      "results",
+      "issues",
+      "next_quarter",
+      "asks",
+      "talking_points"
+    ],
+    "properties": {
+      "headline": {
+        "type": "string",
+        "description": "One sentence on the quarter.",
+        "title": "Headline"
+      },
+      "goals": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "goal",
+            "status"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Goal id such as G1."
+            },
+            "goal": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "achieved",
+                "on_track",
+                "at_risk",
+                "not_started"
+              ]
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Goals"
+      },
+      "results": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "goal_id",
+            "result",
+            "data"
+          ],
+          "properties": {
+            "goal_id": {
+              "type": "string"
+            },
+            "result": {
+              "type": "string"
+            },
+            "data": {
+              "type": "string",
+              "description": "Copied word for word from the results data."
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Results"
+      },
+      "issues": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "issue",
+            "what_we_did"
+          ],
+          "properties": {
+            "issue": {
+              "type": "string"
+            },
+            "what_we_did": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Issues"
+      },
+      "next_quarter": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "initiative",
+            "goal_id",
+            "owner"
+          ],
+          "properties": {
+            "initiative": {
+              "type": "string"
+            },
+            "goal_id": {
+              "type": "string"
+            },
+            "owner": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Next quarter"
+      },
+      "asks": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Asks"
+      },
+      "talking_points": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 8,
+        "title": "Talking points"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "prepare",
+      "name": "Prepare QBR",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Build the review from goals and data.",
+      "prompt": "Prepare the QBR. Give goals ids G1, ... and a status. For each result, copy the supporting data exactly into data and name the goal it shows progress on. Include issues from the notes and what was done about them. Tie every next-quarter initiative to a goal.",
+      "tools": []
+    },
+    {
+      "id": "check_qbr",
+      "name": "Check QBR",
+      "kind": "check",
+      "responsibility": "Results quote the data and tie to goals; initiatives tie to goals.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "results_from_data",
+        "description": "Every result quotes your data word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "results[].data",
+            "inputs": [
+              "results_data"
+            ]
+          }
+        }
+      },
+      {
+        "id": "results_tied_to_goals",
+        "description": "Every result shows progress on a stated goal.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "results[].goal_id",
+            "to": "goals[].id"
+          }
+        }
+      },
+      {
+        "id": "plan_tied_to_goals",
+        "description": "Every next-quarter initiative serves a stated goal.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "next_quarter[].goal_id",
+            "to": "goals[].id"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

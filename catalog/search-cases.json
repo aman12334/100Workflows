@@ -249,6 +249,12 @@
       "expect": [
         "account-onboarding-plan"
       ]
+    },
+    {
+      "query": "prepare a quarterly business review for an account",
+      "expect": [
+        "qbr-prep"
+      ]
     }
   ]
 }
