@@ -1,0 +1,201 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "support-macros",
+  "version": "0.1.0",
+  "name": "Support Reply Macros",
+  "category": "sales",
+  "summary": "Writes reusable support replies for your most common tickets, using only the product facts you approve.",
+  "description": "Turns your recurring support questions into reply macros: when to use each, the reply text in your tone, personalisation slots, and an internal note. Every product fact in a reply is listed and must be copied from the facts you supply, so agents never promise a feature, limit or policy that does not exist. Who it's for: support leads and small teams who answer the same questions every day. Limitations: replies cover the facts given; anything else is left as a slot for the agent to fill. It does not connect to your helpdesk.",
+  "status": "available",
+  "problems": [
+    "We answer the same support tickets every day",
+    "Support replies are inconsistent between agents",
+    "I need canned responses for common questions"
+  ],
+  "tags": [
+    "support",
+    "macros",
+    "canned-responses",
+    "helpdesk",
+    "customer-support"
+  ],
+  "inputs": [
+    {
+      "key": "common_questions",
+      "label": "Common questions",
+      "type": "long_text",
+      "required": true,
+      "description": "Recurring tickets or questions, one per line.",
+      "example": "How do I change my billing email?\nWhy did my bank connection stop syncing?"
+    },
+    {
+      "key": "product_facts",
+      "label": "Approved facts",
+      "type": "long_text",
+      "required": true,
+      "description": "Facts and policies agents may state.",
+      "example": "Billing email is changed under Settings > Billing. Bank connections must be re-authorised every 90 days."
+    },
+    {
+      "key": "tone",
+      "label": "Tone",
+      "type": "text",
+      "required": false,
+      "description": "How replies should sound.",
+      "example": "Warm, brief, no jargon"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "macros",
+      "label": "Macros",
+      "description": "Reply macros with usage notes, slots and facts used.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write support macros. Replies are short, warm and solve the problem in as few steps as possible. Only state facts from the approved list; anything else becomes a {slot} for the agent.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "macros",
+      "gaps"
+    ],
+    "properties": {
+      "macros": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "title",
+            "use_when",
+            "reply",
+            "facts_used",
+            "slots",
+            "internal_note"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "use_when": {
+              "type": "string"
+            },
+            "reply": {
+              "type": "string"
+            },
+            "facts_used": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "Copied word for word from the approved facts."
+              }
+            },
+            "slots": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "internal_note": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 20,
+        "title": "Macros"
+      },
+      "gaps": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Questions the facts do not cover"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "write",
+      "name": "Write macros",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write a macro per common question.",
+      "prompt": "Write one macro per common question. Keep replies under 120 words. Copy every product fact a reply relies on exactly into facts_used. Use {slots} for details the agent must fill. List questions the facts cannot answer under gaps.",
+      "tools": []
+    },
+    {
+      "id": "check_macros",
+      "name": "Check macros",
+      "kind": "check",
+      "responsibility": "Facts come from the approved list; replies are short; titles unique.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "facts_approved",
+        "description": "Every fact used is copied from the approved facts.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "macros[].facts_used[]",
+            "inputs": [
+              "product_facts"
+            ]
+          }
+        }
+      },
+      {
+        "id": "short_replies",
+        "description": "Replies are 120 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "macros[].reply",
+            "max": 120
+          }
+        }
+      },
+      {
+        "id": "unique_titles",
+        "description": "Macro titles are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "macros[].title"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

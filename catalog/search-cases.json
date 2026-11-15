@@ -261,6 +261,12 @@
       "expect": [
         "churn-risk-review"
       ]
+    },
+    {
+      "query": "write canned responses for common support tickets",
+      "expect": [
+        "support-macros"
+      ]
     }
   ]
 }
