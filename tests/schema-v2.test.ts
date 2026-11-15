@@ -33,6 +33,13 @@ const GOLDEN: Record<string, string> = {
 const SNAPSHOT_DIR = path.join(process.cwd(), "tests", "fixtures", "v1-snapshots");
 const MIGRATED = ["discovery-call-prep", "sop-writer", "survey-designer"];
 
+/** Fingerprints of the migrated pilots as committed in Phase 0; later phases must not change them. */
+const PILOTS_V2: Record<string, string> = {
+  "discovery-call-prep@0.2.0": "b5deabebbe65443b05c164966c791fd030cfb712893e7926f87351b530d2d153",
+  "sop-writer@0.2.0": "f5af5df105e09483109c53da0ce91acaec8c51f0ff461862cfa770c8a56391a3",
+  "survey-designer@0.2.0": "9593e4c07cc34980fe53e56e94ad7c8927ffb0ca781e301f627e1c9769a6b28b",
+};
+
 let catalog: Workflow[];
 /** Every v1 definition: the catalog's current v1 files plus the pre-migration pilot snapshots. */
 let v1: Workflow[];
@@ -53,8 +60,8 @@ describe("backward compatibility: fingerprints", () => {
   });
 
   it("migrated the three pilots to new versions, so pinned v1 snapshots are never reinterpreted", () => {
-    const migrated = catalog.filter((w) => w.schemaVersion === 2);
-    expect(migrated.map((w) => `${w.id}@${w.version}`).sort()).toEqual(MIGRATED.map((id) => `${id}@0.2.0`));
+    const migrated = catalog.filter((w) => MIGRATED.includes(w.id));
+    expect(Object.fromEntries(migrated.map((w) => [`${w.id}@${w.version}`, definitionHash(w)]))).toEqual(PILOTS_V2);
     for (const wf of migrated) expect(Object.hasOwn(GOLDEN, `${wf.id}@${wf.version}`), wf.id).toBe(false);
     expect(readdirSync(SNAPSHOT_DIR).sort()).toEqual(MIGRATED.map((id) => `${id}.json`));
   });
