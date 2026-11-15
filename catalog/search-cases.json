@@ -273,6 +273,12 @@
       "expect": [
         "budget-variance-review"
       ]
+    },
+    {
+      "query": "write our monthly investor update",
+      "expect": [
+        "investor-update"
+      ]
     }
   ]
 }

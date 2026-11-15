@@ -1,0 +1,225 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "investor-update",
+  "version": "0.1.0",
+  "name": "Investor Update Writer",
+  "category": "finance",
+  "summary": "Drafts a monthly or quarterly investor update from your metrics and notes: highlights, lowlights, KPIs and specific asks.",
+  "description": "Writes the update investors actually read: a two-line TL;DR, KPIs quoted exactly from your numbers, highlights and lowlights stated plainly, what you are focused on next, and specific asks (intros, hires, advice). Every KPI must be copied from the metrics you supply, so the update never rounds in your favour or invents a figure. Who it's for: founders sending regular updates to investors and advisors. Limitations: it reports only the numbers you supply and does not calculate growth rates; add them to your metrics if you want them shown.",
+  "status": "available",
+  "problems": [
+    "I need to write our monthly investor update",
+    "Our investor updates take a whole day",
+    "Investors never know how to help us"
+  ],
+  "tags": [
+    "investor-update",
+    "board",
+    "fundraising",
+    "founder",
+    "kpis"
+  ],
+  "inputs": [
+    {
+      "use": "company_name",
+      "required": true
+    },
+    {
+      "key": "metrics",
+      "label": "Metrics",
+      "type": "long_text",
+      "required": true,
+      "description": "This period's numbers, as you want them reported.",
+      "example": "MRR $42,300 (Mar: $38,900)\nNet revenue retention 108%\nCash $1.2M; runway 19 months"
+    },
+    {
+      "key": "notes",
+      "label": "What happened",
+      "type": "long_text",
+      "required": true,
+      "description": "Wins, problems, hires, product news.",
+      "example": "Signed Brightline (15 seats). Lost our first enterprise pilot on SSO. Hired a second engineer."
+    },
+    {
+      "key": "asks",
+      "label": "What you need",
+      "type": "long_text",
+      "required": false,
+      "description": "Intros or help you want.",
+      "example": "Intros to agency-focused accountants; a fractional CFO"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "update",
+      "label": "Investor update",
+      "description": "TL;DR, KPIs, highlights, lowlights, focus and asks.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You draft founder investor updates. Be brief and candid: bad news early and plainly, numbers exactly as given, asks specific enough that an investor can act on them in one email.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "subject",
+      "tldr",
+      "kpis",
+      "highlights",
+      "lowlights",
+      "focus_next",
+      "asks"
+    ],
+    "properties": {
+      "subject": {
+        "type": "string",
+        "title": "Subject line"
+      },
+      "tldr": {
+        "type": "string",
+        "description": "Two sentences.",
+        "title": "TL;DR"
+      },
+      "kpis": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "metric",
+            "value"
+          ],
+          "properties": {
+            "metric": {
+              "type": "string"
+            },
+            "value": {
+              "type": "string",
+              "description": "Copied word for word from the metrics."
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 8,
+        "title": "KPIs"
+      },
+      "highlights": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "maxItems": 5,
+        "title": "Highlights"
+      },
+      "lowlights": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 5,
+        "title": "Lowlights"
+      },
+      "focus_next": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "maxItems": 4,
+        "title": "Focus next period"
+      },
+      "asks": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ask",
+            "ideal_helper"
+          ],
+          "properties": {
+            "ask": {
+              "type": "string"
+            },
+            "ideal_helper": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Asks"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "draft",
+      "name": "Draft update",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the update from metrics and notes.",
+      "prompt": "Write the update. Copy each KPI value exactly from the metrics. State lowlights plainly, with what you are doing about them. Make each ask specific (who, what, by when). Keep the whole update readable in two minutes.",
+      "tools": []
+    },
+    {
+      "id": "check_update",
+      "name": "Check update",
+      "kind": "check",
+      "responsibility": "KPI values are copied exactly; the TL;DR is short.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "kpis_exact",
+        "description": "Every KPI value is copied exactly from your metrics.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "kpis[].value",
+            "inputs": [
+              "metrics"
+            ],
+            "minChars": 2
+          }
+        }
+      },
+      {
+        "id": "short_tldr",
+        "description": "The TL;DR is 50 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "tldr",
+            "max": 50
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
