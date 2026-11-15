@@ -1,0 +1,260 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "account-onboarding-plan",
+  "version": "0.1.0",
+  "name": "Account Onboarding Plan",
+  "category": "sales",
+  "summary": "Builds a 30/60/90-day onboarding plan for a newly signed account, with milestones, owners on both sides and success criteria.",
+  "description": "Turns what was sold and what the new account wants to achieve into an onboarding plan: success criteria agreed at kickoff, milestones by day with who owns each (your side, theirs or both), dependencies, risks and the first value moment. Milestones can only depend on earlier milestones in the plan and every success criterion must be served by a milestone. Who it's for: customer success managers, onboarding specialists and founders handing over a new account. Limitations: it plans from the handover notes; it does not know your implementation effort, so durations are proposals to confirm at kickoff.",
+  "status": "available",
+  "problems": [
+    "New accounts take too long to get value",
+    "Onboarding is different every time",
+    "I need a 30-60-90 day plan for a new account"
+  ],
+  "tags": [
+    "onboarding",
+    "customer-success",
+    "kickoff",
+    "implementation",
+    "time-to-value"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "handover_notes",
+      "label": "Handover notes",
+      "type": "long_text",
+      "required": true,
+      "description": "What was sold, why they bought and who is involved.",
+      "example": "Brightline, 15 seats, two entities. Bought to close month-end in a day. Champion Dana (COO); bookkeeper Raj does the work."
+    },
+    {
+      "key": "plan_days",
+      "label": "Plan length (days)",
+      "type": "number",
+      "required": false,
+      "description": "Usually 30, 60 or 90."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "onboarding_plan",
+      "label": "Onboarding plan",
+      "description": "Success criteria, milestones with owners and dependencies, risks.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a customer success lead. Onboarding exists to reach the outcome the account bought, quickly. Define success in the account's terms, front-load the first value moment, and make ownership on both sides explicit.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "success_criteria",
+      "first_value_moment",
+      "milestones",
+      "stakeholders",
+      "risks"
+    ],
+    "properties": {
+      "success_criteria": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "criterion"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Criterion id such as SC1."
+            },
+            "criterion": {
+              "type": "string",
+              "description": "Measurable, in the account's terms."
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 5,
+        "title": "Success criteria"
+      },
+      "first_value_moment": {
+        "type": "string",
+        "title": "First value moment"
+      },
+      "milestones": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "day",
+            "milestone",
+            "owner",
+            "owner_role",
+            "depends_on",
+            "serves"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Milestone id such as M1."
+            },
+            "day": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 180
+            },
+            "milestone": {
+              "type": "string"
+            },
+            "owner": {
+              "type": "string",
+              "enum": [
+                "us",
+                "customer",
+                "both"
+              ]
+            },
+            "owner_role": {
+              "type": "string"
+            },
+            "depends_on": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "serves": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "description": "Success criterion ids."
+            }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 20,
+        "title": "Milestones"
+      },
+      "stakeholders": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "role",
+            "involvement"
+          ],
+          "properties": {
+            "role": {
+              "type": "string"
+            },
+            "involvement": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Stakeholders"
+      },
+      "risks": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "risk",
+            "mitigation"
+          ],
+          "properties": {
+            "risk": {
+              "type": "string"
+            },
+            "mitigation": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Risks"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "plan",
+      "name": "Plan onboarding",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Define success and lay out milestones.",
+      "prompt": "Write success criteria (SC1, ...) in the account's terms. Lay out milestones (M1, ...) by day within the plan length, each with an owner side and role, dependencies on earlier milestones only, and the success criteria it serves. Make sure every success criterion is served.",
+      "tools": []
+    },
+    {
+      "id": "check_plan",
+      "name": "Check plan",
+      "kind": "check",
+      "responsibility": "Dependencies exist; every success criterion is served.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "criteria_served",
+        "description": "Milestones serve declared success criteria, and every criterion is served.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "milestones[].serves[]",
+            "to": "success_criteria[].id",
+            "everyTargetReferenced": true
+          }
+        }
+      },
+      {
+        "id": "dependencies_exist",
+        "description": "Every milestone dependency exists in the plan.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "milestones[].depends_on[]",
+            "to": "milestones[].id"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

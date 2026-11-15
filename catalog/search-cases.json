@@ -243,6 +243,12 @@
       "expect": [
         "demo-script"
       ]
+    },
+    {
+      "query": "create a 30-60-90 day onboarding plan for a new account",
+      "expect": [
+        "account-onboarding-plan"
+      ]
     }
   ]
 }
