@@ -22,8 +22,10 @@ describe("shipped catalog", () => {
       const implemented = Boolean(executor && implementsVersion(executor, wf.version));
       expect(implemented, `${wf.id}@${wf.version} is ${wf.status}`).toBe(wf.status === "available");
     }
-    const available = catalog.workflows.filter((w) => w.status === "available").map((w) => w.id).sort();
-    expect(available).toEqual(["discovery-call-prep", "icp-builder", "market-research", "sop-writer", "survey-designer"]);
+    const available = catalog.workflows.filter((w) => w.status === "available");
+    // The two hand-written workflows and the three Phase 0 pilots, plus every Phase 1 schema-v2 workflow.
+    expect(available.map((w) => w.id)).toEqual(expect.arrayContaining(["discovery-call-prep", "icp-builder", "market-research", "sop-writer", "survey-designer"]));
+    for (const wf of available) if (!["icp-builder", "market-research"].includes(wf.id)) expect(wf.schemaVersion, wf.id).toBe(2);
   });
 
   it("executors only use steps and criteria their definitions declare", async () => {
