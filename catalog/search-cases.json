@@ -333,6 +333,12 @@
       "expect": [
         "pre-mortem"
       ]
+    },
+    {
+      "query": "write the weekly project status report",
+      "expect": [
+        "status-report"
+      ]
     }
   ]
 }

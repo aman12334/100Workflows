@@ -1,0 +1,235 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "status-report",
+  "version": "0.1.0",
+  "name": "Weekly Status Report",
+  "category": "operations",
+  "summary": "Turns raw updates from people and workstreams into a status report with RAG status per workstream, risks and asks.",
+  "description": "Collects the updates you paste (from Slack, standups or emails) into a status report leadership can read in two minutes: overall status, each workstream's red/amber/green status with the update it is based on quoted, progress, next steps, risks and the decisions or help needed. Statuses are justified from the updates rather than assumed green. Who it's for: project managers, program leads and chiefs of staff writing weekly or fortnightly status reports. Limitations: it reports what the updates say; a workstream with no update is shown as \"no update\", not as on track.",
+  "status": "available",
+  "problems": [
+    "Writing the weekly status report takes hours",
+    "Leadership doesn't know which projects are at risk",
+    "Updates are scattered across Slack"
+  ],
+  "tags": [
+    "status-report",
+    "weekly-update",
+    "rag-status",
+    "project-update",
+    "program-management"
+  ],
+  "inputs": [
+    {
+      "key": "updates",
+      "label": "Raw updates",
+      "type": "long_text",
+      "required": true,
+      "description": "Updates from each workstream, pasted as written.",
+      "example": "Payments: Stripe migration done, 2 days early.\nMobile: designer out sick, prototype slips a week.\nXero: waiting on partner API access since 20 May."
+    },
+    {
+      "key": "period",
+      "label": "Period",
+      "type": "text",
+      "required": false,
+      "description": "The week or sprint covered.",
+      "example": "Week of 3 June"
+    },
+    {
+      "key": "audience",
+      "label": "Audience",
+      "type": "text",
+      "required": false,
+      "description": "Who reads the report.",
+      "example": "Founders and board observer"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "status_report",
+      "label": "Status report",
+      "description": "Overall status, workstreams with RAG and evidence, risks and asks.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write crisp status reports. Status must be justified by the updates: green means on track per the update, amber means at risk, red means off track or blocked. Quote the update each status rests on. Put decisions and help needed at the top.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "overall",
+      "headline",
+      "asks",
+      "workstreams",
+      "risks"
+    ],
+    "properties": {
+      "overall": {
+        "type": "string",
+        "enum": [
+          "green",
+          "amber",
+          "red"
+        ]
+      },
+      "headline": {
+        "type": "string",
+        "title": "Headline"
+      },
+      "asks": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Decisions or help needed"
+      },
+      "workstreams": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "status",
+            "progress",
+            "next"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "green",
+                "amber",
+                "red",
+                "no_update"
+              ]
+            },
+            "update": {
+              "type": "string",
+              "description": "Copied word for word from the raw updates. Omit if no update."
+            },
+            "progress": {
+              "type": "string"
+            },
+            "next": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 15,
+        "title": "Workstreams"
+      },
+      "risks": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "risk",
+            "workstream",
+            "mitigation"
+          ],
+          "properties": {
+            "risk": {
+              "type": "string"
+            },
+            "workstream": {
+              "type": "string"
+            },
+            "mitigation": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Risks"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "compile",
+      "name": "Compile report",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Assess each workstream and compile the report.",
+      "prompt": "Compile the report. For each workstream, copy the update it rests on exactly into update and set a status justified by it; use no_update and omit update when nothing was reported. Put asks first. Keep the headline under 25 words.",
+      "tools": []
+    },
+    {
+      "id": "check_report",
+      "name": "Check report",
+      "kind": "check",
+      "responsibility": "Statuses rest on quoted updates; workstreams appear once.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "updates_quoted",
+        "description": "Every workstream status rests on an update quoted word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "workstreams[].update",
+            "inputs": [
+              "updates"
+            ]
+          }
+        }
+      },
+      {
+        "id": "unique_workstreams",
+        "description": "Each workstream appears once.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "workstreams[].name"
+          }
+        }
+      },
+      {
+        "id": "short_headline",
+        "description": "The headline is 25 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "headline",
+            "max": 25
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
