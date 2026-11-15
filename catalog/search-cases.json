@@ -327,6 +327,12 @@
       "expect": [
         "decision-memo"
       ]
+    },
+    {
+      "query": "run a pre-mortem on our plan, what could go wrong",
+      "expect": [
+        "pre-mortem"
+      ]
     }
   ]
 }

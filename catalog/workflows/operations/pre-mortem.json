@@ -1,0 +1,223 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "pre-mortem",
+  "version": "0.1.0",
+  "name": "Pre-Mortem",
+  "category": "operations",
+  "summary": "Imagines a plan has failed and works backwards: failure stories, early warning signs and preventive actions for each.",
+  "description": "Runs a pre-mortem on a plan before you commit: assumes it failed a year from now, writes the most plausible failure stories, rates their likelihood and impact, names the early warning sign to watch for each, and proposes preventive actions that each target a failure story. Every failure scenario gets at least one preventive action, so the exercise produces changes, not anxiety. Who it's for: founders, project leads and teams about to commit to a launch, hire, strategy or big project. Limitations: likelihood and impact are judgments, not probabilities; it does not know facts about your plan beyond what you describe.",
+  "status": "available",
+  "problems": [
+    "I want to stress-test our plan before we commit",
+    "We only find the risks after things go wrong",
+    "I need to know what could make this project fail"
+  ],
+  "tags": [
+    "pre-mortem",
+    "risk",
+    "planning",
+    "failure-modes",
+    "strategy"
+  ],
+  "inputs": [
+    {
+      "key": "plan",
+      "label": "The plan",
+      "type": "long_text",
+      "required": true,
+      "description": "What you are about to do, with goals and timeline.",
+      "example": "Launch a self-serve plan at $29/month in Q3 to reach 500 paying agencies by year end, with no sales team."
+    },
+    {
+      "key": "context",
+      "label": "Context",
+      "type": "long_text",
+      "required": false,
+      "description": "Market, team, constraints and what you already worry about.",
+      "example": "Current customers are all sales-led; onboarding needs a call today."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "pre_mortem",
+      "label": "Pre-mortem",
+      "description": "Failure stories with ratings, warning signs and preventive actions.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You facilitate pre-mortems. Assume the plan failed and explain why, concretely and specifically for this plan, not generic risks. Each failure story has an early warning sign someone could actually observe, and preventive actions that change the plan.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "failure_scenarios",
+      "preventive_actions",
+      "plan_changes",
+      "kill_criteria"
+    ],
+    "properties": {
+      "failure_scenarios": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "story",
+            "likelihood",
+            "impact",
+            "early_warning_sign"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Scenario id such as F1."
+            },
+            "story": {
+              "type": "string",
+              "description": "How it failed, told in the past tense."
+            },
+            "likelihood": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "impact": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "early_warning_sign": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 10,
+        "title": "How it failed"
+      },
+      "preventive_actions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "action",
+            "scenario_ids",
+            "owner_role",
+            "when"
+          ],
+          "properties": {
+            "action": {
+              "type": "string"
+            },
+            "scenario_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "owner_role": {
+              "type": "string"
+            },
+            "when": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Preventive actions"
+      },
+      "plan_changes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Changes to the plan"
+      },
+      "kill_criteria": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "When to stop",
+        "description": "Signals that should make you stop or rethink the plan."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "imagine",
+      "name": "Run pre-mortem",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write failure stories and preventive actions.",
+      "prompt": "Assume it is a year later and the plan failed. Write 3-10 specific failure stories (F1, ...) in the past tense, with likelihood, impact and an observable early warning sign. Give every failure story at least one preventive action that names its scenario ids. End with plan changes and kill criteria.",
+      "tools": []
+    },
+    {
+      "id": "check_actions",
+      "name": "Check actions",
+      "kind": "check",
+      "responsibility": "Every failure story has a preventive action; stories are distinct.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "scenarios_prevented",
+        "description": "Actions target real scenarios, and every scenario has an action.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "preventive_actions[].scenario_ids[]",
+            "to": "failure_scenarios[].id",
+            "everyTargetReferenced": true
+          }
+        }
+      },
+      {
+        "id": "distinct_stories",
+        "description": "Failure stories are distinct.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "failure_scenarios[].story"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
