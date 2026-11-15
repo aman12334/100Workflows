@@ -4,7 +4,7 @@
 
 100 Workflows is an open-source, local-first app. You run it on your own computer, connect your own Anthropic or OpenAI API key, and talk to an assistant that searches a catalog of workflow definitions across go-to-market, marketing, sales, finance, product, user research and operations. It explains which workflows fit your goal and what each one needs.
 
-> **Status: Phase 0 is done.** Chat, grounded recommendations, persistent packages, setup forms, and real execution of five workflows with evaluation, bounded retries, saved results, and per-run usage with cost estimates where a price is verified. Two are hand-written (**Market Research Agent**, **Ideal Customer Profile Builder**) and three run on the schema-v2 generic executor straight from their JSON definitions (**Survey Designer**, **SOP Writer**, **Discovery Call Prep**). The catalog has 12 workflows across all 7 categories and contributor tooling to grow it. The other 7 workflows are *definition only*, and the app says so wherever they appear.
+> **Status: Phase 1 is done.** Chat, grounded recommendations, persistent packages, setup forms, and real execution of **50 workflows** with evaluation, bounded retries, saved results, and per-run usage with cost estimates where a price is verified. Two are hand-written (**Market Research Agent**, **Ideal Customer Profile Builder**); the other 48 run on the schema-v2 generic executor straight from their JSON definitions, across product, user research, marketing, go-to-market, sales and customer success, finance, and operations (including HR and strategy). The catalog has 57 workflows; the other 7 are *definition only*, and the app says so wherever they appear.
 
 ---
 
@@ -86,7 +86,9 @@ The app uses whichever key is set. With both set, Anthropic wins, unless you add
 | **SOP Writer** (`sop-writer@0.2.0`) | A numbered procedure with an owner and a check for every step, failure modes and assumptions. A reviewer call grades whether anything you didn't say is listed as an assumption. | Nothing extra |
 | **Discovery Call Prep** (`discovery-call-prep@0.2.0`) | Facts, hypotheses, questions mapped to each hypothesis, and qualification criteria. A "fact" must quote your notes word for word, so guesses can't pass as facts. Uses an accepted ICP when it ran first. | Nothing extra |
 
-The last three are schema-v2 definitions that run on the generic executor: their prompts, output schema and checks are data in the JSON file, with no workflow-specific code. All five run on either provider except Market Research, which needs Anthropic's web search.
+The last three are schema-v2 definitions that run on the generic executor: their prompts, output schema and checks are data in the JSON file, with no workflow-specific code. All of them run on either provider except Market Research, which needs Anthropic's web search.
+
+**45 more model-only workflows** (Phase 1) run the same way, from PRDs, launch plans and battlecards to postmortems, OKRs and vendor scorecards. [docs/catalog.md](docs/catalog.md#workflow-details) lists each one with who it is for, its inputs, output, checks and limitations. They work only from what you type in and from the model's general knowledge: none of them searches the web, reads files or contacts another system, and outputs label what you supplied apart from what the model assumed.
 
 **Web search is opt-in.** Market Research uses Anthropic's server-side web search tool with the same API key, so you don't need another account. Anthropic bills searches separately from tokens, so the tool is off until you add `WORKFLOWS_WEB_SEARCH=on` to `.env.local` and restart. While it is off, Market Research is skipped with that explanation, and it never produces a report without sources. Your Anthropic organization must also allow web search (an admin enables it in the Anthropic Console). If it doesn't, the run fails and shows Anthropic's own error message.
 
@@ -180,11 +182,13 @@ docs/                   Architecture, contributor guide, generated catalog index
 | 3 | Market Research Agent: execution, evaluation, bounded retries, saved results | ✅ done |
 | 4 | Shared input collection, dependency ordering, a second connected workflow | ✅ done |
 | 5 | Contributor tooling and catalog structure for 100+ workflows | ✅ done |
-| 6–10 | Schema v2 and the generic executor, three migrated workflows, run usage and cost estimates | ✅ this release |
+| 6–10 | Schema v2 and the generic executor, three migrated workflows, run usage and cost estimates | ✅ done |
+| Phase 1 | 45 new model-only workflows on the generic executor (57 in the catalog, 50 executable) | ✅ this release |
 
 ## Known limitations
 
-- Five workflows can execute. The other 7 are definitions.
+- 50 workflows can execute. The other 7 are definitions. The 45 Phase 1 workflows are model-only: they cannot search the web, read files or spreadsheets, or do calculations beyond what you supply, and they have been tested with scripted model responses, not yet against a live model.
+- There are no separate categories for customer success, HR or strategy yet: those workflows live under Sales and Operations.
 - Catalog search is keyword-based with light stemming. It is tested by `catalog/search-cases.json` and should hold up to a few hundred workflows. Beyond that, an embedding index may be worth adding.
 - Runs execute inside the dev or production server process. Closing the server interrupts a run, and it can't resume.
 - One run at a time per package. Different packages can run at the same time, which also spends credits in parallel.

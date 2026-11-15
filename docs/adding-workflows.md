@@ -134,6 +134,15 @@ Property names are snake_case. `required` may only name declared properties, and
 
 **Testing**: add a test that runs the workflow through the run service with scripted model responses, covering an accepted run, a retry with feedback, and an escalation to *Needs review*. See [`tests/run-service-generic.test.ts`](../tests/run-service-generic.test.ts). These tests make no network calls. Then set `"status": "available"`. A test fails if a workflow is `available` without an executor that can run it.
 
+### Lessons from writing 45 of these
+
+- **Make the critical check the one that catches a plausible but wrong answer.** For grounded workflows that is usually `verbatim_in_inputs` on an evidence or quote field; for plans it is `references` between ids (requirements to stories, actions to causes, scores to criteria).
+- **Put a bound in the schema or in a rule, not both.** If `minItems: 2` is in the schema, a one-item output fails `schema_valid` and the user sees a generic schema error. Leave the bound to a `count` rule when you want a named, explainable failure.
+- **Make evidence fields optional when "unknown" is a valid answer.** A blank string fails `verbatim_in_inputs`; a missing optional field is skipped. Say in the prompt to omit it when nothing supports it.
+- **Rules check values, not lists.** `distinct` and `max_words` need a path that selects strings (`must_have[]`), not the list itself (`must_have`); the catalog rejects the wrong one when it loads.
+- **Search is keyword-based.** Generic words in a name, tags or problems ("customer", "team", "first") can push other workflows out of their search cases. Use the words your users would type for *this* job.
+- **Test with fixtures.** Add `tests/fixtures/phase1/<id>.json` with `inputs`, a `good` output, a schema-valid `bad` output and the critical criterion it breaks (`bad_fails`); [`tests/phase1-workflows.test.ts`](../tests/phase1-workflows.test.ts) then runs the success, invalid-output retry, needs-review, budget and run-service checks for it.
+
 ## 7. Workflows that need code (hand-written executors)
 
 Use a hand-written executor when a workflow needs tools or checks the generic executor doesn't offer (Market Research and ICP Builder are hand-written). `npm run new:workflow -- ... --executable` creates a v1 definition plus stubs for steps 1 and 4:
