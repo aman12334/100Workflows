@@ -165,6 +165,12 @@
       "expect": [
         "email-nurture-sequence"
       ]
+    },
+    {
+      "query": "write a case study from a client interview",
+      "expect": [
+        "case-study-writer"
+      ]
     }
   ]
 }

@@ -1,0 +1,207 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "case-study-writer",
+  "version": "0.1.0",
+  "name": "Case Study Writer",
+  "category": "marketing",
+  "summary": "Turns interview notes with a client into a case study whose results and quotes are taken word for word from the notes.",
+  "description": "Writes a challenge-solution-results case study from your notes or transcript of a conversation with a client. Every result and every pull quote is copied word for word from the notes, so the story cannot overstate outcomes. Missing facts (like before/after numbers) are listed as questions to ask the client before publishing. Who it's for: marketers, founders and account managers producing customer stories for the website or sales team. Limitations: it does not obtain approval from the client; get sign-off before publishing. It will not round up or extrapolate results.",
+  "status": "available",
+  "problems": [
+    "I need a case study from a happy client",
+    "Our success stories are vague and have no numbers",
+    "I have a great interview but no time to write it up"
+  ],
+  "tags": [
+    "case-study",
+    "success-story",
+    "testimonial",
+    "social-proof",
+    "content"
+  ],
+  "inputs": [
+    {
+      "use": "company_name",
+      "required": true
+    },
+    {
+      "key": "client",
+      "label": "Client",
+      "type": "text",
+      "required": true,
+      "description": "The client featured.",
+      "example": "Brightline Agency"
+    },
+    {
+      "key": "interview_notes",
+      "label": "Interview notes",
+      "type": "long_text",
+      "required": true,
+      "description": "Notes or transcript from the conversation.",
+      "example": "Dana Lee, COO: \"Month-end used to take three days. Now it takes four hours.\" They switched from spreadsheets in January."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "case_study",
+      "label": "Case study",
+      "description": "Title, challenge, solution, results and quotes, plus questions for the client.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write credible B2B case studies. Specific beats impressive. Results and quotes must be copied exactly from the notes; if a number is missing, ask for it rather than estimating it.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "title",
+      "summary",
+      "challenge",
+      "solution",
+      "results",
+      "pull_quotes",
+      "questions_for_client"
+    ],
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "summary": {
+        "type": "string",
+        "title": "At a glance"
+      },
+      "challenge": {
+        "type": "string",
+        "title": "Challenge"
+      },
+      "solution": {
+        "type": "string",
+        "title": "Solution"
+      },
+      "results": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "result",
+            "evidence"
+          ],
+          "properties": {
+            "result": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": "string",
+              "description": "The supporting words from the notes, copied exactly."
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Results"
+      },
+      "pull_quotes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "quote",
+            "attribution"
+          ],
+          "properties": {
+            "quote": {
+              "type": "string",
+              "description": "Copied word for word from the notes."
+            },
+            "attribution": {
+              "type": "string"
+            }
+          }
+        },
+        "maxItems": 3,
+        "title": "Quotes"
+      },
+      "questions_for_client": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Questions before publishing"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "write",
+      "name": "Write case study",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the story from the notes.",
+      "prompt": "Write the case study. Copy each result's supporting words exactly into evidence, and copy pull quotes exactly. Do not add numbers or outcomes that are not in the notes; ask for them in questions_for_client instead. Keep the summary to two sentences.",
+      "tools": []
+    },
+    {
+      "id": "check_quotes",
+      "name": "Check quotes",
+      "kind": "check",
+      "responsibility": "Results and quotes are copied from the notes.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "results_evidenced",
+        "description": "Every result is backed by words copied from the notes.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "results[].evidence",
+            "inputs": [
+              "interview_notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "quotes_exact",
+        "description": "Every pull quote is copied word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "pull_quotes[].quote",
+            "inputs": [
+              "interview_notes"
+            ]
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
