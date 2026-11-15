@@ -1,0 +1,229 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "user-story-splitter",
+  "version": "0.1.0",
+  "name": "User Story Splitter",
+  "category": "product",
+  "summary": "Splits an epic into small, independent user stories with acceptance criteria and explicit dependencies.",
+  "description": "Breaks an epic into thin vertical slices that each deliver user value, with acceptance criteria, a size label and dependencies on other stories. Dependencies must point to stories in the same plan, and the number of stories respects your limit. Who it's for: product owners and engineering leads preparing a backlog for sprint planning. Limitations: sizes are relative labels (S/M/L), not estimates; it does not know your codebase, so technical sequencing may need adjusting by the team.",
+  "status": "available",
+  "problems": [
+    "Our epics are too big to finish in a sprint",
+    "I need to break a feature into user stories",
+    "Stories in our backlog depend on each other in hidden ways"
+  ],
+  "tags": [
+    "user-stories",
+    "backlog",
+    "epic",
+    "agile",
+    "sprint-planning"
+  ],
+  "inputs": [
+    {
+      "key": "epic",
+      "label": "Epic",
+      "type": "long_text",
+      "required": true,
+      "description": "The epic or feature to split, with any context.",
+      "example": "Customers can export their transactions to Xero with category mapping and scheduled syncs."
+    },
+    {
+      "key": "users",
+      "label": "Users involved",
+      "type": "list",
+      "required": false,
+      "description": "User roles affected, one per line.",
+      "example": "Agency admin\nBookkeeper"
+    },
+    {
+      "key": "max_stories",
+      "label": "Maximum stories",
+      "type": "number",
+      "required": false,
+      "description": "Upper limit on the number of stories."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "stories",
+      "label": "Story map",
+      "description": "Ordered user stories with acceptance criteria, size and dependencies.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are an agile coach who splits epics into INVEST user stories: independent where possible, valuable to a user on their own, small, and testable. Prefer vertical slices over technical layers.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "slicing_approach",
+      "stories",
+      "deferred"
+    ],
+    "properties": {
+      "slicing_approach": {
+        "type": "string",
+        "description": "How the epic was split (by workflow step, rule, data type, ...).",
+        "title": "Slicing approach"
+      },
+      "stories": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "title",
+            "story",
+            "acceptance_criteria",
+            "size",
+            "depends_on"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Story id such as S1."
+            },
+            "title": {
+              "type": "string"
+            },
+            "story": {
+              "type": "string",
+              "description": "As a <user>, I want <capability> so that <outcome>."
+            },
+            "acceptance_criteria": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "maxItems": 5
+            },
+            "size": {
+              "type": "string",
+              "enum": [
+                "S",
+                "M",
+                "L"
+              ]
+            },
+            "depends_on": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Ids of stories that must be done first; empty if none."
+            }
+          }
+        },
+        "minItems": 2,
+        "maxItems": 20,
+        "title": "Stories"
+      },
+      "deferred": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Deferred scope",
+        "description": "Parts of the epic intentionally left out of this split."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "split",
+      "name": "Split epic",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Split the epic into vertical-slice stories.",
+      "prompt": "Split the epic into user stories ordered so the first delivers the smallest end-to-end value. Give ids S1, S2, ... and list depends_on only when a story truly cannot start before another. Keep each story sentence under 40 words. Respect the maximum number of stories if one is given; move the rest to deferred.",
+      "tools": []
+    },
+    {
+      "id": "check_stories",
+      "name": "Check stories",
+      "kind": "check",
+      "responsibility": "Dependencies exist, count is within the limit, titles are unique, stories are short.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "dependencies_exist",
+        "description": "Every dependency points to a story in this plan.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "stories[].depends_on[]",
+            "to": "stories[].id"
+          }
+        }
+      },
+      {
+        "id": "within_limit",
+        "description": "The number of stories is within the limit.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "count",
+          "params": {
+            "path": "stories",
+            "min": 2,
+            "max": 20,
+            "maxFromInput": "max_stories"
+          }
+        }
+      },
+      {
+        "id": "unique_titles",
+        "description": "Story titles are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "stories[].title"
+          }
+        }
+      },
+      {
+        "id": "short_stories",
+        "description": "Each story sentence is 40 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "stories[].story",
+            "max": 40
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

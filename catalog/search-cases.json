@@ -87,6 +87,12 @@
       "expect": [
         "prd-writer"
       ]
+    },
+    {
+      "query": "break this epic into smaller user stories",
+      "expect": [
+        "user-story-splitter"
+      ]
     }
   ]
 }
