@@ -1,0 +1,204 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "demo-script",
+  "version": "0.1.0",
+  "name": "Tailored Demo Script",
+  "category": "sales",
+  "summary": "Writes a demo script tailored to one prospect: each segment shows a capability that answers a pain they told you about.",
+  "description": "Builds a demo for a specific prospect from your discovery notes: an opening that restates their situation, then segments that each tie a pain they stated (quoted) to the capability you will show, the talk track and a check-in question, ending with a close for next steps. Pains must come from the notes, so the demo is about their problems, not your feature list. Who it's for: account executives and sales engineers preparing a second-call demo. Limitations: it does not know your product's UI; capability names come from what you list, and timings are guidance.",
+  "status": "available",
+  "problems": [
+    "Our demos turn into feature tours",
+    "I need to tailor a demo to this prospect",
+    "Prospects lose interest halfway through the demo"
+  ],
+  "tags": [
+    "demo",
+    "sales-demo",
+    "talk-track",
+    "solution-selling",
+    "presentation"
+  ],
+  "inputs": [
+    {
+      "key": "discovery_notes",
+      "label": "Discovery notes",
+      "type": "long_text",
+      "required": true,
+      "description": "What the prospect said about their pains and goals.",
+      "example": "Dana: \"We re-key every expense into Xero.\" \"I never know which receipts are missing until month-end.\""
+    },
+    {
+      "key": "capabilities",
+      "label": "Capabilities you can show",
+      "type": "long_text",
+      "required": true,
+      "description": "Features or workflows available to demo.",
+      "example": "Xero sync; missing-receipt reminders; bulk approval"
+    },
+    {
+      "key": "minutes",
+      "label": "Demo length (minutes)",
+      "type": "number",
+      "required": false,
+      "description": "How long you have."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "demo_script",
+      "label": "Demo script",
+      "description": "Opening, pain-led segments with talk tracks, and the close.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a senior sales engineer. A great demo shows the fewest features needed to solve the prospect's stated pains, in their words, and checks in often. Do not show capabilities that answer no stated pain.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "opening",
+      "segments",
+      "not_shown",
+      "close"
+    ],
+    "properties": {
+      "opening": {
+        "type": "string",
+        "description": "Restate their situation and agree the agenda.",
+        "title": "Opening"
+      },
+      "segments": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "pain_quote",
+            "capability",
+            "talk_track",
+            "check_in_question",
+            "minutes"
+          ],
+          "properties": {
+            "pain_quote": {
+              "type": "string",
+              "description": "The prospect's words, copied exactly from the notes."
+            },
+            "capability": {
+              "type": "string"
+            },
+            "talk_track": {
+              "type": "string"
+            },
+            "check_in_question": {
+              "type": "string"
+            },
+            "minutes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 6,
+        "title": "Segments"
+      },
+      "not_shown": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Deliberately not shown"
+      },
+      "close": {
+        "type": "string",
+        "description": "How to ask for the next step.",
+        "title": "Close"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "script",
+      "name": "Write script",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Map pains to capabilities and write talk tracks.",
+      "prompt": "Write the demo. Each segment starts from a pain the prospect stated, copied exactly into pain_quote, and shows one capability from the list. Keep talk tracks under 90 words. Fit the segment minutes within the demo length if given, leaving time for questions. List capabilities you chose not to show.",
+      "tools": []
+    },
+    {
+      "id": "check_script",
+      "name": "Check script",
+      "kind": "check",
+      "responsibility": "Pains are quoted; talk tracks are short; no pain repeated.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "pains_quoted",
+        "description": "Every segment starts from a pain quoted from the notes.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "segments[].pain_quote",
+            "inputs": [
+              "discovery_notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "short_talk_tracks",
+        "description": "Talk tracks are 90 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "segments[].talk_track",
+            "max": 90
+          }
+        }
+      },
+      {
+        "id": "distinct_pains",
+        "description": "No pain is demoed twice.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "segments[].pain_quote"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

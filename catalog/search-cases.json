@@ -237,6 +237,12 @@
       "expect": [
         "rfp-responder"
       ]
+    },
+    {
+      "query": "tailor a product demo to this prospect",
+      "expect": [
+        "demo-script"
+      ]
     }
   ]
 }
