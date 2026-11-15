@@ -1,0 +1,291 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "proposal-writer",
+  "version": "0.1.0",
+  "name": "Sales Proposal Writer",
+  "category": "sales",
+  "summary": "Drafts a sales proposal from discovery notes: their goals in their words, scope, deliverables, timeline and terms.",
+  "description": "Writes a proposal that starts from the buyer's situation and goals (quoted from your discovery notes), then sets out scope, deliverables mapped to those goals, a phased timeline, investment from the pricing you provide, assumptions and next steps. Every deliverable must serve a stated goal, which keeps proposals from padding. Who it's for: founders, account executives and agencies sending proposals after discovery. Limitations: it uses only the pricing you give it and does not calculate discounts; legal terms are placeholders for your own contract.",
+  "status": "available",
+  "problems": [
+    "Writing proposals takes me hours",
+    "Our proposals talk about us instead of the client's goals",
+    "I need a proposal after a discovery call"
+  ],
+  "tags": [
+    "proposal",
+    "sow",
+    "statement-of-work",
+    "deal-closing",
+    "quote"
+  ],
+  "inputs": [
+    {
+      "use": "company_name",
+      "required": true
+    },
+    {
+      "key": "discovery_notes",
+      "label": "Discovery notes",
+      "type": "long_text",
+      "required": true,
+      "description": "What the buyer told you about their situation and goals.",
+      "example": "Dana: \"We need month-end done in a day, across both entities.\" Wants to start in July."
+    },
+    {
+      "key": "offering",
+      "label": "What you are proposing",
+      "type": "long_text",
+      "required": true,
+      "description": "Your product, service or package.",
+      "example": "Annual plan, 15 seats, onboarding package with two entity setups"
+    },
+    {
+      "key": "pricing",
+      "label": "Pricing",
+      "type": "text",
+      "required": true,
+      "description": "Prices to include, exactly as they should appear.",
+      "example": "$14,400 per year; onboarding $1,500 one-off"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "proposal",
+      "label": "Proposal",
+      "description": "Goals, scope, deliverables, timeline, investment, assumptions and next steps.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write concise, buyer-centred B2B proposals. Start from the buyer's goals in their own words. Every deliverable serves a goal. Use prices exactly as supplied; never calculate or invent discounts.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "title",
+      "situation",
+      "goals",
+      "deliverables",
+      "timeline",
+      "investment",
+      "assumptions",
+      "next_steps"
+    ],
+    "properties": {
+      "title": {
+        "type": "string",
+        "title": "Title"
+      },
+      "situation": {
+        "type": "string",
+        "title": "Where you are today"
+      },
+      "goals": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "goal",
+            "quote"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Goal id such as G1."
+            },
+            "goal": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "The buyer's words, copied exactly from the notes."
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 6,
+        "title": "Your goals"
+      },
+      "deliverables": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "deliverable",
+            "goal_ids",
+            "description"
+          ],
+          "properties": {
+            "deliverable": {
+              "type": "string"
+            },
+            "goal_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "description": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Deliverables"
+      },
+      "timeline": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "phase",
+            "duration",
+            "outcome"
+          ],
+          "properties": {
+            "phase": {
+              "type": "string"
+            },
+            "duration": {
+              "type": "string"
+            },
+            "outcome": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Timeline"
+      },
+      "investment": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "item",
+            "price"
+          ],
+          "properties": {
+            "item": {
+              "type": "string"
+            },
+            "price": {
+              "type": "string",
+              "description": "Copied exactly from the pricing supplied."
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Investment"
+      },
+      "assumptions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Assumptions"
+      },
+      "next_steps": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "title": "Next steps"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "write",
+      "name": "Write proposal",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Draft the proposal from the notes.",
+      "prompt": "Write the proposal. Give goals ids G1, ... with the buyer's exact words in quote. Map each deliverable to the goals it serves. Copy every price exactly from the pricing supplied. Keep it short enough to read in five minutes.",
+      "tools": []
+    },
+    {
+      "id": "check_proposal",
+      "name": "Check proposal",
+      "kind": "check",
+      "responsibility": "Goals are quoted, deliverables serve goals, prices are copied exactly.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "goals_quoted",
+        "description": "Every goal quotes the buyer word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "goals[].quote",
+            "inputs": [
+              "discovery_notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "deliverables_serve_goals",
+        "description": "Every deliverable serves a stated goal, and every goal is served.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "deliverables[].goal_ids[]",
+            "to": "goals[].id",
+            "everyTargetReferenced": true
+          }
+        }
+      },
+      {
+        "id": "prices_exact",
+        "description": "Every price is copied exactly from the pricing supplied.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "investment[].price",
+            "inputs": [
+              "pricing"
+            ],
+            "minChars": 2
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

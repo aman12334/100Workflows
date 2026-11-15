@@ -225,6 +225,12 @@
       "expect": [
         "deal-review"
       ]
+    },
+    {
+      "query": "write a sales proposal after discovery",
+      "expect": [
+        "proposal-writer"
+      ]
     }
   ]
 }
