@@ -1,0 +1,255 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "performance-review-writer",
+  "version": "0.1.0",
+  "name": "Performance Review Writer",
+  "category": "operations",
+  "summary": "Drafts a fair, evidence-based performance review from a manager's notes, where every point is backed by a specific example.",
+  "description": "Turns a manager's notes for the review period into a written review: strengths and growth areas, each backed by an example quoted from the notes, progress on goals, support the manager will offer, and goals for the next period. Points about personality are rewritten as observable behavior, and a reviewer checks the review for balance and fairness. Who it's for: people managers writing reviews, and HR partners coaching them. Limitations: it cannot judge performance itself; it reflects the notes, so thin notes produce a thin review. It does not assign ratings or pay outcomes.",
+  "status": "available",
+  "problems": [
+    "I have to write performance reviews and don't know where to start",
+    "My feedback is vague and not backed by examples",
+    "I want reviews to be fair and specific"
+  ],
+  "tags": [
+    "performance-review",
+    "feedback",
+    "people-management",
+    "appraisal",
+    "growth"
+  ],
+  "inputs": [
+    {
+      "key": "employee_role",
+      "label": "Role",
+      "type": "text",
+      "required": true,
+      "description": "The person's role (no name needed).",
+      "example": "Senior support specialist"
+    },
+    {
+      "key": "manager_notes",
+      "label": "Your notes for the period",
+      "type": "long_text",
+      "required": true,
+      "description": "Examples, wins, misses and feedback from others.",
+      "example": "Rewrote 40 macros in March; first-response time dropped from 9h to 5h. Missed two escalations in May because the SLA dashboard was ignored."
+    },
+    {
+      "key": "goals",
+      "label": "Goals for the period",
+      "type": "long_text",
+      "required": false,
+      "description": "Goals that were set.",
+      "example": "Cut first-response time below 6h; mentor the new hire."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "review",
+      "label": "Performance review",
+      "description": "Strengths, growth areas, goal progress, support and next goals.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You help managers write fair, specific performance reviews. Every point must rest on an example from the notes, quoted exactly. Describe behavior and impact, never personality. Balance strengths and growth areas, and keep a respectful, direct tone.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "summary",
+      "strengths",
+      "growth_areas",
+      "goal_progress",
+      "next_period_goals"
+    ],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "title": "Summary"
+      },
+      "strengths": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "point",
+            "example",
+            "impact"
+          ],
+          "properties": {
+            "point": {
+              "type": "string"
+            },
+            "example": {
+              "type": "string",
+              "description": "Copied word for word from the notes."
+            },
+            "impact": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 5,
+        "title": "Strengths"
+      },
+      "growth_areas": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "point",
+            "example",
+            "support"
+          ],
+          "properties": {
+            "point": {
+              "type": "string"
+            },
+            "example": {
+              "type": "string",
+              "description": "Copied word for word from the notes."
+            },
+            "support": {
+              "type": "string"
+            }
+          }
+        },
+        "maxItems": 4,
+        "title": "Growth areas"
+      },
+      "goal_progress": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "goal",
+            "status",
+            "comment"
+          ],
+          "properties": {
+            "goal": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "met",
+                "partly_met",
+                "not_met",
+                "no_evidence"
+              ]
+            },
+            "comment": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Goals"
+      },
+      "next_period_goals": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "maxItems": 5,
+        "title": "Next period goals"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "draft",
+      "name": "Draft review",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the review from the notes.",
+      "prompt": "Write the review. Copy the example behind each strength and growth area exactly from the notes. Describe behavior and impact, not personality. Mark goals with no evidence in the notes as no_evidence. Propose specific next-period goals.",
+      "tools": []
+    },
+    {
+      "id": "check_examples",
+      "name": "Check examples",
+      "kind": "check",
+      "responsibility": "Every point is backed by an example from the notes.",
+      "tools": []
+    },
+    {
+      "id": "review",
+      "name": "Fairness review",
+      "kind": "agent",
+      "responsibility": "Grade the draft for balance and behavior-based language.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "strengths_evidenced",
+        "description": "Every strength is backed by an example copied from the notes.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "strengths[].example",
+            "inputs": [
+              "manager_notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "growth_evidenced",
+        "description": "Every growth area is backed by an example copied from the notes.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "growth_areas[].example",
+            "inputs": [
+              "manager_notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "fair_and_behavioral",
+        "description": "The review is balanced and describes behavior, not personality.",
+        "method": "model",
+        "critical": false,
+        "review": {
+          "step": "review",
+          "rubric": "Is the review balanced, specific and about observable behavior and impact rather than personality or assumptions about motives? 5 = fair, specific, behavior-based; 1 = personal, one-sided or vague."
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 4
+  }
+}

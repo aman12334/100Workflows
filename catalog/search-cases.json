@@ -309,6 +309,12 @@
       "expect": [
         "interview-kit"
       ]
+    },
+    {
+      "query": "help me write a performance review with examples",
+      "expect": [
+        "performance-review-writer"
+      ]
     }
   ]
 }
