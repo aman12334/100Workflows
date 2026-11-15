@@ -1,0 +1,260 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "ad-copy-variants",
+  "version": "0.1.0",
+  "name": "Ad Copy Variants",
+  "category": "marketing",
+  "summary": "Writes paid-ad variants for Google, Meta and LinkedIn across distinct angles, within each platform's length limits.",
+  "description": "Writes ad variants for the platforms you choose, each testing a distinct angle (pain, outcome, proof, objection, offer). Headlines and descriptions are kept within word budgets that fit the platforms' character limits, every variant names its angle, and any proof used must come from what you supplied. Who it's for: founders and performance marketers launching or refreshing paid campaigns. Limitations: word budgets approximate character limits; check final lengths in the ad platform. It does not set targeting, bids or budgets.",
+  "status": "available",
+  "problems": [
+    "I need ad copy for Google and LinkedIn",
+    "Our ads all say the same thing",
+    "I want several ad angles to test"
+  ],
+  "tags": [
+    "ads",
+    "paid-ads",
+    "google-ads",
+    "linkedin-ads",
+    "meta-ads",
+    "ppc"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "offer",
+      "label": "Offer",
+      "type": "text",
+      "required": true,
+      "description": "What the ad promotes.",
+      "example": "14-day free trial, no card required"
+    },
+    {
+      "key": "platforms",
+      "label": "Platforms",
+      "type": "list",
+      "required": false,
+      "description": "Platforms, one per line (Google, Meta, LinkedIn).",
+      "example": "Google\nLinkedIn"
+    },
+    {
+      "key": "proof",
+      "label": "Proof you can use",
+      "type": "long_text",
+      "required": false,
+      "description": "Numbers or quotes you are allowed to use.",
+      "example": "Used by 300 agencies"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "ads",
+      "label": "Ad variants",
+      "description": "Variants per platform, each with an angle, headline, description and CTA.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a performance copywriter. Each variant tests one distinct angle. Be concrete and benefit-led, follow platform conventions, and never use proof that was not supplied.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "angles",
+      "variants",
+      "proof_used"
+    ],
+    "properties": {
+      "angles": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "idea"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "enum": [
+                "pain",
+                "outcome",
+                "proof",
+                "objection",
+                "offer",
+                "curiosity"
+              ]
+            },
+            "idea": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 2,
+        "maxItems": 6,
+        "title": "Angles"
+      },
+      "variants": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "platform",
+            "angle",
+            "headline",
+            "description",
+            "cta"
+          ],
+          "properties": {
+            "platform": {
+              "type": "string",
+              "enum": [
+                "google",
+                "meta",
+                "linkedin"
+              ]
+            },
+            "angle": {
+              "type": "string",
+              "description": "One of the angle ids."
+            },
+            "headline": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "cta": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 15,
+        "title": "Variants"
+      },
+      "proof_used": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Proof used",
+        "description": "Copied word for word from the proof supplied."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "write",
+      "name": "Write variants",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write variants across angles and platforms.",
+      "prompt": "Choose 2-6 angles, then write variants for each platform (Google, Meta and LinkedIn if none are given). Headlines 6 words or fewer; descriptions 18 words or fewer. Each variant names its angle id. List any proof you used, copied exactly from the proof supplied.",
+      "tools": []
+    },
+    {
+      "id": "check_variants",
+      "name": "Check variants",
+      "kind": "check",
+      "responsibility": "Lengths fit; every variant uses a declared angle; proof is supplied.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "headline_length",
+        "description": "Headlines are 6 words or fewer.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "variants[].headline",
+            "max": 6
+          }
+        }
+      },
+      {
+        "id": "angles_declared",
+        "description": "Every variant uses a declared angle.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "variants[].angle",
+            "to": "angles[].id"
+          }
+        }
+      },
+      {
+        "id": "proof_supplied",
+        "description": "Any proof used is copied from the proof supplied.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "proof_used[]",
+            "inputs": [
+              "proof"
+            ],
+            "minChars": 6
+          }
+        }
+      },
+      {
+        "id": "description_length",
+        "description": "Descriptions are 18 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "variants[].description",
+            "max": 18
+          }
+        }
+      },
+      {
+        "id": "distinct_headlines",
+        "description": "Headlines are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "variants[].headline"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

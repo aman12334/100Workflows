@@ -177,6 +177,12 @@
       "expect": [
         "content-repurposer"
       ]
+    },
+    {
+      "query": "write google and linkedin ad headlines",
+      "expect": [
+        "ad-copy-variants"
+      ]
     }
   ]
 }
