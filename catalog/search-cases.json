@@ -111,6 +111,12 @@
       "expect": [
         "spec-reviewer"
       ]
+    },
+    {
+      "query": "are we ready to launch, go or no-go review",
+      "expect": [
+        "launch-readiness-review"
+      ]
     }
   ]
 }

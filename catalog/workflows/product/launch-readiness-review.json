@@ -1,0 +1,246 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "launch-readiness-review",
+  "version": "0.1.0",
+  "name": "Launch Readiness Review",
+  "category": "product",
+  "summary": "Turns launch status notes into a go / no-go assessment by area, with blockers, owners and evidence.",
+  "description": "Reads status notes from the teams involved in a launch and assesses readiness area by area (product, QA, support, docs, marketing, legal, ops). Each area gets a status, the evidence quoted from the notes, the owner and what is needed to be ready. The overall recommendation is go, conditional go or no-go, and blockers must belong to an assessed area. Who it's for: product and program managers running a launch review meeting. Limitations: it only knows what the notes say; an area nobody reported on is marked unknown rather than assumed ready.",
+  "status": "available",
+  "problems": [
+    "I need a go or no-go decision for our launch",
+    "I don't know if every team is ready for the release",
+    "Launch blockers surface on launch day"
+  ],
+  "tags": [
+    "launch",
+    "go-no-go",
+    "release-readiness",
+    "program-management"
+  ],
+  "inputs": [
+    {
+      "key": "launch",
+      "label": "What is launching",
+      "type": "text",
+      "required": true,
+      "description": "The release or launch being reviewed.",
+      "example": "Bulk approvals GA on 12 June"
+    },
+    {
+      "key": "status_notes",
+      "label": "Status notes",
+      "type": "long_text",
+      "required": true,
+      "description": "Updates from each team, pasted as they wrote them.",
+      "example": "QA: 2 P1 bugs open in bulk approve, fix ETA Friday.\nSupport: macros written, team trained on Tuesday.\nDocs: help article drafted, not reviewed."
+    },
+    {
+      "key": "launch_date",
+      "label": "Launch date",
+      "type": "text",
+      "required": false,
+      "description": "The planned date.",
+      "example": "12 June"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "readiness",
+      "label": "Readiness assessment",
+      "description": "Recommendation, per-area status with evidence, blockers and next actions.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a release manager. You assess launch readiness strictly from the evidence in the status notes. An area with no evidence is \"unknown\", not \"ready\". Be direct about blockers.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "recommendation",
+      "rationale",
+      "areas",
+      "blockers",
+      "next_actions"
+    ],
+    "properties": {
+      "recommendation": {
+        "type": "string",
+        "enum": [
+          "go",
+          "conditional_go",
+          "no_go"
+        ]
+      },
+      "rationale": {
+        "type": "string",
+        "title": "Rationale"
+      },
+      "areas": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "area",
+            "status",
+            "owner",
+            "needed_to_be_ready"
+          ],
+          "properties": {
+            "area": {
+              "type": "string",
+              "enum": [
+                "product",
+                "qa",
+                "support",
+                "docs",
+                "marketing",
+                "sales",
+                "legal",
+                "operations"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "ready",
+                "at_risk",
+                "blocked",
+                "unknown"
+              ]
+            },
+            "evidence": {
+              "type": "string",
+              "description": "The status note this is based on, copied word for word. Omit when nothing was reported."
+            },
+            "owner": {
+              "type": "string",
+              "description": "Team or role named in the notes, or \"unassigned\"."
+            },
+            "needed_to_be_ready": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 8,
+        "title": "Areas"
+      },
+      "blockers": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "area",
+            "blocker",
+            "resolution"
+          ],
+          "properties": {
+            "area": {
+              "type": "string",
+              "description": "One of the assessed areas."
+            },
+            "blocker": {
+              "type": "string"
+            },
+            "resolution": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Blockers"
+      },
+      "next_actions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Next actions"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "assess",
+      "name": "Assess readiness",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Assess each area from the notes.",
+      "prompt": "Assess each relevant area. Copy the supporting note word for word into evidence; if nothing was reported for an area, mark it unknown and omit evidence. List blockers using the same area names. Recommend no_go if any blocker has no resolution before the date.",
+      "tools": []
+    },
+    {
+      "id": "check_evidence",
+      "name": "Check evidence",
+      "kind": "check",
+      "responsibility": "Evidence quotes the notes; blockers belong to assessed areas; areas are unique.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "evidence_quoted",
+        "description": "Every piece of evidence quotes the status notes word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "areas[].evidence",
+            "inputs": [
+              "status_notes"
+            ]
+          }
+        }
+      },
+      {
+        "id": "blockers_in_areas",
+        "description": "Every blocker belongs to an assessed area.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "blockers[].area",
+            "to": "areas[].area"
+          }
+        }
+      },
+      {
+        "id": "areas_unique",
+        "description": "Each area is assessed once.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "areas[].area"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
