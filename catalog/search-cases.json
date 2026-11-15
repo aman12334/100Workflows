@@ -159,6 +159,12 @@
       "expect": [
         "landing-page-copy"
       ]
+    },
+    {
+      "query": "write onboarding emails for new trial signups",
+      "expect": [
+        "email-nurture-sequence"
+      ]
     }
   ]
 }

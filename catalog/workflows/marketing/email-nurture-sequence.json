@@ -1,0 +1,219 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "email-nurture-sequence",
+  "version": "0.1.0",
+  "name": "Lifecycle Email Sequence",
+  "category": "marketing",
+  "summary": "Writes an onboarding or nurture email sequence for people who already signed up, with timing, goals and one CTA each.",
+  "description": "Plans and writes a lifecycle sequence (trial onboarding, activation, re-engagement or upgrade) for people who already know you. Each email has a send day, a single goal tied to an activation step you describe, a subject line short enough for mobile, a body under 180 words and one call to action. Who it's for: founders, lifecycle and growth marketers setting up trial or onboarding emails. Limitations: it writes copy and timing only; it does not segment your list, set up automation or send anything. Cold outreach is a different workflow (Cold Outbound Sequence Writer).",
+  "status": "available",
+  "problems": [
+    "Trial users sign up and never come back",
+    "I need onboarding emails for new signups",
+    "Our trial emails don't lead to activation"
+  ],
+  "tags": [
+    "email-sequence",
+    "onboarding-emails",
+    "lifecycle",
+    "activation",
+    "trial-conversion"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "sequence_goal",
+      "label": "Sequence goal",
+      "type": "select",
+      "required": true,
+      "description": "What the sequence is for.",
+      "options": [
+        "trial onboarding",
+        "activation",
+        "re-engagement",
+        "upgrade to paid"
+      ]
+    },
+    {
+      "key": "activation_steps",
+      "label": "Key actions",
+      "type": "long_text",
+      "required": true,
+      "description": "The actions that make a user successful, in order.",
+      "example": "Connect a bank account; invite the bookkeeper; run the first reconciliation."
+    },
+    {
+      "key": "emails",
+      "label": "Number of emails",
+      "type": "number",
+      "required": false,
+      "description": "How many emails, usually 3-7."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "sequence",
+      "label": "Email sequence",
+      "description": "Emails with send day, goal, subject, body and call to action.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a lifecycle marketer. Each email has one job, one call to action and a reason to open it now. Write in a helpful, specific voice; no hype, no fake urgency, no invented customer stories.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "strategy",
+      "emails"
+    ],
+    "properties": {
+      "strategy": {
+        "type": "string",
+        "description": "How the sequence moves users through the key actions.",
+        "title": "Strategy"
+      },
+      "emails": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "day",
+            "goal",
+            "subject",
+            "preview_text",
+            "body",
+            "cta",
+            "skip_if"
+          ],
+          "properties": {
+            "day": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 90,
+              "description": "Days after signup or trigger."
+            },
+            "goal": {
+              "type": "string"
+            },
+            "subject": {
+              "type": "string"
+            },
+            "preview_text": {
+              "type": "string"
+            },
+            "body": {
+              "type": "string"
+            },
+            "cta": {
+              "type": "string"
+            },
+            "skip_if": {
+              "type": "string",
+              "description": "Condition to skip this email, e.g. the action is already done."
+            }
+          }
+        },
+        "title": "Emails"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "write",
+      "name": "Write sequence",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the emails.",
+      "prompt": "Write the sequence (3-7 emails, or the number requested). Tie each email to one key action. Subject lines 8 words or fewer, bodies under 180 words, one call to action each. Order by day and add a skip condition so users who already did the action are not nagged.",
+      "tools": []
+    },
+    {
+      "id": "check_emails",
+      "name": "Check emails",
+      "kind": "check",
+      "responsibility": "Email count, subject and body length, unique subjects.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "email_count",
+        "description": "The sequence has 3-7 emails, or the number requested.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "count",
+          "params": {
+            "path": "emails",
+            "min": 2,
+            "max": 7,
+            "maxFromInput": "emails"
+          }
+        }
+      },
+      {
+        "id": "short_subjects",
+        "description": "Subject lines are 8 words or fewer.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "emails[].subject",
+            "max": 8
+          }
+        }
+      },
+      {
+        "id": "body_length",
+        "description": "Bodies are 180 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "params": {
+            "path": "emails[].body",
+            "max": 180
+          }
+        }
+      },
+      {
+        "id": "unique_subjects",
+        "description": "Subject lines are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "emails[].subject"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
