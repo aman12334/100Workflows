@@ -1,0 +1,240 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "raci-matrix",
+  "version": "0.1.0",
+  "name": "RACI Matrix Builder",
+  "category": "operations",
+  "summary": "Builds a RACI matrix for a project or process: one accountable role per activity, with responsible, consulted and informed roles.",
+  "description": "Takes a project or recurring process and the roles involved and produces a RACI matrix: the key activities, exactly one accountable role per activity, the responsible, consulted and informed roles, and notes on overloaded roles or activities with unclear ownership. Every role used must be one of the declared roles, which keeps the matrix consistent. Who it's for: project managers, operations leads and founders clarifying who owns what. Limitations: it proposes ownership from the description; the people involved should confirm it. It does not know individual capacity.",
+  "status": "available",
+  "problems": [
+    "Nobody knows who owns what on this project",
+    "Work falls through the cracks between teams",
+    "I need a RACI chart"
+  ],
+  "tags": [
+    "raci",
+    "ownership",
+    "roles",
+    "responsibility-matrix",
+    "project-management"
+  ],
+  "inputs": [
+    {
+      "key": "scope",
+      "label": "Project or process",
+      "type": "long_text",
+      "required": true,
+      "description": "What the work is and its main activities.",
+      "example": "Monthly close: collect receipts, reconcile banks, review exceptions, approve and lock the period, report to founders."
+    },
+    {
+      "key": "roles",
+      "label": "Roles involved",
+      "type": "list",
+      "required": true,
+      "description": "Roles, one per line.",
+      "example": "Office manager\nBookkeeper\nCOO\nCEO"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "raci",
+      "label": "RACI matrix",
+      "description": "Activities with one accountable role and R, C, I roles, plus issues.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You design clear ownership. Each activity has exactly one accountable role. Use only the declared roles. Flag roles that are accountable for too much and activities where ownership was unclear in the description.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "roles",
+      "activities",
+      "issues"
+    ],
+    "properties": {
+      "roles": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "role"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Short role id such as R1."
+            },
+            "role": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 2,
+        "title": "Roles"
+      },
+      "activities": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "activity",
+            "accountable",
+            "responsible",
+            "consulted",
+            "informed"
+          ],
+          "properties": {
+            "activity": {
+              "type": "string"
+            },
+            "accountable": {
+              "type": "string",
+              "description": "One role id."
+            },
+            "responsible": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "consulted": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "informed": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 25,
+        "title": "Activities"
+      },
+      "issues": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "issue",
+            "suggestion"
+          ],
+          "properties": {
+            "issue": {
+              "type": "string"
+            },
+            "suggestion": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Issues"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "build",
+      "name": "Build matrix",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Assign R, A, C and I for each activity.",
+      "prompt": "Give each declared role an id (R1, ...). List the activities and assign exactly one accountable role id each, plus responsible, consulted and informed role ids. Use only declared role ids. Flag overloaded roles and unclear ownership as issues.",
+      "tools": []
+    },
+    {
+      "id": "check_matrix",
+      "name": "Check matrix",
+      "kind": "check",
+      "responsibility": "Every role used is declared; activities are unique.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "accountable_declared",
+        "description": "Every accountable role is a declared role.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "activities[].accountable",
+            "to": "roles[].id"
+          }
+        }
+      },
+      {
+        "id": "responsible_declared",
+        "description": "Every responsible role is a declared role.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "activities[].responsible[]",
+            "to": "roles[].id"
+          }
+        }
+      },
+      {
+        "id": "consulted_informed_declared",
+        "description": "Consulted and informed roles are declared roles.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "activities[].consulted[]",
+            "to": "roles[].id"
+          }
+        }
+      },
+      {
+        "id": "unique_activities",
+        "description": "Each activity appears once.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "activities[].activity"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

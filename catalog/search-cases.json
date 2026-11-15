@@ -315,6 +315,12 @@
       "expect": [
         "performance-review-writer"
       ]
+    },
+    {
+      "query": "who owns what, make a RACI chart",
+      "expect": [
+        "raci-matrix"
+      ]
     }
   ]
 }
