@@ -1,0 +1,243 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "interview-kit",
+  "version": "0.1.0",
+  "name": "Structured Interview Kit",
+  "category": "operations",
+  "summary": "Builds a structured interview kit: competencies for the role, questions mapped to them, and what strong and weak answers sound like.",
+  "description": "Defines the 3-6 competencies a role needs and writes behavioral and situational questions for each, with what a strong answer and a red flag look like and a 1-4 rating guide. Every question maps to a defined competency and every competency is covered, so each interviewer scores the same things and decisions rest on evidence. Who it's for: hiring managers and recruiters setting up a consistent interview loop. Limitations: it does not check questions against employment law in your jurisdiction; avoid adding questions about protected characteristics.",
+  "status": "available",
+  "problems": [
+    "Our interviews are inconsistent between interviewers",
+    "I need interview questions for this role",
+    "We hire on gut feeling"
+  ],
+  "tags": [
+    "interview",
+    "hiring",
+    "scorecard",
+    "structured-interview",
+    "competencies"
+  ],
+  "inputs": [
+    {
+      "key": "role",
+      "label": "Role",
+      "type": "text",
+      "required": true,
+      "description": "The role you are hiring for.",
+      "example": "Head of Support at a 20-person SaaS company"
+    },
+    {
+      "key": "role_outcomes",
+      "label": "What success looks like",
+      "type": "long_text",
+      "required": true,
+      "description": "What this person must achieve.",
+      "example": "Halve response times in 6 months; build the help center; hire the second agent."
+    },
+    {
+      "key": "stages",
+      "label": "Interview stages",
+      "type": "list",
+      "required": false,
+      "description": "Stages in your loop, one per line.",
+      "example": "Hiring manager\nWork sample\nFounder"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "kit",
+      "label": "Interview kit",
+      "description": "Competencies, questions, answer signals and rating guide.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You design structured interviews. Competencies come from what the role must achieve. Prefer behavioral questions (\"Tell me about a time...\") and realistic scenarios. Never include questions about age, family, religion, health or other protected characteristics.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "competencies",
+      "questions",
+      "rating_guide"
+    ],
+    "properties": {
+      "competencies": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "competency",
+            "why_it_matters"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Competency id such as C1."
+            },
+            "competency": {
+              "type": "string"
+            },
+            "why_it_matters": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 6,
+        "title": "Competencies"
+      },
+      "questions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "question",
+            "type",
+            "competency_ids",
+            "strong_signals",
+            "red_flags",
+            "stage"
+          ],
+          "properties": {
+            "question": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "behavioral",
+                "situational",
+                "technical",
+                "work_sample"
+              ]
+            },
+            "competency_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "strong_signals": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "red_flags": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "stage": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 20,
+        "title": "Questions"
+      },
+      "rating_guide": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "score",
+            "meaning"
+          ],
+          "properties": {
+            "score": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4
+            },
+            "meaning": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 4,
+        "maxItems": 4,
+        "title": "Rating guide"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "build",
+      "name": "Build kit",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Define competencies and write questions.",
+      "prompt": "Define 3-6 competencies (C1, ...) from the role outcomes. Write questions that each map to competency ids, with strong signals and red flags, and assign them to stages if given. Make sure every competency is covered by at least two questions where possible. Add a 1-4 rating guide.",
+      "tools": []
+    },
+    {
+      "id": "check_kit",
+      "name": "Check kit",
+      "kind": "check",
+      "responsibility": "Questions map to competencies; every competency is covered.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "competencies_covered",
+        "description": "Questions map to defined competencies, and every competency is covered.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "questions[].competency_ids[]",
+            "to": "competencies[].id",
+            "everyTargetReferenced": true
+          }
+        }
+      },
+      {
+        "id": "distinct_questions",
+        "description": "Questions are not repeated.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "questions[].question"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

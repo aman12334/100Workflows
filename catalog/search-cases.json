@@ -303,6 +303,12 @@
       "expect": [
         "job-description-writer"
       ]
+    },
+    {
+      "query": "interview questions and scorecard for a role",
+      "expect": [
+        "interview-kit"
+      ]
     }
   ]
 }
