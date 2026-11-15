@@ -1,7 +1,31 @@
 import type { Catalog } from "../catalog";
-import { CATEGORIES, CATEGORY_LABELS } from "../schema";
+import { CATEGORIES, CATEGORY_LABELS, type Workflow } from "../schema";
 
 const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
+
+const METHOD: Record<string, string> = { schema: "schema", rule: "rule", model: "model review" };
+
+/** One workflow's reference entry. Descriptions may carry "Who it's for:" and "Limitations:" sentences, shown as their own lines. */
+function workflowDetails(w: Workflow): string[] {
+  const [what, rest = ""] = w.description.split(" Who it's for: ");
+  const [who, limits] = rest.split(" Limitations: ");
+  const root = w.outputSchema?.type === "object" ? w.outputSchema.properties : {};
+  const outputs = Object.entries(root).map(([key, node]) => node.title ?? key);
+  const lines = [`### ${w.name} \`${w.id}@${w.version}\``, "", what];
+  if (who) lines.push("", `**Who it's for:** ${who}`);
+  lines.push(
+    "",
+    `**Inputs:** ${w.inputs.map((i) => `${i.label}${i.required ? "" : " (optional)"}`).join(", ")}`,
+    "",
+    `**Output:** ${outputs.join(", ")}`,
+    "",
+    "**Checks:**",
+    "",
+    ...w.evaluation.criteria.map((c) => `- ${c.critical ? "**critical** " : ""}${METHOD[c.method]}: ${c.description}`),
+  );
+  if (limits) lines.push("", `**Limitations:** ${limits}`);
+  return lines;
+}
 
 /** docs/catalog.md: a browsable index of every definition, generated so it never drifts from the JSON. */
 export function renderCatalogDocs(catalog: Catalog): string {
@@ -24,6 +48,18 @@ export function renderCatalogDocs(catalog: Catalog): string {
       lines.push(`| [${cell(w.name)}](${file}) \`${w.id}@${w.version}\` | ${w.status === "available" ? "executable" : "definition"} | ${cell(w.summary)} | ${needs} | ${tools} |`);
     }
     lines.push("");
+  }
+  const generic = catalog.workflows.filter((w) => w.schemaVersion === 2 && w.outputSchema);
+  if (generic.length) {
+    lines.push(
+      "## Workflow details",
+      "",
+      "Every schema-v2 workflow, which runs on the generic executor. Checks marked **critical** reject an output on their own; the others count toward the quality score.",
+      "",
+    );
+    for (const category of CATEGORIES) {
+      for (const w of generic.filter((g) => g.category === category)) lines.push(...workflowDetails(w), "");
+    }
   }
   const shared = catalog.registry?.sharedInputs ?? [];
   if (shared.length) {

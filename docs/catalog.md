@@ -51,6 +51,55 @@
 | --- | --- | --- | --- | --- |
 | [SOP Writer](../catalog/workflows/operations/sop-writer.json) `sop-writer@0.2.0` | executable | Turns a rough description of a recurring process into a step-by-step standard operating procedure. | — | — |
 
+## Workflow details
+
+Every schema-v2 workflow, which runs on the generic executor. Checks marked **critical** reject an output on their own; the others count toward the quality score.
+
+### Discovery Call Prep `discovery-call-prep@0.2.0`
+
+Combines what you know about the prospect with your ICP to produce hypotheses about their pains, questions that test those hypotheses, and qualification criteria to listen for. It never presents guesses about the prospect as facts; anything not supplied is labelled a hypothesis.
+
+**Inputs:** Product description, Prospect, What you know (optional)
+
+**Output:** Prospect, What we know, Hypotheses to test, Questions, Qualification criteria, Next-step options
+
+**Checks:**
+
+- **critical** schema: Output matches the schema.
+- **critical** rule: Claims about the prospect that aren't in the notes are labelled hypotheses: every fact quotes the prospect or notes word for word.
+- rule: Each hypothesis has at least one question that tests it.
+- rule: Hypothesis ids are unique.
+
+### Survey Designer `survey-designer@0.2.0`
+
+Drafts survey questions mapped to the research goal, flags leading or double-barreled wording, and proposes how each answer will be analyzed.
+
+**Inputs:** Research question, Audience, Maximum questions (optional)
+
+**Output:** Questions, Analysis plan
+
+**Checks:**
+
+- **critical** schema: Output matches the schema.
+- **critical** rule: Question count does not exceed the maximum.
+- rule: Every question has a rationale and an analysis method.
+- rule: No question is asked twice.
+- rule: Each question is short enough to read at a glance (30 words or fewer).
+
+### SOP Writer `sop-writer@0.2.0`
+
+Produces a numbered procedure with owners, inputs, decision points, and checks for each step, plus a short list of the ways the process usually goes wrong. It works only from what you describe and marks every assumption it had to make.
+
+**Inputs:** Company name (optional), Process description, Roles involved (optional)
+
+**Output:** Purpose, Scope, Roles, Procedure, Common failure modes, Assumptions
+
+**Checks:**
+
+- **critical** schema: Output matches the schema.
+- **critical** rule: Every step names an owner role, an action and a check.
+- model review: Anything not in the description is listed as an assumption.
+
 ## Shared inputs
 
 Defined once in `catalog/shared-inputs.json` and referenced with `{ "use": "<key>" }`.
