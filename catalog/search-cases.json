@@ -105,6 +105,12 @@
       "expect": [
         "experiment-design"
       ]
+    },
+    {
+      "query": "review my product spec and find gaps",
+      "expect": [
+        "spec-reviewer"
+      ]
     }
   ]
 }

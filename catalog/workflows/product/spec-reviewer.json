@@ -1,0 +1,202 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "spec-reviewer",
+  "version": "0.1.0",
+  "name": "Spec Reviewer",
+  "category": "product",
+  "summary": "Reviews a draft spec or PRD and lists concrete gaps, each tied to the exact passage it concerns.",
+  "description": "Reads a draft spec, PRD or design doc and returns a prioritised list of issues: ambiguity, missing edge cases, untestable criteria, contradictions and unstated assumptions. Every issue quotes the passage it is about, and anything missing entirely is listed separately, so you can find and fix each point quickly. Who it's for: product managers asking for a second pair of eyes, and engineering leads reviewing a spec before estimating. Limitations: it reviews the text only; it cannot judge technical feasibility in your stack or whether the business case is right.",
+  "status": "available",
+  "problems": [
+    "I want feedback on my product spec before engineering reviews it",
+    "Our specs have gaps we only find during development",
+    "I need to review a PRD quickly"
+  ],
+  "tags": [
+    "spec-review",
+    "prd",
+    "design-doc",
+    "edge-cases",
+    "quality"
+  ],
+  "inputs": [
+    {
+      "key": "spec",
+      "label": "Spec text",
+      "type": "long_text",
+      "required": true,
+      "description": "Paste the draft spec, PRD or design doc.",
+      "example": "Users can invite teammates. Invites expire after a while. Admins can remove anyone."
+    },
+    {
+      "key": "focus",
+      "label": "Review focus",
+      "type": "text",
+      "required": false,
+      "description": "Anything to look at especially closely.",
+      "example": "Permissions and edge cases"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "review",
+      "label": "Spec review",
+      "description": "Prioritised issues with quotes, missing sections and a verdict.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a meticulous staff engineer and product reviewer. You find what would cause rework later: ambiguity, missing edge cases, contradictions, untestable requirements and hidden assumptions. Be concrete; quote the text you are commenting on.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "verdict",
+      "issues",
+      "missing_sections",
+      "strengths"
+    ],
+    "properties": {
+      "verdict": {
+        "type": "string",
+        "enum": [
+          "ready",
+          "ready_with_changes",
+          "needs_rework"
+        ],
+        "description": "Overall readiness."
+      },
+      "issues": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "quote",
+            "type",
+            "severity",
+            "problem",
+            "suggestion"
+          ],
+          "properties": {
+            "quote": {
+              "type": "string",
+              "description": "The passage the issue is about, copied word for word from the spec."
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "ambiguity",
+                "missing_edge_case",
+                "contradiction",
+                "untestable",
+                "assumption",
+                "scope"
+              ]
+            },
+            "severity": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "problem": {
+              "type": "string"
+            },
+            "suggestion": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 15,
+        "title": "Issues"
+      },
+      "missing_sections": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Missing entirely",
+        "description": "Things the spec should cover but does not mention at all."
+      },
+      "strengths": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "What works"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "review",
+      "name": "Review spec",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "List issues tied to quoted passages.",
+      "prompt": "Review the spec. For each issue, copy the exact passage (at least a few words) into quote, classify it, rate severity, and suggest a fix. Order issues by severity. Put things that are absent from the spec under missing_sections instead of inventing a quote.",
+      "tools": []
+    },
+    {
+      "id": "check_quotes",
+      "name": "Check quotes",
+      "kind": "check",
+      "responsibility": "Every quote appears in the spec; quotes are not repeated.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "quotes_in_spec",
+        "description": "Every issue quotes the spec word for word.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "issues[].quote",
+            "inputs": [
+              "spec"
+            ]
+          }
+        }
+      },
+      {
+        "id": "no_duplicate_issues",
+        "description": "No passage is reported twice.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "issues[].quote"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
