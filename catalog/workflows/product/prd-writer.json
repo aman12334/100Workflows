@@ -1,0 +1,284 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "prd-writer",
+  "version": "0.1.0",
+  "name": "PRD Writer",
+  "category": "product",
+  "summary": "Turns a feature idea and the evidence behind it into a product requirements document with traceable stories and requirements.",
+  "description": "Writes a PRD with the problem, goals, non-goals, user stories with acceptance criteria, and requirements. Every requirement points to the user story it serves, and every story is covered by at least one requirement, so nothing in the document is orphaned. Open questions and assumptions are listed separately from what you supplied. Who it's for: product managers and founders who need a reviewable spec before engineering starts. Limitations: it works only from the idea and evidence you give it; it does not research users or check technical feasibility, and effort estimates are not included.",
+  "status": "available",
+  "problems": [
+    "I need to write a PRD for a new feature",
+    "Engineers keep asking what exactly we are building",
+    "Our specs miss acceptance criteria"
+  ],
+  "tags": [
+    "prd",
+    "product-spec",
+    "requirements",
+    "user-stories",
+    "acceptance-criteria"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": false
+    },
+    {
+      "key": "feature_idea",
+      "label": "Feature idea",
+      "type": "long_text",
+      "required": true,
+      "description": "What you want to build and why, in a few sentences.",
+      "example": "Let agency admins approve expenses in bulk from the weekly digest email."
+    },
+    {
+      "key": "problem_evidence",
+      "label": "Evidence of the problem",
+      "type": "long_text",
+      "required": false,
+      "description": "Customer quotes, tickets or data that show the problem is real.",
+      "example": "14 support tickets last month asked for bulk approval; \"I approve 60 expenses every Friday one by one.\""
+    },
+    {
+      "key": "constraints",
+      "label": "Constraints",
+      "type": "long_text",
+      "required": false,
+      "description": "Deadlines, platforms, compliance or scope limits.",
+      "example": "Must ship before the Q3 pricing change; web only."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "prd",
+      "label": "Product requirements document",
+      "description": "Problem, goals, user stories with acceptance criteria, requirements, open questions.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a senior product manager writing a PRD that engineers and designers can build from. Be specific and testable. Separate what the user supplied from your own assumptions; never present an assumption as a supplied fact. Keep requirements implementation-neutral unless a constraint demands otherwise.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "problem",
+      "goals",
+      "non_goals",
+      "user_stories",
+      "requirements",
+      "open_questions",
+      "assumptions"
+    ],
+    "properties": {
+      "problem": {
+        "type": "string",
+        "description": "The user problem, grounded in the evidence supplied.",
+        "title": "Problem"
+      },
+      "goals": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "maxItems": 5,
+        "title": "Goals"
+      },
+      "non_goals": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "maxItems": 6,
+        "title": "Non-goals"
+      },
+      "user_stories": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "story",
+            "acceptance_criteria"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Story id such as US1."
+            },
+            "story": {
+              "type": "string",
+              "description": "As a <user>, I want <capability> so that <outcome>."
+            },
+            "acceptance_criteria": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "maxItems": 6
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 12,
+        "title": "User stories"
+      },
+      "requirements": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "requirement",
+            "priority",
+            "story_ids"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Requirement id such as R1."
+            },
+            "requirement": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "must",
+                "should",
+                "could"
+              ]
+            },
+            "story_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "description": "Ids of the user stories this requirement serves."
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 25,
+        "title": "Requirements"
+      },
+      "open_questions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Open questions"
+      },
+      "assumptions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Assumptions",
+        "description": "Everything not stated in the inputs."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "draft",
+      "name": "Draft PRD",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the PRD from the idea, evidence and constraints.",
+      "prompt": "Write the PRD. Give each user story an id (US1, US2, ...) and 1-6 acceptance criteria that a tester could check. Give each requirement an id (R1, ...), a MoSCoW priority, and the ids of the stories it serves. Every story must be served by at least one requirement. Put anything you assumed in assumptions.",
+      "tools": []
+    },
+    {
+      "id": "check_traceability",
+      "name": "Check traceability",
+      "kind": "check",
+      "responsibility": "Requirements point to real stories; every story is covered; ids are unique.",
+      "tools": []
+    },
+    {
+      "id": "review",
+      "name": "Review acceptance criteria",
+      "kind": "agent",
+      "responsibility": "Grade whether acceptance criteria are testable.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "requirements_traced",
+        "description": "Every requirement serves a declared story, and every story has a requirement.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "requirements[].story_ids[]",
+            "to": "user_stories[].id",
+            "everyTargetReferenced": true
+          }
+        }
+      },
+      {
+        "id": "unique_story_ids",
+        "description": "Story ids are unique.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "user_stories[].id"
+          }
+        }
+      },
+      {
+        "id": "unique_requirement_ids",
+        "description": "Requirement ids are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "requirements[].id"
+          }
+        }
+      },
+      {
+        "id": "testable_criteria",
+        "description": "Acceptance criteria are specific and testable.",
+        "method": "model",
+        "critical": false,
+        "review": {
+          "step": "review",
+          "rubric": "Read the acceptance criteria. Could a tester decide pass or fail for each one without asking the author? 5 = all are observable and specific; 1 = mostly vague wording such as \"works well\" or \"is intuitive\"."
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 4
+  }
+}

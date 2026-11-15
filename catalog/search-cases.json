@@ -81,6 +81,12 @@
       "expect": [
         "discovery-call-prep"
       ]
+    },
+    {
+      "query": "write a PRD with user stories and acceptance criteria",
+      "expect": [
+        "prd-writer"
+      ]
     }
   ]
 }
