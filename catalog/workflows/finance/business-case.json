@@ -1,0 +1,246 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "business-case",
+  "version": "0.1.0",
+  "name": "Business Case Builder",
+  "category": "finance",
+  "summary": "Builds a business case for an investment: options including doing nothing, costs and benefits as stated, risks and a recommendation.",
+  "description": "Structures a decision to spend money or effort (a hire, a tool, a project) into a business case: the problem, at least three options including doing nothing, the costs and benefits of each as you stated them, risks, the assumptions that matter most, and a recommendation that must name one of the options. A reviewer checks that the recommendation follows from the analysis. Who it's for: founders, managers and finance partners asking for budget or approval. Limitations: it does not compute NPV, ROI or payback; figures appear only as you supply them. Benefits you did not quantify stay qualitative.",
+  "status": "available",
+  "problems": [
+    "I need to justify a budget request",
+    "I need approval to hire or buy a tool",
+    "We decide on investments without comparing options"
+  ],
+  "tags": [
+    "business-case",
+    "budget-request",
+    "investment",
+    "approval",
+    "options-analysis"
+  ],
+  "inputs": [
+    {
+      "key": "proposal",
+      "label": "What you want to do",
+      "type": "long_text",
+      "required": true,
+      "description": "The investment and why.",
+      "example": "Hire a second support agent ($55k/yr) because response times doubled since January."
+    },
+    {
+      "key": "figures",
+      "label": "Costs and benefits you know",
+      "type": "long_text",
+      "required": false,
+      "description": "Any numbers you have.",
+      "example": "Median first response 9h (Jan: 4h). 3 churned accounts cited support in exit surveys."
+    },
+    {
+      "key": "audience",
+      "label": "Approver",
+      "type": "text",
+      "required": false,
+      "description": "Who approves this.",
+      "example": "CEO and board"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "business_case",
+      "label": "Business case",
+      "description": "Problem, options, costs and benefits, risks, assumptions and recommendation.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write decision-ready business cases. Always include doing nothing as an option. Present costs and benefits only as supplied or clearly labelled estimates to verify. The recommendation must follow from the comparison.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "problem",
+      "options",
+      "key_assumptions",
+      "recommendation",
+      "decision_needed"
+    ],
+    "properties": {
+      "problem": {
+        "type": "string",
+        "title": "Problem"
+      },
+      "options": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "option",
+            "costs",
+            "benefits",
+            "risks"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Option id such as OPT1."
+            },
+            "option": {
+              "type": "string"
+            },
+            "costs": {
+              "type": "string"
+            },
+            "benefits": {
+              "type": "string"
+            },
+            "risks": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 5,
+        "title": "Options"
+      },
+      "key_assumptions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "assumption",
+            "how_to_verify"
+          ],
+          "properties": {
+            "assumption": {
+              "type": "string"
+            },
+            "how_to_verify": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Key assumptions"
+      },
+      "recommendation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "option_id",
+          "rationale",
+          "conditions"
+        ],
+        "properties": {
+          "option_id": {
+            "type": "string"
+          },
+          "rationale": {
+            "type": "string"
+          },
+          "conditions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Recommendation"
+      },
+      "decision_needed": {
+        "type": "string",
+        "description": "What the approver is asked to decide, by when.",
+        "title": "Decision needed"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "build",
+      "name": "Build case",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Compare options and recommend.",
+      "prompt": "Write the business case with 3-5 options (OPT1, ...), one of which is doing nothing. Use only the figures supplied; label anything else as an estimate to verify. Recommend one option by id, with the conditions under which you would change the recommendation.",
+      "tools": []
+    },
+    {
+      "id": "check_case",
+      "name": "Check case",
+      "kind": "check",
+      "responsibility": "The recommendation names a listed option; options are distinct.",
+      "tools": []
+    },
+    {
+      "id": "review",
+      "name": "Review reasoning",
+      "kind": "agent",
+      "responsibility": "Grade whether the recommendation follows from the comparison.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "recommends_an_option",
+        "description": "The recommendation names one of the listed options.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "recommendation.option_id",
+            "to": "options[].id"
+          }
+        }
+      },
+      {
+        "id": "distinct_options",
+        "description": "Options are distinct.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "options[].option"
+          }
+        }
+      },
+      {
+        "id": "follows_from_analysis",
+        "description": "The recommendation follows from the costs, benefits and risks presented.",
+        "method": "model",
+        "critical": false,
+        "review": {
+          "step": "review",
+          "rubric": "Does the recommended option follow from the comparison, with trade-offs acknowledged, and no benefit or cost appearing only in the recommendation? 5 = clearly follows; 1 = contradicts or ignores the analysis."
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 4
+  }
+}
