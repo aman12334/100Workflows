@@ -1,0 +1,80 @@
+{
+  "inputs": {
+    "epic": "Customers can export their transactions to Xero with category mapping and scheduled syncs.",
+    "max_stories": 4
+  },
+  "good": {
+    "slicing_approach": "By workflow step.",
+    "stories": [
+      {
+        "id": "S1",
+        "title": "One-off export",
+        "story": "As a bookkeeper, I want to export this month to Xero so that I stop retyping.",
+        "acceptance_criteria": [
+          "Export creates matching transactions in Xero"
+        ],
+        "size": "M",
+        "depends_on": []
+      },
+      {
+        "id": "S2",
+        "title": "Category mapping",
+        "story": "As a bookkeeper, I want to map categories so that exports land in the right accounts.",
+        "acceptance_criteria": [
+          "Mapped categories appear in Xero"
+        ],
+        "size": "M",
+        "depends_on": [
+          "S1"
+        ]
+      },
+      {
+        "id": "S3",
+        "title": "Scheduled sync",
+        "story": "As an admin, I want nightly syncs so that Xero stays current.",
+        "acceptance_criteria": [
+          "A sync runs nightly"
+        ],
+        "size": "L",
+        "depends_on": [
+          "S1",
+          "S2"
+        ]
+      }
+    ],
+    "deferred": [
+      "Two-way sync"
+    ]
+  },
+  "bad_fails": "dependencies_exist",
+  "bad": {
+    "slicing_approach": "By workflow step.",
+    "stories": [
+      {
+        "id": "S1",
+        "title": "Export",
+        "story": "As a bookkeeper, I want exports.",
+        "acceptance_criteria": [
+          "Works"
+        ],
+        "size": "M",
+        "depends_on": [
+          "S7"
+        ]
+      },
+      {
+        "id": "S2",
+        "title": "Mapping",
+        "story": "As a bookkeeper, I want mapping.",
+        "acceptance_criteria": [
+          "Works"
+        ],
+        "size": "M",
+        "depends_on": []
+      }
+    ],
+    "deferred": [
+      "Two-way sync"
+    ]
+  }
+}

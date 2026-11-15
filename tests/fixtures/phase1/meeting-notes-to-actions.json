@@ -1,0 +1,48 @@
+{
+  "inputs": {
+    "notes": "Agreed to move launch to 19 June. Priya to update the help center by Friday. Still unclear who owns the Xero partnership."
+  },
+  "good": {
+    "recap": "Launch moves to 19 June.",
+    "decisions": [
+      {
+        "decision": "Launch on 19 June",
+        "quote": "Agreed to move launch to 19 June."
+      }
+    ],
+    "action_items": [
+      {
+        "action": "Update help center",
+        "owner": "Priya",
+        "due": "Friday",
+        "quote": "Priya to update the help center by Friday."
+      }
+    ],
+    "open_questions": [
+      "Who owns the Xero partnership?"
+    ],
+    "parked": []
+  },
+  "bad_fails": "decisions_quoted",
+  "bad": {
+    "recap": "Launch moves to 19 June.",
+    "decisions": [
+      {
+        "decision": "Hire a partner manager",
+        "quote": "We agreed to hire a partner manager"
+      }
+    ],
+    "action_items": [
+      {
+        "action": "Update help center",
+        "owner": "Priya",
+        "due": "Friday",
+        "quote": "Priya to update the help center by Friday."
+      }
+    ],
+    "open_questions": [
+      "Who owns the Xero partnership?"
+    ],
+    "parked": []
+  }
+}

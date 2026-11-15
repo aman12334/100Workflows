@@ -1,0 +1,87 @@
+{
+  "inputs": {
+    "company_name": "Acme",
+    "discovery_notes": "Dana: \"We need month-end done in a day, across both entities.\" Wants to start in July.",
+    "offering": "Annual plan, 15 seats",
+    "pricing": "$14,400 per year; onboarding $1,500 one-off"
+  },
+  "good": {
+    "title": "Month-end in a day for Brightline",
+    "situation": "Three-day close.",
+    "goals": [
+      {
+        "id": "G1",
+        "goal": "One-day close",
+        "quote": "We need month-end done in a day, across both entities."
+      }
+    ],
+    "deliverables": [
+      {
+        "deliverable": "Two entity setup",
+        "goal_ids": [
+          "G1"
+        ],
+        "description": "x"
+      }
+    ],
+    "timeline": [
+      {
+        "phase": "Onboarding",
+        "duration": "2 weeks",
+        "outcome": "Live"
+      }
+    ],
+    "investment": [
+      {
+        "item": "Annual plan",
+        "price": "$14,400 per year"
+      },
+      {
+        "item": "Onboarding",
+        "price": "$1,500 one-off"
+      }
+    ],
+    "assumptions": [],
+    "next_steps": [
+      "Sign by June 30"
+    ]
+  },
+  "bad_fails": "prices_exact",
+  "bad": {
+    "title": "Month-end in a day for Brightline",
+    "situation": "Three-day close.",
+    "goals": [
+      {
+        "id": "G1",
+        "goal": "One-day close",
+        "quote": "We need month-end done in a day, across both entities."
+      }
+    ],
+    "deliverables": [
+      {
+        "deliverable": "Two entity setup",
+        "goal_ids": [
+          "G1"
+        ],
+        "description": "x"
+      }
+    ],
+    "timeline": [
+      {
+        "phase": "Onboarding",
+        "duration": "2 weeks",
+        "outcome": "Live"
+      }
+    ],
+    "investment": [
+      {
+        "item": "Annual plan",
+        "price": "$12,960 per year (10% off)"
+      }
+    ],
+    "assumptions": [],
+    "next_steps": [
+      "Sign by June 30"
+    ]
+  }
+}

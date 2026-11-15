@@ -1,0 +1,55 @@
+{
+  "inputs": {
+    "changes": "Added bulk approve endpoint and UI for expenses\nFixed currency rounding in CSV export\nDeprecated v1 receipts API (removal on 1 Sept)",
+    "audience": "admins"
+  },
+  "good": {
+    "headline": "Approve expenses in bulk",
+    "highlights": [
+      {
+        "title": "Bulk approval",
+        "benefit": "Approve many expenses at once.",
+        "source_change": "Added bulk approve endpoint and UI for expenses"
+      }
+    ],
+    "fixes": [
+      {
+        "description": "CSV exports now round currencies correctly.",
+        "source_change": "Fixed currency rounding in CSV export"
+      }
+    ],
+    "action_required": [
+      {
+        "action": "Move to the v2 receipts API.",
+        "deadline": "1 Sept",
+        "source_change": "Deprecated v1 receipts API (removal on 1 Sept)"
+      }
+    ],
+    "omitted": []
+  },
+  "bad_fails": "highlights_sourced",
+  "bad": {
+    "headline": "Approve expenses in bulk",
+    "highlights": [
+      {
+        "title": "AI receipts",
+        "benefit": "Receipts are read by AI.",
+        "source_change": "Added AI receipt scanning for all plans"
+      }
+    ],
+    "fixes": [
+      {
+        "description": "CSV exports now round currencies correctly.",
+        "source_change": "Fixed currency rounding in CSV export"
+      }
+    ],
+    "action_required": [
+      {
+        "action": "Move to the v2 receipts API.",
+        "deadline": "1 Sept",
+        "source_change": "Deprecated v1 receipts API (removal on 1 Sept)"
+      }
+    ],
+    "omitted": []
+  }
+}

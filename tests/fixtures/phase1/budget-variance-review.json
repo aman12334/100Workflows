@@ -1,0 +1,65 @@
+{
+  "inputs": {
+    "variance_data": "Software: budget $8,000, actual $11,200, variance +$3,200 (+40%)\nContractors: budget $20,000, actual $14,500, variance -$5,500 (-28%)"
+  },
+  "good": {
+    "overview": "Software over, contractors under.",
+    "lines": [
+      {
+        "line_item": "Software",
+        "variance": "variance +$3,200 (+40%)",
+        "direction": "over",
+        "drivers": [
+          {
+            "driver": "Annual renewal",
+            "basis": "hypothesis"
+          }
+        ],
+        "questions_for_owner": [
+          "Which tools renewed?"
+        ],
+        "action": "investigate"
+      },
+      {
+        "line_item": "Contractors",
+        "variance": "variance -$5,500 (-28%)",
+        "direction": "under",
+        "drivers": [
+          {
+            "driver": "Contract ended",
+            "basis": "hypothesis"
+          }
+        ],
+        "questions_for_owner": [
+          "Is the role still needed?"
+        ],
+        "action": "reforecast"
+      }
+    ],
+    "reforecast_flags": [
+      "Contractors"
+    ]
+  },
+  "bad_fails": "figures_quoted",
+  "bad": {
+    "overview": "Software over, contractors under.",
+    "lines": [
+      {
+        "line_item": "Software",
+        "variance": "variance +$4,000 (+50%)",
+        "direction": "over",
+        "drivers": [
+          {
+            "driver": "x",
+            "basis": "hypothesis"
+          }
+        ],
+        "questions_for_owner": [],
+        "action": "monitor"
+      }
+    ],
+    "reforecast_flags": [
+      "Contractors"
+    ]
+  }
+}

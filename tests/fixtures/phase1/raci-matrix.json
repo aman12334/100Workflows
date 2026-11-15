@@ -1,0 +1,111 @@
+{
+  "inputs": {
+    "scope": "Monthly close: collect receipts, reconcile banks, approve and lock the period.",
+    "roles": [
+      "Office manager",
+      "Bookkeeper",
+      "COO"
+    ]
+  },
+  "good": {
+    "roles": [
+      {
+        "id": "R1",
+        "role": "Office manager"
+      },
+      {
+        "id": "R2",
+        "role": "Bookkeeper"
+      },
+      {
+        "id": "R3",
+        "role": "COO"
+      }
+    ],
+    "activities": [
+      {
+        "activity": "Collect receipts",
+        "accountable": "R1",
+        "responsible": [
+          "R1"
+        ],
+        "consulted": [],
+        "informed": [
+          "R2"
+        ]
+      },
+      {
+        "activity": "Reconcile banks",
+        "accountable": "R2",
+        "responsible": [
+          "R2"
+        ],
+        "consulted": [
+          "R1"
+        ],
+        "informed": [
+          "R3"
+        ]
+      },
+      {
+        "activity": "Lock the period",
+        "accountable": "R3",
+        "responsible": [
+          "R2"
+        ],
+        "consulted": [],
+        "informed": [
+          "R1"
+        ]
+      }
+    ],
+    "issues": []
+  },
+  "bad_fails": "accountable_declared",
+  "bad": {
+    "roles": [
+      {
+        "id": "R1",
+        "role": "Office manager"
+      },
+      {
+        "id": "R2",
+        "role": "Bookkeeper"
+      },
+      {
+        "id": "R3",
+        "role": "COO"
+      }
+    ],
+    "activities": [
+      {
+        "activity": "Collect receipts",
+        "accountable": "R9",
+        "responsible": [
+          "R1"
+        ],
+        "consulted": [],
+        "informed": []
+      },
+      {
+        "activity": "Reconcile",
+        "accountable": "R2",
+        "responsible": [
+          "R2"
+        ],
+        "consulted": [],
+        "informed": []
+      },
+      {
+        "activity": "Lock",
+        "accountable": "R3",
+        "responsible": [
+          "R2"
+        ],
+        "consulted": [],
+        "informed": []
+      }
+    ],
+    "issues": []
+  }
+}

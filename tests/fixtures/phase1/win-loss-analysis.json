@@ -1,0 +1,68 @@
+{
+  "inputs": {
+    "deal_notes": "LOST Brightline: \"Too expensive for 12 seats compared to a part-time bookkeeper.\"\nWON Northpeak: \"The Xero sync was the deciding factor.\""
+  },
+  "good": {
+    "reasons": [
+      {
+        "id": "R1",
+        "outcome": "lost",
+        "reason": "Seat price vs bookkeeper",
+        "category": "price",
+        "deals_mentioning": 1,
+        "quotes": [
+          "Too expensive for 12 seats compared to a part-time bookkeeper."
+        ]
+      },
+      {
+        "id": "R2",
+        "outcome": "won",
+        "reason": "Xero sync",
+        "category": "product",
+        "deals_mentioning": 1,
+        "quotes": [
+          "The Xero sync was the deciding factor."
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "action": "Test a team plan",
+        "owner": "pricing",
+        "reason_ids": [
+          "R1"
+        ]
+      }
+    ],
+    "data_quality_notes": [
+      "Two deals only"
+    ]
+  },
+  "bad_fails": "quotes_exact",
+  "bad": {
+    "reasons": [
+      {
+        "id": "R1",
+        "outcome": "lost",
+        "reason": "Missing SSO",
+        "category": "product",
+        "deals_mentioning": 3,
+        "quotes": [
+          "We needed single sign-on for security"
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "action": "Test a team plan",
+        "owner": "pricing",
+        "reason_ids": [
+          "R1"
+        ]
+      }
+    ],
+    "data_quality_notes": [
+      "Two deals only"
+    ]
+  }
+}

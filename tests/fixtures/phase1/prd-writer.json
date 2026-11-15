@@ -1,0 +1,97 @@
+{
+  "inputs": {
+    "feature_idea": "Let agency admins approve expenses in bulk from the weekly digest email."
+  },
+  "good": {
+    "problem": "Admins approve expenses one at a time.",
+    "goals": [
+      "Cut weekly approval time"
+    ],
+    "non_goals": [
+      "Mobile app support"
+    ],
+    "user_stories": [
+      {
+        "id": "US1",
+        "story": "As an admin, I want to select many expenses so that I can approve them at once.",
+        "acceptance_criteria": [
+          "Selecting 20 expenses and approving marks all 20 approved"
+        ]
+      },
+      {
+        "id": "US2",
+        "story": "As an admin, I want to approve from the digest email so that I skip logging in.",
+        "acceptance_criteria": [
+          "The digest has an Approve all link"
+        ]
+      }
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "requirement": "Multi-select on the expenses list",
+        "priority": "must",
+        "story_ids": [
+          "US1"
+        ]
+      },
+      {
+        "id": "R2",
+        "requirement": "Signed approval link in the digest",
+        "priority": "should",
+        "story_ids": [
+          "US2"
+        ]
+      }
+    ],
+    "open_questions": [
+      "Is there an approval limit per batch?"
+    ],
+    "assumptions": [
+      "Admins already receive the digest."
+    ]
+  },
+  "bad_fails": "requirements_traced",
+  "review": 4,
+  "bad": {
+    "problem": "Admins approve expenses one at a time.",
+    "goals": [
+      "Cut weekly approval time"
+    ],
+    "non_goals": [
+      "Mobile app support"
+    ],
+    "user_stories": [
+      {
+        "id": "US1",
+        "story": "As an admin, I want to select many expenses so that I can approve them at once.",
+        "acceptance_criteria": [
+          "Selecting 20 expenses and approving marks all 20 approved"
+        ]
+      },
+      {
+        "id": "US2",
+        "story": "As an admin, I want to approve from the digest email so that I skip logging in.",
+        "acceptance_criteria": [
+          "The digest has an Approve all link"
+        ]
+      }
+    ],
+    "requirements": [
+      {
+        "id": "R1",
+        "requirement": "Multi-select",
+        "priority": "must",
+        "story_ids": [
+          "US9"
+        ]
+      }
+    ],
+    "open_questions": [
+      "Is there an approval limit per batch?"
+    ],
+    "assumptions": [
+      "Admins already receive the digest."
+    ]
+  }
+}

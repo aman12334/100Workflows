@@ -1,0 +1,63 @@
+{
+  "inputs": {
+    "product_description": "AI bookkeeping for agencies",
+    "sequence_goal": "trial onboarding",
+    "activation_steps": "Connect a bank account; invite the bookkeeper; run the first reconciliation."
+  },
+  "good": {
+    "strategy": "One key action per email.",
+    "emails": [
+      {
+        "day": 0,
+        "goal": "Connect bank",
+        "subject": "Connect your bank in 2 minutes",
+        "preview_text": "x",
+        "body": "Short body.",
+        "cta": "Connect bank",
+        "skip_if": "Bank connected"
+      },
+      {
+        "day": 2,
+        "goal": "Invite bookkeeper",
+        "subject": "Bring your bookkeeper in",
+        "preview_text": "x",
+        "body": "Short body.",
+        "cta": "Invite",
+        "skip_if": "Invited"
+      },
+      {
+        "day": 5,
+        "goal": "First reconciliation",
+        "subject": "Run your first reconciliation",
+        "preview_text": "x",
+        "body": "Short body.",
+        "cta": "Reconcile",
+        "skip_if": "Done"
+      }
+    ]
+  },
+  "bad_fails": "short_subjects",
+  "bad": {
+    "strategy": "One key action per email.",
+    "emails": [
+      {
+        "day": 0,
+        "goal": "All",
+        "subject": "Welcome to the best bookkeeping product you will ever use in your life",
+        "preview_text": "x",
+        "body": "x",
+        "cta": "Go",
+        "skip_if": "x"
+      },
+      {
+        "day": 1,
+        "goal": "All",
+        "subject": "Hi",
+        "preview_text": "x",
+        "body": "x",
+        "cta": "Go",
+        "skip_if": "x"
+      }
+    ]
+  }
+}

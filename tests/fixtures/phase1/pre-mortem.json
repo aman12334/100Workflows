@@ -1,0 +1,100 @@
+{
+  "inputs": {
+    "plan": "Launch a self-serve plan at $29/month in Q3 to reach 500 paying agencies by year end."
+  },
+  "good": {
+    "failure_scenarios": [
+      {
+        "id": "F1",
+        "story": "Self-serve users never connected their banks.",
+        "likelihood": "high",
+        "impact": "high",
+        "early_warning_sign": "Bank connection rate under 40%"
+      },
+      {
+        "id": "F2",
+        "story": "Support load swamped the team.",
+        "likelihood": "medium",
+        "impact": "medium",
+        "early_warning_sign": "Tickets per signup rising"
+      },
+      {
+        "id": "F3",
+        "story": "Price cannibalised the sales-led plan.",
+        "likelihood": "medium",
+        "impact": "high",
+        "early_warning_sign": "Downgrades"
+      }
+    ],
+    "preventive_actions": [
+      {
+        "action": "Guided bank connection",
+        "scenario_ids": [
+          "F1"
+        ],
+        "owner_role": "PM",
+        "when": "Before launch"
+      },
+      {
+        "action": "Help center first",
+        "scenario_ids": [
+          "F2"
+        ],
+        "owner_role": "Support",
+        "when": "Before launch"
+      },
+      {
+        "action": "Seat cap on self-serve",
+        "scenario_ids": [
+          "F3"
+        ],
+        "owner_role": "CEO",
+        "when": "Pricing"
+      }
+    ],
+    "plan_changes": [],
+    "kill_criteria": [
+      "Under 100 paying by October"
+    ]
+  },
+  "bad_fails": "scenarios_prevented",
+  "bad": {
+    "failure_scenarios": [
+      {
+        "id": "F1",
+        "story": "Self-serve users never connected their banks.",
+        "likelihood": "high",
+        "impact": "high",
+        "early_warning_sign": "Bank connection rate under 40%"
+      },
+      {
+        "id": "F2",
+        "story": "Support load swamped the team.",
+        "likelihood": "medium",
+        "impact": "medium",
+        "early_warning_sign": "Tickets per signup rising"
+      },
+      {
+        "id": "F3",
+        "story": "Price cannibalised the sales-led plan.",
+        "likelihood": "medium",
+        "impact": "high",
+        "early_warning_sign": "Downgrades"
+      }
+    ],
+    "preventive_actions": [
+      {
+        "action": "Guided bank connection",
+        "scenario_ids": [
+          "F1"
+        ],
+        "owner_role": "PM",
+        "when": "Before launch"
+      }
+    ],
+    "plan_changes": [],
+    "kill_criteria": [
+      "Under 100 paying by October"
+    ]
+  }
+}

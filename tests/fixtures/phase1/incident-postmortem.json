@@ -1,0 +1,96 @@
+{
+  "inputs": {
+    "incident_notes": "09:12 alerts: sync queue at 40k\n09:30 on-call restarts workers, no change\n10:05 found expired Xero API token\n10:20 token rotated, queue drains by 11:00"
+  },
+  "good": {
+    "summary": "An expired token stopped syncs.",
+    "impact": "unknown",
+    "timeline": [
+      {
+        "time": "09:12",
+        "event": "Alert",
+        "record": "09:12 alerts: sync queue at 40k"
+      },
+      {
+        "time": "10:05",
+        "event": "Cause found",
+        "record": "10:05 found expired Xero API token"
+      }
+    ],
+    "root_causes": [
+      {
+        "id": "RC1",
+        "cause": "Token expiry not monitored",
+        "type": "root_cause"
+      },
+      {
+        "id": "RC2",
+        "cause": "Restart runbook first step",
+        "type": "contributing_factor"
+      }
+    ],
+    "what_went_well": [
+      "Fast rotation"
+    ],
+    "action_items": [
+      {
+        "action": "Alert 7 days before token expiry",
+        "cause_ids": [
+          "RC1"
+        ],
+        "owner_role": "Platform lead",
+        "priority": "p1"
+      },
+      {
+        "action": "Update runbook",
+        "cause_ids": [
+          "RC2"
+        ],
+        "owner_role": "On-call lead",
+        "priority": "p2"
+      }
+    ]
+  },
+  "bad_fails": "causes_have_actions",
+  "bad": {
+    "summary": "An expired token stopped syncs.",
+    "impact": "unknown",
+    "timeline": [
+      {
+        "time": "09:12",
+        "event": "Alert",
+        "record": "09:12 alerts: sync queue at 40k"
+      },
+      {
+        "time": "10:05",
+        "event": "Cause found",
+        "record": "10:05 found expired Xero API token"
+      }
+    ],
+    "root_causes": [
+      {
+        "id": "RC1",
+        "cause": "Token expiry not monitored",
+        "type": "root_cause"
+      },
+      {
+        "id": "RC2",
+        "cause": "Restart runbook first step",
+        "type": "contributing_factor"
+      }
+    ],
+    "what_went_well": [
+      "Fast rotation"
+    ],
+    "action_items": [
+      {
+        "action": "Alert on token expiry",
+        "cause_ids": [
+          "RC1"
+        ],
+        "owner_role": "Platform lead",
+        "priority": "p1"
+      }
+    ]
+  }
+}

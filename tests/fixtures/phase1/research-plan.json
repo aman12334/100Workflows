@@ -1,0 +1,95 @@
+{
+  "inputs": {
+    "research_question": "Why do trial users not convert?",
+    "decision": "Whether to build a mobile receipt app this year"
+  },
+  "good": {
+    "objectives": [
+      {
+        "id": "O1",
+        "objective": "How receipts are captured today"
+      },
+      {
+        "id": "O2",
+        "objective": "How often users are away from a desk"
+      }
+    ],
+    "methods": [
+      {
+        "method": "interviews",
+        "objective_ids": [
+          "O1",
+          "O2"
+        ],
+        "participants": 8,
+        "why": "Context",
+        "limitations": "Stated behavior"
+      },
+      {
+        "method": "analytics_review",
+        "objective_ids": [
+          "O1"
+        ],
+        "participants": 1,
+        "why": "Actual uploads",
+        "limitations": "No why"
+      }
+    ],
+    "participant_criteria": [
+      "Submits 10+ receipts a month"
+    ],
+    "screener_questions": [
+      "How do you submit receipts?",
+      "How many a month?"
+    ],
+    "guide_topics": [
+      "Last receipt submitted"
+    ],
+    "timeline": [
+      {
+        "week": 1,
+        "activity": "Recruit"
+      }
+    ]
+  },
+  "bad_fails": "objectives_covered",
+  "bad": {
+    "objectives": [
+      {
+        "id": "O1",
+        "objective": "How receipts are captured today"
+      },
+      {
+        "id": "O2",
+        "objective": "How often users are away from a desk"
+      }
+    ],
+    "methods": [
+      {
+        "method": "survey",
+        "objective_ids": [
+          "O1"
+        ],
+        "participants": 50,
+        "why": "Scale",
+        "limitations": "Stated"
+      }
+    ],
+    "participant_criteria": [
+      "Submits 10+ receipts a month"
+    ],
+    "screener_questions": [
+      "How do you submit receipts?",
+      "How many a month?"
+    ],
+    "guide_topics": [
+      "Last receipt submitted"
+    ],
+    "timeline": [
+      {
+        "week": 1,
+        "activity": "Recruit"
+      }
+    ]
+  }
+}

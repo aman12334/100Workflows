@@ -1,0 +1,35 @@
+{
+  "inputs": {
+    "questions": "Do you support SSO via SAML?\nAre you SOC 2 Type II certified?",
+    "facts": "SSO via SAML 2.0 on the Business plan. SOC 2 Type I completed March; Type II audit in progress."
+  },
+  "good": {
+    "answers": [
+      {
+        "question": "Do you support SSO via SAML?",
+        "compliance": "yes",
+        "answer": "Yes, SAML 2.0 on the Business plan.",
+        "supporting_fact": "SSO via SAML 2.0 on the Business plan."
+      },
+      {
+        "question": "Are you SOC 2 Type II certified?",
+        "compliance": "partial",
+        "answer": "Type I is complete; Type II is in progress.",
+        "supporting_fact": "SOC 2 Type I completed March; Type II audit in progress."
+      }
+    ],
+    "needs_expert": []
+  },
+  "bad_fails": "facts_quoted",
+  "bad": {
+    "answers": [
+      {
+        "question": "Are you SOC 2 Type II certified?",
+        "compliance": "yes",
+        "answer": "Yes.",
+        "supporting_fact": "SOC 2 Type II certified since 2024"
+      }
+    ],
+    "needs_expert": []
+  }
+}

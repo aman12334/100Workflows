@@ -1,0 +1,72 @@
+{
+  "inputs": {
+    "product_description": "AI bookkeeping",
+    "competitor": "LedgerLoop",
+    "competitor_notes": "Prospects say LedgerLoop \"has a nicer mobile app\". Lost Brightline because LedgerLoop was \"$20 cheaper per seat\". LedgerLoop has no Xero sync."
+  },
+  "good": {
+    "quick_take": "Cheaper with a better app; no Xero sync.",
+    "competitor_claims": [
+      {
+        "kind": "strength",
+        "claim": "Better mobile app",
+        "quote": "has a nicer mobile app"
+      },
+      {
+        "kind": "pricing",
+        "claim": "Cheaper per seat",
+        "quote": "$20 cheaper per seat"
+      },
+      {
+        "kind": "weakness",
+        "claim": "No Xero sync",
+        "quote": "LedgerLoop has no Xero sync."
+      }
+    ],
+    "we_win_when": [
+      "Buyer uses Xero"
+    ],
+    "we_lose_when": [
+      "Price-led buyer"
+    ],
+    "landmine_questions": [
+      "Which accounting system do you close in?",
+      "How do exports reach your ledger?"
+    ],
+    "responses": [
+      {
+        "they_say": "LedgerLoop is cheaper",
+        "we_say": "Compare the hours your team spends re-keying into Xero."
+      }
+    ],
+    "gaps_to_verify": []
+  },
+  "bad_fails": "claims_quoted",
+  "bad": {
+    "quick_take": "Cheaper with a better app; no Xero sync.",
+    "competitor_claims": [
+      {
+        "kind": "weakness",
+        "claim": "Frequent outages",
+        "quote": "LedgerLoop goes down every week"
+      }
+    ],
+    "we_win_when": [
+      "Buyer uses Xero"
+    ],
+    "we_lose_when": [
+      "Price-led buyer"
+    ],
+    "landmine_questions": [
+      "Which accounting system do you close in?",
+      "How do exports reach your ledger?"
+    ],
+    "responses": [
+      {
+        "they_say": "LedgerLoop is cheaper",
+        "we_say": "Compare the hours your team spends re-keying into Xero."
+      }
+    ],
+    "gaps_to_verify": []
+  }
+}

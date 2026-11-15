@@ -1,0 +1,69 @@
+{
+  "inputs": {
+    "account": "Northpeak, renews 30 Sept",
+    "signals": "Weekly active users fell from 12 to 4 since July. Champion Lee left in August."
+  },
+  "good": {
+    "risk": "high",
+    "risk_summary": "Lost champion and falling usage.",
+    "signals": [
+      {
+        "id": "SG1",
+        "signal": "Usage down",
+        "evidence": "Weekly active users fell from 12 to 4 since July.",
+        "type": "usage",
+        "weight": "high",
+        "kind": "symptom"
+      },
+      {
+        "id": "SG2",
+        "signal": "Champion left",
+        "evidence": "Champion Lee left in August.",
+        "type": "relationship",
+        "weight": "high",
+        "kind": "cause"
+      }
+    ],
+    "save_plan": [
+      {
+        "action": "Find a new sponsor",
+        "signal_ids": [
+          "SG2"
+        ],
+        "owner": "CSM",
+        "by_when": "Two weeks"
+      }
+    ],
+    "missing_data": [
+      "Login data by user"
+    ]
+  },
+  "bad_fails": "signals_quoted",
+  "bad": {
+    "risk": "high",
+    "risk_summary": "Lost champion and falling usage.",
+    "signals": [
+      {
+        "id": "SG1",
+        "signal": "Budget cut",
+        "evidence": "They announced a 30% budget cut",
+        "type": "commercial",
+        "weight": "high",
+        "kind": "cause"
+      }
+    ],
+    "save_plan": [
+      {
+        "action": "x",
+        "signal_ids": [
+          "SG1"
+        ],
+        "owner": "y",
+        "by_when": "z"
+      }
+    ],
+    "missing_data": [
+      "Login data by user"
+    ]
+  }
+}

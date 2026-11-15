@@ -1,0 +1,67 @@
+{
+  "inputs": {
+    "call_notes": "Dana (COO) - month-end takes 3 days. Wants pilot with 2 entities. Will intro CFO by Friday. We send security doc.",
+    "prospect": "Brightline Agency, Dana Lee (COO)"
+  },
+  "good": {
+    "summary": "Dana wants a two-entity pilot.",
+    "stated_needs": [
+      {
+        "need": "Faster month-end",
+        "quote": "month-end takes 3 days"
+      }
+    ],
+    "next_steps": [
+      {
+        "step": "Intro to CFO",
+        "owner": "them",
+        "due": "Friday",
+        "quote": "Will intro CFO by Friday"
+      },
+      {
+        "step": "Send security doc",
+        "owner": "us",
+        "due": "not agreed",
+        "quote": "We send security doc"
+      }
+    ],
+    "crm_updates": [
+      {
+        "field": "pain",
+        "value": "Three-day month-end"
+      }
+    ],
+    "email": {
+      "subject": "Next steps from today",
+      "body": "Thanks Dana. Security doc attached; looking forward to meeting your CFO."
+    }
+  },
+  "bad_fails": "steps_quoted",
+  "bad": {
+    "summary": "Dana wants a two-entity pilot.",
+    "stated_needs": [
+      {
+        "need": "Faster month-end",
+        "quote": "month-end takes 3 days"
+      }
+    ],
+    "next_steps": [
+      {
+        "step": "Sign contract",
+        "owner": "them",
+        "due": "Monday",
+        "quote": "Will sign the contract on Monday"
+      }
+    ],
+    "crm_updates": [
+      {
+        "field": "pain",
+        "value": "Three-day month-end"
+      }
+    ],
+    "email": {
+      "subject": "Next steps from today",
+      "body": "Thanks Dana. Security doc attached; looking forward to meeting your CFO."
+    }
+  }
+}

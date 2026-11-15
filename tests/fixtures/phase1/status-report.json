@@ -1,0 +1,54 @@
+{
+  "inputs": {
+    "updates": "Payments: Stripe migration done, 2 days early.\nMobile: designer out sick, prototype slips a week.\nXero: waiting on partner API access since 20 May."
+  },
+  "good": {
+    "overall": "amber",
+    "headline": "Payments done; Xero blocked on partner access.",
+    "asks": [
+      "Escalate Xero API access"
+    ],
+    "workstreams": [
+      {
+        "name": "Payments",
+        "status": "green",
+        "update": "Payments: Stripe migration done, 2 days early.",
+        "progress": "Done",
+        "next": "Monitor"
+      },
+      {
+        "name": "Mobile",
+        "status": "amber",
+        "update": "Mobile: designer out sick, prototype slips a week.",
+        "progress": "Slipping",
+        "next": "Prototype"
+      },
+      {
+        "name": "Xero",
+        "status": "red",
+        "update": "Xero: waiting on partner API access since 20 May.",
+        "progress": "Blocked",
+        "next": "Escalate"
+      }
+    ],
+    "risks": []
+  },
+  "bad_fails": "updates_quoted",
+  "bad": {
+    "overall": "amber",
+    "headline": "Payments done; Xero blocked on partner access.",
+    "asks": [
+      "Escalate Xero API access"
+    ],
+    "workstreams": [
+      {
+        "name": "Xero",
+        "status": "green",
+        "update": "Xero: integration live in production",
+        "progress": "x",
+        "next": "y"
+      }
+    ],
+    "risks": []
+  }
+}

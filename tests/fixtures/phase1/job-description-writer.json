@@ -1,0 +1,55 @@
+{
+  "inputs": {
+    "company_name": "Acme",
+    "role_need": "We need someone to own customer support end to end; response times doubled."
+  },
+  "good": {
+    "title": "Head of Support",
+    "summary": "Own support end to end.",
+    "outcomes": [
+      "Median first response under 4 hours",
+      "Founders out of the queue"
+    ],
+    "responsibilities": [
+      "Answer tickets",
+      "Write macros",
+      "Report trends"
+    ],
+    "must_have": [
+      "Two years in SaaS support",
+      "Clear writing"
+    ],
+    "nice_to_have": [
+      "Accounting knowledge"
+    ],
+    "details": []
+  },
+  "bad_fails": "short_must_have",
+  "bad": {
+    "title": "Head of Support",
+    "summary": "Own support end to end.",
+    "outcomes": [
+      "Median first response under 4 hours",
+      "Founders out of the queue"
+    ],
+    "responsibilities": [
+      "Answer tickets",
+      "Write macros",
+      "Report trends"
+    ],
+    "must_have": [
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+      "f",
+      "g",
+      "h"
+    ],
+    "nice_to_have": [
+      "Accounting knowledge"
+    ],
+    "details": []
+  }
+}

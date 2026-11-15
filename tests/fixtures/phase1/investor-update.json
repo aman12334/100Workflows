@@ -1,0 +1,52 @@
+{
+  "inputs": {
+    "company_name": "Acme",
+    "metrics": "MRR $42,300 (Mar: $38,900)\nNet revenue retention 108%",
+    "notes": "Signed Brightline (15 seats). Lost our first enterprise pilot on SSO."
+  },
+  "good": {
+    "subject": "Acme April update",
+    "tldr": "MRR up; lost a pilot on SSO.",
+    "kpis": [
+      {
+        "metric": "MRR",
+        "value": "$42,300 (Mar: $38,900)"
+      },
+      {
+        "metric": "NRR",
+        "value": "108%"
+      }
+    ],
+    "highlights": [
+      "Signed Brightline"
+    ],
+    "lowlights": [
+      "Lost enterprise pilot on SSO"
+    ],
+    "focus_next": [
+      "SSO"
+    ],
+    "asks": []
+  },
+  "bad_fails": "kpis_exact",
+  "bad": {
+    "subject": "Acme April update",
+    "tldr": "MRR up; lost a pilot on SSO.",
+    "kpis": [
+      {
+        "metric": "MRR",
+        "value": "$45k"
+      }
+    ],
+    "highlights": [
+      "Signed Brightline"
+    ],
+    "lowlights": [
+      "Lost enterprise pilot on SSO"
+    ],
+    "focus_next": [
+      "SSO"
+    ],
+    "asks": []
+  }
+}

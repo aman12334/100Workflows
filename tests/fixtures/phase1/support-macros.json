@@ -1,0 +1,51 @@
+{
+  "inputs": {
+    "common_questions": "How do I change my billing email?",
+    "product_facts": "Billing email is changed under Settings > Billing. Bank connections must be re-authorised every 90 days."
+  },
+  "good": {
+    "macros": [
+      {
+        "title": "Change billing email",
+        "use_when": "Billing email question",
+        "reply": "Hi {name}, go to Settings > Billing.",
+        "facts_used": [
+          "Billing email is changed under Settings > Billing."
+        ],
+        "slots": [
+          "name"
+        ],
+        "internal_note": ""
+      },
+      {
+        "title": "Bank sync stopped",
+        "use_when": "Sync stopped",
+        "reply": "Hi {name}, please re-authorise your bank.",
+        "facts_used": [
+          "Bank connections must be re-authorised every 90 days."
+        ],
+        "slots": [
+          "name"
+        ],
+        "internal_note": ""
+      }
+    ],
+    "gaps": []
+  },
+  "bad_fails": "facts_approved",
+  "bad": {
+    "macros": [
+      {
+        "title": "Refunds",
+        "use_when": "x",
+        "reply": "y",
+        "facts_used": [
+          "Refunds are available within 60 days"
+        ],
+        "slots": [],
+        "internal_note": ""
+      }
+    ],
+    "gaps": []
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "inputs": {
+    "spec": "Users can invite teammates. Invites expire after a while. Admins can remove anyone."
+  },
+  "good": {
+    "verdict": "ready_with_changes",
+    "issues": [
+      {
+        "quote": "Invites expire after a while",
+        "type": "ambiguity",
+        "severity": "medium",
+        "problem": "No expiry period.",
+        "suggestion": "State 7 days."
+      },
+      {
+        "quote": "Admins can remove anyone",
+        "type": "missing_edge_case",
+        "severity": "high",
+        "problem": "Can an admin remove the last admin?",
+        "suggestion": "Block removing the last admin."
+      }
+    ],
+    "missing_sections": [
+      "Audit logging"
+    ],
+    "strengths": [
+      "Short and clear"
+    ]
+  },
+  "bad_fails": "quotes_in_spec",
+  "bad": {
+    "verdict": "ready_with_changes",
+    "issues": [
+      {
+        "quote": "Invites are sent by SMS",
+        "type": "ambiguity",
+        "severity": "low",
+        "problem": "x",
+        "suggestion": "y"
+      }
+    ],
+    "missing_sections": [
+      "Audit logging"
+    ],
+    "strengths": [
+      "Short and clear"
+    ]
+  }
+}

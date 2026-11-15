@@ -1,0 +1,50 @@
+{
+  "inputs": {
+    "company_name": "Acme",
+    "client": "Brightline Agency",
+    "interview_notes": "Dana Lee, COO: \"Month-end used to take three days. Now it takes four hours.\" They switched from spreadsheets in January."
+  },
+  "good": {
+    "title": "How Brightline closes the month in four hours",
+    "summary": "Brightline replaced spreadsheets.",
+    "challenge": "Three-day month-end.",
+    "solution": "Automated reconciliation.",
+    "results": [
+      {
+        "result": "Month-end from three days to four hours",
+        "evidence": "Month-end used to take three days. Now it takes four hours."
+      }
+    ],
+    "pull_quotes": [
+      {
+        "quote": "Now it takes four hours.",
+        "attribution": "Dana Lee, COO"
+      }
+    ],
+    "questions_for_client": [
+      "How many people were involved before?"
+    ]
+  },
+  "bad_fails": "results_evidenced",
+  "bad": {
+    "title": "How Brightline closes the month in four hours",
+    "summary": "Brightline replaced spreadsheets.",
+    "challenge": "Three-day month-end.",
+    "solution": "Automated reconciliation.",
+    "results": [
+      {
+        "result": "Saved $50,000 a year",
+        "evidence": "We saved fifty thousand dollars a year"
+      }
+    ],
+    "pull_quotes": [
+      {
+        "quote": "Now it takes four hours.",
+        "attribution": "Dana Lee, COO"
+      }
+    ],
+    "questions_for_client": [
+      "How many people were involved before?"
+    ]
+  }
+}

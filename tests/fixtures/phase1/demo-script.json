@@ -1,0 +1,46 @@
+{
+  "inputs": {
+    "discovery_notes": "Dana: \"We re-key every expense into Xero.\" \"I never know which receipts are missing until month-end.\"",
+    "capabilities": "Xero sync; missing-receipt reminders"
+  },
+  "good": {
+    "opening": "You told us month-end means re-keying.",
+    "segments": [
+      {
+        "pain_quote": "We re-key every expense into Xero.",
+        "capability": "Xero sync",
+        "talk_track": "Watch an expense land in Xero.",
+        "check_in_question": "Is this the account you use?",
+        "minutes": 6
+      },
+      {
+        "pain_quote": "I never know which receipts are missing until month-end.",
+        "capability": "Missing-receipt reminders",
+        "talk_track": "Reminders go out daily.",
+        "check_in_question": "Who chases receipts today?",
+        "minutes": 5
+      }
+    ],
+    "not_shown": [
+      "Bulk approval"
+    ],
+    "close": "Propose a pilot."
+  },
+  "bad_fails": "pains_quoted",
+  "bad": {
+    "opening": "You told us month-end means re-keying.",
+    "segments": [
+      {
+        "pain_quote": "Our reports are always late for the board",
+        "capability": "Reporting",
+        "talk_track": "x",
+        "check_in_question": "y",
+        "minutes": 5
+      }
+    ],
+    "not_shown": [
+      "Bulk approval"
+    ],
+    "close": "Propose a pilot."
+  }
+}

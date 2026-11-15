@@ -1,0 +1,44 @@
+{
+  "inputs": {
+    "source": "Most agencies lose a day a month to reconciliation. The fix is not more discipline; it is fewer manual steps."
+  },
+  "good": {
+    "core_ideas": [
+      "Fewer steps beats discipline"
+    ],
+    "posts": [
+      {
+        "channel": "linkedin",
+        "hook": "Discipline will not fix your month-end.",
+        "body": "Short post.",
+        "source_passage": "The fix is not more discipline; it is fewer manual steps."
+      },
+      {
+        "channel": "x",
+        "hook": "A day a month, gone.",
+        "body": "Short.",
+        "source_passage": "Most agencies lose a day a month to reconciliation."
+      }
+    ]
+  },
+  "bad_fails": "anchored",
+  "bad": {
+    "core_ideas": [
+      "Fewer steps beats discipline"
+    ],
+    "posts": [
+      {
+        "channel": "linkedin",
+        "hook": "x",
+        "body": "y",
+        "source_passage": "Agencies that automate grow twice as fast"
+      },
+      {
+        "channel": "x",
+        "hook": "z",
+        "body": "y",
+        "source_passage": "Most agencies lose a day a month to reconciliation."
+      }
+    ]
+  }
+}

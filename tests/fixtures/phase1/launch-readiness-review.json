@@ -1,0 +1,81 @@
+{
+  "inputs": {
+    "launch": "Bulk approvals GA on 12 June",
+    "status_notes": "QA: 2 P1 bugs open in bulk approve, fix ETA Friday.\nSupport: macros written, team trained on Tuesday.\nDocs: help article drafted, not reviewed."
+  },
+  "good": {
+    "recommendation": "conditional_go",
+    "rationale": "Ship if the P1 bugs are fixed by Friday.",
+    "areas": [
+      {
+        "area": "qa",
+        "status": "blocked",
+        "evidence": "QA: 2 P1 bugs open in bulk approve, fix ETA Friday.",
+        "owner": "QA",
+        "needed_to_be_ready": "Fix and verify both P1s"
+      },
+      {
+        "area": "support",
+        "status": "ready",
+        "evidence": "Support: macros written, team trained on Tuesday.",
+        "owner": "Support",
+        "needed_to_be_ready": "Nothing"
+      },
+      {
+        "area": "docs",
+        "status": "at_risk",
+        "evidence": "Docs: help article drafted, not reviewed.",
+        "owner": "Docs",
+        "needed_to_be_ready": "Review the article"
+      },
+      {
+        "area": "marketing",
+        "status": "unknown",
+        "owner": "unassigned",
+        "needed_to_be_ready": "Confirm announcement plan"
+      }
+    ],
+    "blockers": [
+      {
+        "area": "qa",
+        "blocker": "Two P1 bugs",
+        "resolution": "Fix by Friday"
+      }
+    ],
+    "next_actions": [
+      "Ask marketing for status"
+    ]
+  },
+  "bad_fails": "evidence_quoted",
+  "bad": {
+    "recommendation": "conditional_go",
+    "rationale": "Ship if the P1 bugs are fixed by Friday.",
+    "areas": [
+      {
+        "area": "qa",
+        "status": "ready",
+        "evidence": "QA: all tests green, no open bugs.",
+        "owner": "QA",
+        "needed_to_be_ready": "Nothing"
+      },
+      {
+        "area": "support",
+        "status": "ready",
+        "evidence": "Support: macros written, team trained on Tuesday.",
+        "owner": "Support",
+        "needed_to_be_ready": "Nothing"
+      },
+      {
+        "area": "docs",
+        "status": "at_risk",
+        "evidence": "Docs: help article drafted, not reviewed.",
+        "owner": "Docs",
+        "needed_to_be_ready": "Review"
+      }
+    ],
+    "blockers": [],
+    "next_actions": [
+      "Ask marketing for status"
+    ]
+  }
+}

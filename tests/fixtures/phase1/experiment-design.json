@@ -1,0 +1,95 @@
+{
+  "inputs": {
+    "change": "Show annual pricing first on the pricing page because annual plans retain better."
+  },
+  "good": {
+    "hypothesis": "If annual pricing is shown first, annual plan share will rise because the discount is more visible.",
+    "metrics": [
+      {
+        "id": "M1",
+        "name": "Annual plan share",
+        "role": "primary",
+        "definition": "Annual checkouts / all checkouts"
+      },
+      {
+        "id": "M2",
+        "name": "Checkout conversion",
+        "role": "guardrail",
+        "definition": "Checkouts / pricing visitors"
+      }
+    ],
+    "variants": [
+      {
+        "id": "control",
+        "description": "Monthly first"
+      },
+      {
+        "id": "B",
+        "description": "Annual first"
+      }
+    ],
+    "audience": "New visitors to the pricing page.",
+    "decision_rules": [
+      {
+        "metric_id": "M1",
+        "condition": "Significant increase",
+        "decision": "ship"
+      },
+      {
+        "metric_id": "M2",
+        "condition": "Drop over 5% relative",
+        "decision": "stop"
+      }
+    ],
+    "power_inputs_needed": [
+      "Baseline annual share"
+    ],
+    "risks": [
+      "Seasonality"
+    ]
+  },
+  "bad_fails": "two_or_more_variants",
+  "review": 4,
+  "bad": {
+    "hypothesis": "If annual pricing is shown first, annual plan share will rise because the discount is more visible.",
+    "metrics": [
+      {
+        "id": "M1",
+        "name": "Annual plan share",
+        "role": "primary",
+        "definition": "Annual checkouts / all checkouts"
+      },
+      {
+        "id": "M2",
+        "name": "Checkout conversion",
+        "role": "guardrail",
+        "definition": "Checkouts / pricing visitors"
+      }
+    ],
+    "variants": [
+      {
+        "id": "B",
+        "description": "Annual first"
+      }
+    ],
+    "audience": "New visitors to the pricing page.",
+    "decision_rules": [
+      {
+        "metric_id": "M1",
+        "condition": "Significant increase",
+        "decision": "ship"
+      },
+      {
+        "metric_id": "M2",
+        "condition": "Drop over 5% relative",
+        "decision": "stop"
+      }
+    ],
+    "power_inputs_needed": [
+      "Baseline annual share"
+    ],
+    "risks": [
+      "Seasonality"
+    ]
+  }
+}

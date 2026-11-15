@@ -1,0 +1,72 @@
+{
+  "inputs": {
+    "product_description": "AI bookkeeping for agencies",
+    "alternatives": "Spreadsheets and a part-time bookkeeper"
+  },
+  "good": {
+    "alternatives": [
+      "Spreadsheets and a part-time bookkeeper"
+    ],
+    "unique_attributes": [
+      {
+        "id": "A1",
+        "attribute": "Agency-specific categories",
+        "basis": "supplied"
+      },
+      {
+        "id": "A2",
+        "attribute": "Nightly reconciliation",
+        "basis": "supplied"
+      }
+    ],
+    "value_themes": [
+      {
+        "value": "Books always current",
+        "attribute_ids": [
+          "A2"
+        ],
+        "proof_needed": "Customer data"
+      }
+    ],
+    "best_fit_buyers": "Agency owners with 10-50 staff.",
+    "market_category": "Agency bookkeeping automation",
+    "positioning_statement": "For agency owners who close books by hand, Acme is agency bookkeeping automation that keeps books current nightly.",
+    "risks": [
+      "Category unfamiliar"
+    ]
+  },
+  "bad_fails": "value_from_attributes",
+  "review": 4,
+  "bad": {
+    "alternatives": [
+      "Spreadsheets and a part-time bookkeeper"
+    ],
+    "unique_attributes": [
+      {
+        "id": "A1",
+        "attribute": "Agency-specific categories",
+        "basis": "supplied"
+      },
+      {
+        "id": "A2",
+        "attribute": "Nightly reconciliation",
+        "basis": "supplied"
+      }
+    ],
+    "value_themes": [
+      {
+        "value": "x",
+        "attribute_ids": [
+          "A7"
+        ],
+        "proof_needed": "y"
+      }
+    ],
+    "best_fit_buyers": "Agency owners with 10-50 staff.",
+    "market_category": "Agency bookkeeping automation",
+    "positioning_statement": "For agency owners who close books by hand, Acme is agency bookkeeping automation that keeps books current nightly.",
+    "risks": [
+      "Category unfamiliar"
+    ]
+  }
+}

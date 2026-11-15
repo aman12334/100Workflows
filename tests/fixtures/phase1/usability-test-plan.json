@@ -1,0 +1,71 @@
+{
+  "inputs": {
+    "flow": "New bulk-approval screen: select expenses, approve, undo.",
+    "learning_goals": "Can admins find bulk approve?"
+  },
+  "good": {
+    "participant_profile": "Agency admins who approve 20+ expenses a week.",
+    "warm_up_questions": [
+      "How do you approve expenses today?"
+    ],
+    "tasks": [
+      {
+        "id": "T1",
+        "scenario": "It is Friday and twenty expenses are waiting. Approve them all.",
+        "success_criterion": "All 20 approved",
+        "learning_goal": "Findability",
+        "observe": [
+          "Path taken"
+        ]
+      },
+      {
+        "id": "T2",
+        "scenario": "You approved one by mistake. Fix it.",
+        "success_criterion": "Expense back to pending",
+        "learning_goal": "Undo trust",
+        "observe": [
+          "Hesitation"
+        ]
+      },
+      {
+        "id": "T3",
+        "scenario": "Approve only the travel expenses.",
+        "success_criterion": "Only travel approved",
+        "learning_goal": "Filtering",
+        "observe": [
+          "Errors"
+        ]
+      }
+    ],
+    "debrief_questions": [
+      "What was hardest?",
+      "Would you trust it?"
+    ],
+    "metrics": [
+      "task_success"
+    ]
+  },
+  "bad_fails": "task_count",
+  "bad": {
+    "participant_profile": "Agency admins who approve 20+ expenses a week.",
+    "warm_up_questions": [
+      "How do you approve expenses today?"
+    ],
+    "tasks": [
+      {
+        "id": "T1",
+        "scenario": "Approve everything.",
+        "success_criterion": "Done",
+        "learning_goal": "x",
+        "observe": []
+      }
+    ],
+    "debrief_questions": [
+      "What was hardest?",
+      "Would you trust it?"
+    ],
+    "metrics": [
+      "task_success"
+    ]
+  }
+}

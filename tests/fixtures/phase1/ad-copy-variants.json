@@ -1,0 +1,84 @@
+{
+  "inputs": {
+    "product_description": "AI bookkeeping for agencies",
+    "offer": "14-day free trial, no card required",
+    "proof": "Used by 300 agencies"
+  },
+  "good": {
+    "angles": [
+      {
+        "id": "pain",
+        "idea": "Month-end pain"
+      },
+      {
+        "id": "proof",
+        "idea": "Social proof"
+      }
+    ],
+    "variants": [
+      {
+        "platform": "google",
+        "angle": "pain",
+        "headline": "Month-end in hours",
+        "description": "Stop reconciling by hand.",
+        "cta": "Start trial"
+      },
+      {
+        "platform": "google",
+        "angle": "proof",
+        "headline": "Used by 300 agencies",
+        "description": "Try it free for 14 days.",
+        "cta": "Start trial"
+      },
+      {
+        "platform": "linkedin",
+        "angle": "pain",
+        "headline": "Your books, closed faster",
+        "description": "No card required.",
+        "cta": "Try free"
+      }
+    ],
+    "proof_used": [
+      "Used by 300 agencies"
+    ]
+  },
+  "bad_fails": "proof_supplied",
+  "bad": {
+    "angles": [
+      {
+        "id": "pain",
+        "idea": "Month-end pain"
+      },
+      {
+        "id": "proof",
+        "idea": "Social proof"
+      }
+    ],
+    "variants": [
+      {
+        "platform": "google",
+        "angle": "pain",
+        "headline": "Month-end in hours",
+        "description": "Stop reconciling by hand.",
+        "cta": "Start trial"
+      },
+      {
+        "platform": "google",
+        "angle": "proof",
+        "headline": "Used by 300 agencies",
+        "description": "Try it free for 14 days.",
+        "cta": "Start trial"
+      },
+      {
+        "platform": "linkedin",
+        "angle": "pain",
+        "headline": "Your books, closed faster",
+        "description": "No card required.",
+        "cta": "Try free"
+      }
+    ],
+    "proof_used": [
+      "Rated #1 by accountants"
+    ]
+  }
+}

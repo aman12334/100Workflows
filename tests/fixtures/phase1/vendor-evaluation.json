@@ -1,0 +1,115 @@
+{
+  "inputs": {
+    "need": "Payroll provider for UK and Ireland; must integrate with Xero.",
+    "vendor_notes": "PayFlow: \"Native Xero sync\", £6/employee/month, no Irish payroll.\nStaffPay: Ireland and UK supported, £9/employee/month, Xero via CSV export only."
+  },
+  "good": {
+    "criteria": [
+      {
+        "id": "K1",
+        "criterion": "Country coverage",
+        "weight": "must_have"
+      },
+      {
+        "id": "K2",
+        "criterion": "Xero integration",
+        "weight": "high"
+      }
+    ],
+    "vendors": [
+      {
+        "vendor": "PayFlow",
+        "scores": [
+          {
+            "criterion_id": "K1",
+            "score": 1,
+            "evidence": "no Irish payroll"
+          },
+          {
+            "criterion_id": "K2",
+            "score": 5,
+            "evidence": "Native Xero sync"
+          }
+        ],
+        "deal_breakers": [
+          "No Irish payroll"
+        ],
+        "questions_to_ask": []
+      },
+      {
+        "vendor": "StaffPay",
+        "scores": [
+          {
+            "criterion_id": "K1",
+            "score": 5,
+            "evidence": "Ireland and UK supported"
+          },
+          {
+            "criterion_id": "K2",
+            "score": 2,
+            "evidence": "Xero via CSV export only"
+          }
+        ],
+        "deal_breakers": [],
+        "questions_to_ask": [
+          "Is a Xero API on the roadmap?"
+        ]
+      }
+    ],
+    "recommendation": {
+      "vendor": "StaffPay",
+      "rationale": "Only one covering Ireland.",
+      "risks": [
+        "Manual Xero export"
+      ]
+    }
+  },
+  "bad_fails": "evidence_quoted",
+  "bad": {
+    "criteria": [
+      {
+        "id": "K1",
+        "criterion": "Country coverage",
+        "weight": "must_have"
+      },
+      {
+        "id": "K2",
+        "criterion": "Xero integration",
+        "weight": "high"
+      }
+    ],
+    "vendors": [
+      {
+        "vendor": "PayFlow",
+        "scores": [
+          {
+            "criterion_id": "K1",
+            "score": 4,
+            "evidence": "Irish payroll launching next month"
+          }
+        ],
+        "deal_breakers": [],
+        "questions_to_ask": []
+      },
+      {
+        "vendor": "StaffPay",
+        "scores": [
+          {
+            "criterion_id": "K1",
+            "score": 5,
+            "evidence": "Ireland and UK supported"
+          }
+        ],
+        "deal_breakers": [],
+        "questions_to_ask": []
+      }
+    ],
+    "recommendation": {
+      "vendor": "StaffPay",
+      "rationale": "Only one covering Ireland.",
+      "risks": [
+        "Manual Xero export"
+      ]
+    }
+  }
+}

@@ -1,0 +1,200 @@
+{
+  "inputs": {
+    "priorities": "Prove self-serve can work; reduce churn among agencies."
+  },
+  "good": {
+    "priorities": [
+      {
+        "id": "P1",
+        "priority": "Prove self-serve"
+      },
+      {
+        "id": "P2",
+        "priority": "Reduce churn"
+      }
+    ],
+    "objectives": [
+      {
+        "objective": "Agencies can start without talking to us",
+        "priority_id": "P1",
+        "key_results": [
+          {
+            "key_result": "150 self-serve signups",
+            "metric": "Signups",
+            "target": 150,
+            "baseline": "0",
+            "unit": "signups"
+          },
+          {
+            "key_result": "40% connect a bank in week one",
+            "metric": "Bank connection rate",
+            "target": 40,
+            "baseline": "unknown",
+            "unit": "%"
+          }
+        ]
+      }
+    ],
+    "not_this_quarter": [
+      "Mobile app"
+    ]
+  },
+  "bad_fails": "objective_count",
+  "bad": {
+    "priorities": [
+      {
+        "id": "P1",
+        "priority": "Prove self-serve"
+      },
+      {
+        "id": "P2",
+        "priority": "Reduce churn"
+      }
+    ],
+    "objectives": [
+      {
+        "objective": "Objective 0",
+        "priority_id": "P1",
+        "key_results": [
+          {
+            "key_result": "a",
+            "metric": "m",
+            "target": 1,
+            "baseline": "unknown",
+            "unit": "u"
+          },
+          {
+            "key_result": "b",
+            "metric": "m",
+            "target": 2,
+            "baseline": "unknown",
+            "unit": "u"
+          }
+        ]
+      },
+      {
+        "objective": "Objective 1",
+        "priority_id": "P1",
+        "key_results": [
+          {
+            "key_result": "a",
+            "metric": "m",
+            "target": 1,
+            "baseline": "unknown",
+            "unit": "u"
+          },
+          {
+            "key_result": "b",
+            "metric": "m",
+            "target": 2,
+            "baseline": "unknown",
+            "unit": "u"
+          }
+        ]
+      },
+      {
+        "objective": "Objective 2",
+        "priority_id": "P1",
+        "key_results": [
+          {
+            "key_result": "a",
+            "metric": "m",
+            "target": 1,
+            "baseline": "unknown",
+            "unit": "u"
+          },
+          {
+            "key_result": "b",
+            "metric": "m",
+            "target": 2,
+            "baseline": "unknown",
+            "unit": "u"
+          }
+        ]
+      },
+      {
+        "objective": "Objective 3",
+        "priority_id": "P1",
+        "key_results": [
+          {
+            "key_result": "a",
+            "metric": "m",
+            "target": 1,
+            "baseline": "unknown",
+            "unit": "u"
+          },
+          {
+            "key_result": "b",
+            "metric": "m",
+            "target": 2,
+            "baseline": "unknown",
+            "unit": "u"
+          }
+        ]
+      },
+      {
+        "objective": "Objective 4",
+        "priority_id": "P1",
+        "key_results": [
+          {
+            "key_result": "a",
+            "metric": "m",
+            "target": 1,
+            "baseline": "unknown",
+            "unit": "u"
+          },
+          {
+            "key_result": "b",
+            "metric": "m",
+            "target": 2,
+            "baseline": "unknown",
+            "unit": "u"
+          }
+        ]
+      },
+      {
+        "objective": "Objective 5",
+        "priority_id": "P1",
+        "key_results": [
+          {
+            "key_result": "a",
+            "metric": "m",
+            "target": 1,
+            "baseline": "unknown",
+            "unit": "u"
+          },
+          {
+            "key_result": "b",
+            "metric": "m",
+            "target": 2,
+            "baseline": "unknown",
+            "unit": "u"
+          }
+        ]
+      },
+      {
+        "objective": "Objective 6",
+        "priority_id": "P1",
+        "key_results": [
+          {
+            "key_result": "a",
+            "metric": "m",
+            "target": 1,
+            "baseline": "unknown",
+            "unit": "u"
+          },
+          {
+            "key_result": "b",
+            "metric": "m",
+            "target": 2,
+            "baseline": "unknown",
+            "unit": "u"
+          }
+        ]
+      }
+    ],
+    "not_this_quarter": [
+      "Mobile app"
+    ]
+  }
+}

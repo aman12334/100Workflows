@@ -1,0 +1,50 @@
+{
+  "inputs": {
+    "feedback": "Export to CSV crashes when I pick last quarter.\nWould love a dark mode!\nI can never find where to change my billing email."
+  },
+  "good": {
+    "items": [
+      {
+        "quote": "Export to CSV crashes when I pick last quarter.",
+        "type": "bug",
+        "product_area": "Reporting",
+        "urgency": "high",
+        "route_to": "Core platform",
+        "note": ""
+      },
+      {
+        "quote": "Would love a dark mode!",
+        "type": "feature_request",
+        "product_area": "UI",
+        "urgency": "low",
+        "route_to": "Growth",
+        "note": ""
+      },
+      {
+        "quote": "I can never find where to change my billing email.",
+        "type": "ux_issue",
+        "product_area": "Billing",
+        "urgency": "medium",
+        "route_to": "Growth",
+        "note": ""
+      }
+    ],
+    "patterns": [],
+    "summary": "One blocking export bug."
+  },
+  "bad_fails": "quotes_exact",
+  "bad": {
+    "items": [
+      {
+        "quote": "The app is slow and unusable for everyone.",
+        "type": "bug",
+        "product_area": "Core",
+        "urgency": "high",
+        "route_to": "Core platform",
+        "note": ""
+      }
+    ],
+    "patterns": [],
+    "summary": "One blocking export bug."
+  }
+}

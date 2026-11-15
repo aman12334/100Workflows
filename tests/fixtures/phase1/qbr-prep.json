@@ -1,0 +1,66 @@
+{
+  "inputs": {
+    "account": "Brightline",
+    "goals": "Close month-end in one day.",
+    "results_data": "Month-end close: 3 days in Q1, 1.5 days in Q2. 2,140 expenses auto-matched."
+  },
+  "good": {
+    "headline": "Close time halved.",
+    "goals": [
+      {
+        "id": "G1",
+        "goal": "One-day close",
+        "status": "on_track"
+      }
+    ],
+    "results": [
+      {
+        "goal_id": "G1",
+        "result": "Close halved",
+        "data": "Month-end close: 3 days in Q1, 1.5 days in Q2."
+      }
+    ],
+    "issues": [],
+    "next_quarter": [
+      {
+        "initiative": "Receipt reminders",
+        "goal_id": "G1",
+        "owner": "CSM"
+      }
+    ],
+    "asks": [
+      "Case study"
+    ],
+    "talking_points": []
+  },
+  "bad_fails": "results_from_data",
+  "bad": {
+    "headline": "Close time halved.",
+    "goals": [
+      {
+        "id": "G1",
+        "goal": "One-day close",
+        "status": "on_track"
+      }
+    ],
+    "results": [
+      {
+        "goal_id": "G1",
+        "result": "ROI",
+        "data": "Saved $80,000 in bookkeeping costs"
+      }
+    ],
+    "issues": [],
+    "next_quarter": [
+      {
+        "initiative": "Receipt reminders",
+        "goal_id": "G1",
+        "owner": "CSM"
+      }
+    ],
+    "asks": [
+      "Case study"
+    ],
+    "talking_points": []
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "inputs": {
+    "product_description": "AI bookkeeping",
+    "launch": "Bulk approvals: admins approve a week of expenses in one click.",
+    "launch_week": 4
+  },
+  "good": {
+    "tier": "tier_2_notable",
+    "tier_rationale": "Visible time saver for admins.",
+    "audiences": [
+      {
+        "id": "AU1",
+        "audience": "Admins",
+        "what_they_care_about": "Time"
+      }
+    ],
+    "messages": [
+      {
+        "audience_id": "AU1",
+        "message": "Approve a week in one click.",
+        "channels": [
+          "In-app"
+        ]
+      }
+    ],
+    "milestones": [
+      {
+        "id": "MS1",
+        "week": 1,
+        "milestone": "Messaging approved",
+        "owner_role": "PMM",
+        "depends_on": []
+      },
+      {
+        "id": "MS2",
+        "week": 2,
+        "milestone": "Help article",
+        "owner_role": "Support lead",
+        "depends_on": [
+          "MS1"
+        ]
+      },
+      {
+        "id": "MS3",
+        "week": 4,
+        "milestone": "Launch email",
+        "owner_role": "PMM",
+        "depends_on": [
+          "MS1",
+          "MS2"
+        ]
+      }
+    ],
+    "success_metrics": [
+      "Bulk approvals used by 30% of admins"
+    ],
+    "risks": []
+  },
+  "bad_fails": "messages_target_audiences",
+  "bad": {
+    "tier": "tier_2_notable",
+    "tier_rationale": "Visible time saver for admins.",
+    "audiences": [
+      {
+        "id": "AU1",
+        "audience": "Admins",
+        "what_they_care_about": "Time"
+      }
+    ],
+    "messages": [
+      {
+        "audience_id": "AU9",
+        "message": "x",
+        "channels": [
+          "Email"
+        ]
+      }
+    ],
+    "milestones": [
+      {
+        "id": "MS1",
+        "week": 1,
+        "milestone": "Messaging approved",
+        "owner_role": "PMM",
+        "depends_on": []
+      },
+      {
+        "id": "MS2",
+        "week": 2,
+        "milestone": "Help article",
+        "owner_role": "Support lead",
+        "depends_on": [
+          "MS1"
+        ]
+      },
+      {
+        "id": "MS3",
+        "week": 4,
+        "milestone": "Launch email",
+        "owner_role": "PMM",
+        "depends_on": [
+          "MS1",
+          "MS2"
+        ]
+      }
+    ],
+    "success_metrics": [
+      "Bulk approvals used by 30% of admins"
+    ],
+    "risks": []
+  }
+}

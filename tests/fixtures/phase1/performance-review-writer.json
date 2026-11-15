@@ -1,0 +1,62 @@
+{
+  "inputs": {
+    "employee_role": "Senior support specialist",
+    "manager_notes": "Rewrote 40 macros in March; first-response time dropped from 9h to 5h. Missed two escalations in May because the SLA dashboard was ignored."
+  },
+  "good": {
+    "summary": "Strong quarter with one process gap.",
+    "strengths": [
+      {
+        "point": "Improved response time",
+        "example": "first-response time dropped from 9h to 5h",
+        "impact": "Faster support"
+      }
+    ],
+    "growth_areas": [
+      {
+        "point": "Escalation tracking",
+        "example": "Missed two escalations in May",
+        "support": "Weekly SLA review"
+      }
+    ],
+    "goal_progress": [
+      {
+        "goal": "Below 6h",
+        "status": "met",
+        "comment": "5h"
+      }
+    ],
+    "next_period_goals": [
+      "Zero missed escalations"
+    ]
+  },
+  "bad_fails": "strengths_evidenced",
+  "review": 4,
+  "bad": {
+    "summary": "Strong quarter with one process gap.",
+    "strengths": [
+      {
+        "point": "Great attitude",
+        "example": "Always positive and a joy to work with",
+        "impact": "x"
+      }
+    ],
+    "growth_areas": [
+      {
+        "point": "Escalation tracking",
+        "example": "Missed two escalations in May",
+        "support": "Weekly SLA review"
+      }
+    ],
+    "goal_progress": [
+      {
+        "goal": "Below 6h",
+        "status": "met",
+        "comment": "5h"
+      }
+    ],
+    "next_period_goals": [
+      "Zero missed escalations"
+    ]
+  }
+}

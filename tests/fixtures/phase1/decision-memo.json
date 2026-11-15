@@ -1,0 +1,125 @@
+{
+  "inputs": {
+    "decision": "Should we build a mobile app this year, or invest in the Xero integration first?"
+  },
+  "good": {
+    "question": "Mobile app or Xero integration first?",
+    "options": [
+      {
+        "id": "OPT1",
+        "option": "Mobile app"
+      },
+      {
+        "id": "OPT2",
+        "option": "Xero integration"
+      }
+    ],
+    "criteria": [
+      {
+        "id": "CR1",
+        "criterion": "Revenue impact",
+        "importance": "critical"
+      },
+      {
+        "id": "CR2",
+        "criterion": "Effort",
+        "importance": "high"
+      }
+    ],
+    "assessment": [
+      {
+        "option_id": "OPT1",
+        "criterion_id": "CR1",
+        "rating": "weak",
+        "note": "x"
+      },
+      {
+        "option_id": "OPT1",
+        "criterion_id": "CR2",
+        "rating": "weak",
+        "note": "x"
+      },
+      {
+        "option_id": "OPT2",
+        "criterion_id": "CR1",
+        "rating": "strong",
+        "note": "x"
+      },
+      {
+        "option_id": "OPT2",
+        "criterion_id": "CR2",
+        "rating": "acceptable",
+        "note": "x"
+      }
+    ],
+    "reversibility": "costly_to_reverse",
+    "recommendation": {
+      "option_id": "OPT2",
+      "rationale": "Higher revenue impact.",
+      "would_change_if": [
+        "Mobile becomes a top loss reason"
+      ]
+    }
+  },
+  "bad_fails": "assessed_options",
+  "review": 4,
+  "bad": {
+    "question": "Mobile app or Xero integration first?",
+    "options": [
+      {
+        "id": "OPT1",
+        "option": "Mobile app"
+      },
+      {
+        "id": "OPT2",
+        "option": "Xero integration"
+      }
+    ],
+    "criteria": [
+      {
+        "id": "CR1",
+        "criterion": "Revenue impact",
+        "importance": "critical"
+      },
+      {
+        "id": "CR2",
+        "criterion": "Effort",
+        "importance": "high"
+      }
+    ],
+    "assessment": [
+      {
+        "option_id": "OPT1",
+        "criterion_id": "CR1",
+        "rating": "weak",
+        "note": "x"
+      },
+      {
+        "option_id": "OPT1",
+        "criterion_id": "CR2",
+        "rating": "weak",
+        "note": "x"
+      },
+      {
+        "option_id": "OPT1",
+        "criterion_id": "CR1",
+        "rating": "weak",
+        "note": "y"
+      },
+      {
+        "option_id": "OPT1",
+        "criterion_id": "CR2",
+        "rating": "weak",
+        "note": "y"
+      }
+    ],
+    "reversibility": "costly_to_reverse",
+    "recommendation": {
+      "option_id": "OPT2",
+      "rationale": "Higher revenue impact.",
+      "would_change_if": [
+        "Mobile becomes a top loss reason"
+      ]
+    }
+  }
+}

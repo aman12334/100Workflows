@@ -1,0 +1,87 @@
+{
+  "inputs": {
+    "proposal": "Hire a second support agent ($55k/yr) because response times doubled since January."
+  },
+  "good": {
+    "problem": "Slow support responses.",
+    "options": [
+      {
+        "id": "OPT1",
+        "option": "Do nothing",
+        "costs": "$0",
+        "benefits": "None",
+        "risks": [
+          "More churn"
+        ]
+      },
+      {
+        "id": "OPT2",
+        "option": "Hire an agent",
+        "costs": "$55k/yr",
+        "benefits": "Faster responses",
+        "risks": []
+      },
+      {
+        "id": "OPT3",
+        "option": "Add macros",
+        "costs": "Time",
+        "benefits": "Some speed",
+        "risks": []
+      }
+    ],
+    "key_assumptions": [
+      {
+        "assumption": "Volume keeps growing",
+        "how_to_verify": "Ticket trend"
+      }
+    ],
+    "recommendation": {
+      "option_id": "OPT2",
+      "rationale": "Response time is driving churn.",
+      "conditions": []
+    },
+    "decision_needed": "Approve the hire this month."
+  },
+  "bad_fails": "recommends_an_option",
+  "review": 4,
+  "bad": {
+    "problem": "Slow support responses.",
+    "options": [
+      {
+        "id": "OPT1",
+        "option": "Do nothing",
+        "costs": "$0",
+        "benefits": "None",
+        "risks": [
+          "More churn"
+        ]
+      },
+      {
+        "id": "OPT2",
+        "option": "Hire an agent",
+        "costs": "$55k/yr",
+        "benefits": "Faster responses",
+        "risks": []
+      },
+      {
+        "id": "OPT3",
+        "option": "Add macros",
+        "costs": "Time",
+        "benefits": "Some speed",
+        "risks": []
+      }
+    ],
+    "key_assumptions": [
+      {
+        "assumption": "Volume keeps growing",
+        "how_to_verify": "Ticket trend"
+      }
+    ],
+    "recommendation": {
+      "option_id": "OPT9",
+      "rationale": "x",
+      "conditions": []
+    },
+    "decision_needed": "Approve the hire this month."
+  }
+}

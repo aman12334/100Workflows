@@ -1,0 +1,95 @@
+{
+  "inputs": {
+    "product_description": "AI bookkeeping for agencies",
+    "business_model": "Per-seat SaaS subscription"
+  },
+  "good": {
+    "north_star_rationale": "Reconciled expenses are the value customers pay for.",
+    "metrics": [
+      {
+        "id": "NS",
+        "name": "Reconciled expenses per week",
+        "definition": "Count of expenses reconciled, weekly",
+        "type": "north_star",
+        "direction": "increase",
+        "suggested_owner": "CPO"
+      },
+      {
+        "id": "M1",
+        "name": "Connected accounts",
+        "definition": "Active bank connections",
+        "parent_id": "NS",
+        "type": "leading",
+        "direction": "increase",
+        "suggested_owner": "Integrations"
+      },
+      {
+        "id": "M2",
+        "name": "Auto-match rate",
+        "definition": "Share matched without edits",
+        "parent_id": "NS",
+        "type": "leading",
+        "direction": "increase",
+        "suggested_owner": "ML"
+      },
+      {
+        "id": "M3",
+        "name": "Rules created",
+        "definition": "Rules per workspace",
+        "parent_id": "M2",
+        "type": "leading",
+        "direction": "increase",
+        "suggested_owner": "Product"
+      }
+    ],
+    "existing_metrics_review": [],
+    "instrumentation_gaps": [
+      "Track rule creation"
+    ]
+  },
+  "bad_fails": "parents_exist",
+  "bad": {
+    "north_star_rationale": "Reconciled expenses are the value customers pay for.",
+    "metrics": [
+      {
+        "id": "NS",
+        "name": "Reconciled expenses",
+        "definition": "x",
+        "type": "north_star",
+        "direction": "increase",
+        "suggested_owner": "x"
+      },
+      {
+        "id": "M1",
+        "name": "Connected accounts",
+        "definition": "x",
+        "parent_id": "M9",
+        "type": "leading",
+        "direction": "increase",
+        "suggested_owner": "x"
+      },
+      {
+        "id": "M2",
+        "name": "Auto-match rate",
+        "definition": "x",
+        "parent_id": "M1",
+        "type": "leading",
+        "direction": "increase",
+        "suggested_owner": "x"
+      },
+      {
+        "id": "M3",
+        "name": "Rules",
+        "definition": "x",
+        "parent_id": "M1",
+        "type": "leading",
+        "direction": "increase",
+        "suggested_owner": "x"
+      }
+    ],
+    "existing_metrics_review": [],
+    "instrumentation_gaps": [
+      "Track rule creation"
+    ]
+  }
+}

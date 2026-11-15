@@ -1,0 +1,94 @@
+{
+  "inputs": {
+    "research_notes": "P1 (office manager): \"I chase receipts on Slack every Friday.\"\nP2 (founder): \"I only look at the numbers once a quarter.\""
+  },
+  "good": {
+    "personas": [
+      {
+        "label": "The Friday receipt chaser",
+        "based_on": [
+          "P1"
+        ],
+        "traits": [
+          {
+            "kind": "behavior",
+            "trait": "Chases receipts weekly",
+            "quote": "I chase receipts on Slack every Friday."
+          },
+          {
+            "kind": "frustration",
+            "trait": "Manual chasing",
+            "quote": "I chase receipts on Slack"
+          },
+          {
+            "kind": "goal",
+            "trait": "Finish by Friday",
+            "quote": "receipts on Slack every Friday"
+          }
+        ],
+        "design_implications": [
+          "Automate reminders"
+        ]
+      },
+      {
+        "label": "The quarterly founder",
+        "based_on": [
+          "P2"
+        ],
+        "traits": [
+          {
+            "kind": "behavior",
+            "trait": "Rarely checks numbers",
+            "quote": "I only look at the numbers once a quarter."
+          },
+          {
+            "kind": "goal",
+            "trait": "Quarterly view",
+            "quote": "look at the numbers once a quarter"
+          },
+          {
+            "kind": "motivation",
+            "trait": "Low time",
+            "quote": "I only look at the numbers"
+          }
+        ],
+        "design_implications": [
+          "Quarterly summary"
+        ]
+      }
+    ],
+    "unclustered_participants": [],
+    "open_questions": []
+  },
+  "bad_fails": "traits_quoted",
+  "bad": {
+    "personas": [
+      {
+        "label": "Busy Brenda",
+        "based_on": [
+          "P1"
+        ],
+        "traits": [
+          {
+            "kind": "goal",
+            "trait": "Wants mobile app",
+            "quote": "I wish there was a mobile app for this"
+          },
+          {
+            "kind": "behavior",
+            "trait": "x",
+            "quote": "I chase receipts on Slack every Friday."
+          },
+          {
+            "kind": "frustration",
+            "trait": "y",
+            "quote": "I chase receipts on Slack"
+          }
+        ],
+        "design_implications": []
+      }
+    ],
+    "unclustered_participants": [],
+    "open_questions": []
+  }
+}

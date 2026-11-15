@@ -1,0 +1,45 @@
+{
+  "inputs": {
+    "product_description": "AI bookkeeping",
+    "objections": "It's too expensive for a team our size.\nWe already have a bookkeeper."
+  },
+  "good": {
+    "objections": [
+      {
+        "objection": "It's too expensive for a team our size.",
+        "category": "price",
+        "underlying_concern": "ROI unclear",
+        "response": "Fair. What does month-end cost you in hours today?",
+        "proof": "proof needed",
+        "follow_up_question": "Who closes the books now?"
+      },
+      {
+        "objection": "We already have a bookkeeper.",
+        "category": "status_quo",
+        "underlying_concern": "Replacement fear",
+        "response": "We make your bookkeeper faster, not redundant.",
+        "proof": "proof needed",
+        "follow_up_question": "What does your bookkeeper spend most time on?"
+      }
+    ],
+    "patterns": [
+      "Value not quantified"
+    ]
+  },
+  "bad_fails": "objections_supplied",
+  "bad": {
+    "objections": [
+      {
+        "objection": "Your product lacks enterprise security",
+        "category": "trust",
+        "underlying_concern": "x",
+        "response": "y",
+        "proof": "proof needed",
+        "follow_up_question": "z"
+      }
+    ],
+    "patterns": [
+      "Value not quantified"
+    ]
+  }
+}
