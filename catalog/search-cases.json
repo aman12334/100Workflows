@@ -339,6 +339,12 @@
       "expect": [
         "status-report"
       ]
+    },
+    {
+      "query": "draft OKRs and key results for next quarter",
+      "expect": [
+        "okr-drafter"
+      ]
     }
   ]
 }

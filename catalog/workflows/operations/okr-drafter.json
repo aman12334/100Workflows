@@ -1,0 +1,234 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "okr-drafter",
+  "version": "0.1.0",
+  "name": "OKR Drafter",
+  "category": "operations",
+  "summary": "Drafts quarterly OKRs from your strategy: a few objectives with measurable key results, baselines to fill and alignment notes.",
+  "description": "Turns your strategy and priorities into OKRs: at most five objectives, each with measurable key results that have a metric, a target value and a baseline (or a flag that the baseline is unknown). Key results are outcomes rather than task lists, and each objective says which priority it serves. Who it's for: founders, leadership teams and team leads setting quarterly goals. Limitations: targets are proposals based on what you supply; it does not know your historical performance unless you give baselines.",
+  "status": "available",
+  "problems": [
+    "We need OKRs for next quarter",
+    "Our goals are task lists, not outcomes",
+    "Teams set goals that don't match company priorities"
+  ],
+  "tags": [
+    "okr",
+    "goals",
+    "quarterly-planning",
+    "key-results",
+    "strategy"
+  ],
+  "inputs": [
+    {
+      "key": "priorities",
+      "label": "Strategy and priorities",
+      "type": "long_text",
+      "required": true,
+      "description": "What matters most this quarter and why.",
+      "example": "Prove self-serve can work; reduce churn among agencies with 10-50 staff; get the Xero integration live."
+    },
+    {
+      "key": "current_numbers",
+      "label": "Current numbers",
+      "type": "long_text",
+      "required": false,
+      "description": "Baselines you know.",
+      "example": "Monthly churn 3.1%; 0 self-serve signups (not launched)"
+    },
+    {
+      "key": "max_objectives",
+      "label": "Maximum objectives",
+      "type": "number",
+      "required": false,
+      "description": "Upper limit, usually 3-5."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "okrs",
+      "label": "OKRs",
+      "description": "Objectives with measurable key results, baselines and priority alignment.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You coach teams on OKRs. Objectives are qualitative and inspiring; key results are measurable outcomes with a number, never tasks. Fewer is better. Use baselines only as supplied; otherwise mark them unknown.",
+    "effort": "medium"
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "priorities",
+      "objectives",
+      "not_this_quarter"
+    ],
+    "properties": {
+      "priorities": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "priority"
+          ],
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "Priority id such as P1."
+            },
+            "priority": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Priorities"
+      },
+      "objectives": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "objective",
+            "priority_id",
+            "key_results"
+          ],
+          "properties": {
+            "objective": {
+              "type": "string"
+            },
+            "priority_id": {
+              "type": "string"
+            },
+            "key_results": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "key_result",
+                  "metric",
+                  "target",
+                  "baseline",
+                  "unit"
+                ],
+                "properties": {
+                  "key_result": {
+                    "type": "string"
+                  },
+                  "metric": {
+                    "type": "string"
+                  },
+                  "target": {
+                    "type": "number",
+                    "description": "Target value."
+                  },
+                  "baseline": {
+                    "type": "string",
+                    "description": "As supplied, or \"unknown\"."
+                  },
+                  "unit": {
+                    "type": "string"
+                  }
+                }
+              },
+              "minItems": 2,
+              "maxItems": 4
+            }
+          }
+        },
+        "title": "Objectives"
+      },
+      "not_this_quarter": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Not this quarter"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "draft",
+      "name": "Draft OKRs",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write objectives and key results.",
+      "prompt": "List the priorities (P1, ...). Write at most five objectives (or the maximum given), each serving one priority id, with 2-4 key results that have a metric, a numeric target, a baseline as supplied or \"unknown\", and a unit. No key result may be a task. List what you deliberately left out.",
+      "tools": []
+    },
+    {
+      "id": "check_okrs",
+      "name": "Check OKRs",
+      "kind": "check",
+      "responsibility": "Objective count, alignment to priorities and unique objectives.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "objective_count",
+        "description": "There are one to five objectives, within the maximum if given.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "count",
+          "params": {
+            "path": "objectives",
+            "min": 1,
+            "max": 5,
+            "maxFromInput": "max_objectives"
+          }
+        }
+      },
+      {
+        "id": "aligned_to_priorities",
+        "description": "Every objective serves a listed priority.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "params": {
+            "from": "objectives[].priority_id",
+            "to": "priorities[].id"
+          }
+        }
+      },
+      {
+        "id": "distinct_objectives",
+        "description": "Objectives are distinct.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "objectives[].objective"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}
