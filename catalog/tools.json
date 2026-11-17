@@ -11,9 +11,9 @@
     {
       "id": "web-fetch",
       "name": "Web fetch",
-      "description": "Reads the content of specific public URLs.",
-      "available": false,
-      "setup": "Not provided by the runtime yet."
+      "description": "Reads specific public web pages (GET only) and returns their readable text and metadata.",
+      "available": true,
+      "setup": "Built in, runs on this computer. Turn on with WORKFLOWS_WEB_FETCH=on. Public addresses only: private, local and cloud-metadata addresses are refused."
     }
   ]
 }

@@ -1014,4 +1014,4 @@ Defined once in `catalog/shared-inputs.json` and referenced with `{ "use": "<key
 | Id | Name | Provided today | Setup |
 | --- | --- | --- | --- |
 | `web-search` | Web search | yes | Anthropic's server-side web search tool. Turn on with WORKFLOWS_WEB_SEARCH=on; searches are billed by Anthropic. |
-| `web-fetch` | Web fetch | no | Not provided by the runtime yet. |
+| `web-fetch` | Web fetch | yes | Built in, runs on this computer. Turn on with WORKFLOWS_WEB_FETCH=on. Public addresses only: private, local and cloud-metadata addresses are refused. |
