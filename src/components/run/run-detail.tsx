@@ -109,7 +109,7 @@ export function RunDetail({ initial, packageName, meta }: { initial: RunRecord; 
 
 /** Run totals. Costs are estimates at verified list prices only; otherwise the reason is shown instead of a number. */
 function UsageSummary({ run }: { run: RunRecord }) {
-  const { usage, costUsd, costNote } = run.summary;
+  const { usage, costUsd, costNote, tools, toolCostNote } = run.summary;
   return (
     <section aria-label="Run usage" className="mt-4 rounded-2xl border border-line bg-surface p-4 text-xs text-ink-700">
       <div className="flex flex-wrap gap-x-6 gap-y-2 font-mono">
@@ -123,9 +123,16 @@ function UsageSummary({ run }: { run: RunRecord }) {
         <span>
           {usage.inputTokens.toLocaleString()} in · {usage.outputTokens.toLocaleString()} out tokens
         </span>
-        <span className="font-semibold text-ink-950">{costUsd === null ? "cost not estimated" : `≈ ${formatUsd(costUsd)} estimated`}</span>
+        {Object.entries(tools ?? {}).map(([id, t]) => (
+          <span key={id}>
+            {t.calls} {id} call{t.calls === 1 ? "" : "s"}
+            {t.failed ? ` (${t.failed} failed)` : ""}
+          </span>
+        ))}
+        <span className="font-semibold text-ink-950">{costUsd === null ? "model cost not estimated" : `≈ ${formatUsd(costUsd)} estimated model cost`}</span>
       </div>
       <p className="mt-2 text-[11px] text-ink-500">{costNote}</p>
+      {toolCostNote && <p className="mt-1 text-[11px] text-ink-500">{toolCostNote}</p>}
     </section>
   );
 }
@@ -193,6 +200,7 @@ function WorkflowRunCard({ wr, meta, now }: { wr: WorkflowRunRecord; meta?: Meta
             {active === "output" && hasOutput && <Output wr={wr} />}
             {active === "checks" && <Checks evaluations={wr.evaluations} />}
             {active === "trace" && <Trace steps={wr.steps} meta={meta} now={now} />}
+            {active === "trace" && wr.toolCalls?.length > 0 && <ToolCalls calls={wr.toolCalls} />}
           </div>
           {wr.usage && (
             <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-dashed border-line px-6 py-3 font-mono text-[11px] text-ink-500">
@@ -321,6 +329,26 @@ function Checks({ evaluations }: { evaluations: EvaluationRecord[] }) {
           </ul>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Every tool call this workflow made: which tool and version, what it targeted, and how it ended. */
+function ToolCalls({ calls }: { calls: WorkflowRunRecord["toolCalls"] }) {
+  return (
+    <div className="mt-4">
+      <h3 className="text-xs font-semibold tracking-wide text-ink-500 uppercase">Tool calls ({calls.length})</h3>
+      <ol className="mt-2 space-y-1.5">
+        {calls.map((c) => (
+          <li key={c.seq} className="rounded-xl bg-canvas px-3 py-2 font-mono text-[11px] text-ink-700">
+            <span className={c.status === "ok" ? "text-ink-950" : "font-semibold text-[#a11]"}>{c.status === "ok" ? "ok" : c.errorKind ?? "error"}</span>
+            {" · "}
+            {c.toolId}@{c.toolVersion} · {c.durationMs} ms{c.attempts > 1 ? ` · ${c.attempts} attempts` : ""} · {(c.outputBytes / 1024).toFixed(1)} KB
+            <div className="mt-0.5 break-all text-ink-500">{c.target}</div>
+            {c.error && <div className="mt-0.5 text-[#a11]">{c.error}</div>}
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
