@@ -1,0 +1,229 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "fact-checker",
+  "version": "0.1.0",
+  "name": "Claim Fact-Checker",
+  "category": "marketing",
+  "summary": "Checks claims in a draft against web sources: each one supported, contradicted or unverified, with the evidence quoted.",
+  "description": "Takes the factual claims in your draft (or a list of claims), searches for evidence, reads the relevant pages and gives a verdict for each claim: supported, partly supported, contradicted or unverified, with the evidence quoted and a suggested correction. Claims with no evidence are never marked supported. Who it's for: content teams, PR, founders and analysts checking a blog post, press release, deck or report before publishing. Limitations: it checks claims against what it can find and read online; \"unverified\" means no evidence was found, not that the claim is false. It does not check opinions or forecasts.",
+  "status": "available",
+  "problems": [
+    "I need to fact-check a blog post before publishing",
+    "Are the numbers in our deck correct",
+    "I want to verify claims in a press release"
+  ],
+  "tags": [
+    "fact-check",
+    "verification",
+    "claims",
+    "accuracy",
+    "editorial"
+  ],
+  "inputs": [
+    {
+      "key": "claims",
+      "label": "Draft or claims",
+      "type": "long_text",
+      "required": true,
+      "description": "The text to check, or one claim per line.",
+      "example": "There are 5.5 million small businesses in the UK. Fintech funding fell 20% in 2026."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "fact_check",
+      "label": "Fact-check",
+      "description": "A verdict per claim with quoted evidence and corrections.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a meticulous fact-checker. A claim is \"supported\" only when a source states it; when sources disagree, say so. Quote evidence exactly. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "claims",
+      "summary"
+    ],
+    "properties": {
+      "claims": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "claim",
+            "verdict",
+            "evidence",
+            "correction"
+          ],
+          "properties": {
+            "claim": {
+              "type": "string",
+              "description": "Copied word for word from the draft."
+            },
+            "verdict": {
+              "type": "string",
+              "enum": [
+                "supported",
+                "partly_supported",
+                "contradicted",
+                "unverified"
+              ]
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "source_id",
+                  "quote"
+                ],
+                "properties": {
+                  "source_id": {
+                    "type": "string"
+                  },
+                  "quote": {
+                    "type": "string",
+                    "description": "Copied exactly from the source."
+                  }
+                }
+              }
+            },
+            "correction": {
+              "type": "string",
+              "description": "Suggested correction, or \"none\"."
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 25,
+        "title": "Claims"
+      },
+      "summary": {
+        "type": "string",
+        "title": "Summary"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Find authoritative evidence for or against each factual claim in the draft. Prefer official statistics, primary reports and reputable press.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 5
+        },
+        "fetch": {
+          "fromSearch": 4,
+          "maxPages": 5
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "Check every factual claim. Copy each claim exactly from the draft. For supported, partly supported or contradicted verdicts, give evidence with source ids and exact quotes. Use \"unverified\" with no evidence when nothing was found.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "claims_from_draft",
+        "description": "Every claim is copied from the draft.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "claims[].claim",
+            "inputs": [
+              "claims"
+            ]
+          }
+        }
+      },
+      {
+        "id": "evidence_quoted",
+        "description": "Every piece of evidence quotes the source it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "claims[].evidence[]",
+            "sourceField": "source_id",
+            "quoteField": "quote"
+          }
+        }
+      },
+      {
+        "id": "evidence_read",
+        "description": "Evidence rests on pages read in full.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "claims[].evidence[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}

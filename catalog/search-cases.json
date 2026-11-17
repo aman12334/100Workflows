@@ -399,6 +399,12 @@
       "expect": [
         "statistics-finder"
       ]
+    },
+    {
+      "query": "fact check the claims in my article",
+      "expect": [
+        "fact-checker"
+      ]
     }
   ]
 }

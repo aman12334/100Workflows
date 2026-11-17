@@ -1,0 +1,66 @@
+{
+  "inputs": {
+    "claims": "There are 5.5 million small businesses in the UK. Fintech funding fell 20% in 2026."
+  },
+  "search": {
+    "results": [
+      {
+        "url": "https://www.stats.example.gov/business-counts-2026",
+        "title": "Business population 2026"
+      },
+      {
+        "url": "https://news.example.org/fintech-funding-2026",
+        "title": "Fintech funding 2026"
+      }
+    ],
+    "cited": []
+  },
+  "pages": {
+    "https://www.stats.example.gov/business-counts-2026": "<html><head><title>Business population 2026</title><meta property=\"og:site_name\" content=\"Example Statistics Office\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Business population 2026</h1><p>There were 5.5 million private sector businesses in the UK at the start of 2026.</p><p>Most were micro businesses.</p></main></body></html>",
+    "https://news.example.org/fintech-funding-2026": "<html><head><title>Fintech funding 2026</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Fintech funding 2026</h1><p>Global fintech funding fell 12% in the first half of 2026.</p><p>Deal counts were flat.</p></main></body></html>"
+  },
+  "good": {
+    "claims": [
+      {
+        "claim": "There are 5.5 million small businesses in the UK.",
+        "verdict": "partly_supported",
+        "evidence": [
+          {
+            "source_id": "S1",
+            "quote": "There were 5.5 million private sector businesses in the UK"
+          }
+        ],
+        "correction": "Say private sector businesses."
+      },
+      {
+        "claim": "Fintech funding fell 20% in 2026.",
+        "verdict": "contradicted",
+        "evidence": [
+          {
+            "source_id": "S2",
+            "quote": "Global fintech funding fell 12% in the first half of 2026."
+          }
+        ],
+        "correction": "Fell 12% in H1 2026."
+      }
+    ],
+    "summary": "One claim needs correction."
+  },
+  "bad_fails": "evidence_quoted",
+  "bad": {
+    "claims": [
+      {
+        "claim": "Fintech funding fell 20% in 2026.",
+        "verdict": "supported",
+        "evidence": [
+          {
+            "source_id": "S2",
+            "quote": "fintech funding fell 20% in 2026"
+          }
+        ],
+        "correction": "none"
+      }
+    ],
+    "summary": "One claim needs correction."
+  }
+}
