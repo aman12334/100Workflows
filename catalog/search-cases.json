@@ -375,6 +375,12 @@
       "expect": [
         "investor-research"
       ]
+    },
+    {
+      "query": "due diligence check on a company before we sign",
+      "expect": [
+        "due-diligence-snapshot"
+      ]
     }
   ]
 }

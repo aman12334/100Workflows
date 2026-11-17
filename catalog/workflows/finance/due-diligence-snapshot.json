@@ -1,0 +1,329 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "due-diligence-snapshot",
+  "version": "0.1.0",
+  "name": "Due Diligence Snapshot",
+  "category": "finance",
+  "summary": "Builds a first-pass due diligence snapshot on a company from public sources: facts, red flags, conflicts and open questions.",
+  "description": "Runs a public-source first pass on a company you may invest in, acquire, partner with or buy from: what it says about itself, leadership, funding, legal or regulatory issues, and press coverage. Every finding quotes its source, contradictions between sources are listed explicitly, and red flags are separated from items that simply could not be verified. Who it's for: investors, corporate development, procurement and founders vetting a counterparty. Limitations: public sources only; it cannot see financial statements, contracts or court records behind paywalls. It is a starting point for diligence, not legal or financial advice.",
+  "status": "available",
+  "problems": [
+    "I need to vet a company before we sign",
+    "Is this company legitimate",
+    "I want a quick due diligence check before investing"
+  ],
+  "tags": [
+    "due-diligence",
+    "vetting",
+    "risk",
+    "counterparty",
+    "background-check"
+  ],
+  "inputs": [
+    {
+      "key": "company",
+      "label": "Company",
+      "type": "text",
+      "required": true,
+      "description": "The company, with website if known.",
+      "example": "Courier Freight Ltd (courierfreight.com)"
+    },
+    {
+      "key": "purpose",
+      "label": "Why you are checking",
+      "type": "select",
+      "required": true,
+      "description": "The decision this informs.",
+      "options": [
+        "investment",
+        "acquisition",
+        "partnership",
+        "supplier",
+        "customer"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "key": "snapshot",
+      "label": "Due diligence snapshot",
+      "description": "Findings with sources, red flags, conflicts and questions.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a careful diligence analyst. Report what sources say without overstating it. Distinguish confirmed issues, allegations and missing information. Never present an allegation as fact. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "summary",
+      "findings",
+      "red_flags",
+      "conflicts",
+      "open_questions",
+      "unverified"
+    ],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "title": "Summary"
+      },
+      "findings": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "area",
+            "finding",
+            "source_id",
+            "quote",
+            "status"
+          ],
+          "properties": {
+            "area": {
+              "type": "string",
+              "enum": [
+                "company",
+                "leadership",
+                "funding",
+                "legal",
+                "regulatory",
+                "reputation",
+                "operations"
+              ]
+            },
+            "finding": {
+              "type": "string"
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied exactly from the source."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "confirmed",
+                "reported",
+                "alleged"
+              ]
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Findings"
+      },
+      "red_flags": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "flag",
+            "source_ids",
+            "severity"
+          ],
+          "properties": {
+            "flag": {
+              "type": "string"
+            },
+            "source_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "severity": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            }
+          }
+        },
+        "title": "Red flags"
+      },
+      "conflicts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "topic",
+            "source_ids",
+            "description"
+          ],
+          "properties": {
+            "topic": {
+              "type": "string"
+            },
+            "source_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 2
+            },
+            "description": {
+              "type": "string",
+              "description": "How the sources disagree."
+            }
+          }
+        },
+        "title": "Conflicting information"
+      },
+      "open_questions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "title": "Questions to ask"
+      },
+      "unverified": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Could not be verified",
+        "description": "Things the task asked about that no retrieved source supports."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Research this company for due diligence: its own description, leadership, funding, any lawsuits, regulatory actions, complaints and press coverage.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 5
+        },
+        "fetch": {
+          "fromSearch": 4,
+          "maxPages": 5
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "Write the snapshot. Each finding cites one source with an exact quote and a status (confirmed, reported or alleged). Red flags cite their sources. List contradictions between sources under conflicts and missing information under unverified.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "findings_quoted",
+        "description": "Every finding quotes the source it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "findings[]",
+            "sourceField": "source_id",
+            "quoteField": "quote"
+          }
+        }
+      },
+      {
+        "id": "findings_read",
+        "description": "Findings rest on pages read in full.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "findings[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "flags_cite_sources",
+        "description": "Red flags cite retrieved sources.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "cites_sources",
+          "params": {
+            "path": "red_flags[].source_ids[]",
+            "min": 1
+          }
+        }
+      },
+      {
+        "id": "conflicts_cite_sources",
+        "description": "Conflicts cite retrieved sources.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "cites_sources",
+          "params": {
+            "path": "conflicts[].source_ids[]",
+            "min": 1
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}

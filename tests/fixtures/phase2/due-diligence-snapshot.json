@@ -1,0 +1,117 @@
+{
+  "inputs": {
+    "company": "Courier Freight Ltd",
+    "purpose": "supplier"
+  },
+  "search": {
+    "results": [
+      {
+        "url": "https://www.courier.example.com/about",
+        "title": "About Courier"
+      },
+      {
+        "url": "https://news.example.org/courier-lawsuit",
+        "title": "Courier sued by former client"
+      },
+      {
+        "url": "https://news.example.com/courier-funding",
+        "title": "Courier raises funding"
+      }
+    ],
+    "cited": []
+  },
+  "pages": {
+    "https://www.courier.example.com/about": "<html><head><title>About Courier</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>About Courier</h1><p>Courier Freight was founded in 2015 and operates 30 depots.</p><p>Our CEO is Maria Okafor.</p></main></body></html>",
+    "https://news.example.org/courier-lawsuit": "<html><head><title>Courier sued</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Courier sued</h1><p>A former client filed a lawsuit alleging unpaid refunds in 2026.</p><p>Courier denies the claims.</p></main></body></html>",
+    "https://news.example.com/courier-funding": "<html><head><title>Courier raises funding</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Courier raises funding</h1><p>Courier Freight raised $20 million in 2025.</p><p>The company says it operates 34 depots.</p></main></body></html>"
+  },
+  "good": {
+    "summary": "Established operator with one pending lawsuit.",
+    "findings": [
+      {
+        "area": "company",
+        "finding": "Founded 2015",
+        "source_id": "S1",
+        "quote": "Courier Freight was founded in 2015",
+        "status": "confirmed"
+      },
+      {
+        "area": "legal",
+        "finding": "Lawsuit over refunds",
+        "source_id": "S2",
+        "quote": "filed a lawsuit alleging unpaid refunds",
+        "status": "alleged"
+      }
+    ],
+    "red_flags": [
+      {
+        "flag": "Pending lawsuit",
+        "source_ids": [
+          "S2"
+        ],
+        "severity": "medium"
+      }
+    ],
+    "conflicts": [
+      {
+        "topic": "Depot count",
+        "source_ids": [
+          "S1",
+          "S3"
+        ],
+        "description": "30 vs 34 depots"
+      }
+    ],
+    "open_questions": [
+      "What is the lawsuit status?"
+    ],
+    "unverified": [
+      "Revenue"
+    ]
+  },
+  "bad_fails": "flags_cite_sources",
+  "bad": {
+    "summary": "Established operator with one pending lawsuit.",
+    "findings": [
+      {
+        "area": "company",
+        "finding": "Founded 2015",
+        "source_id": "S1",
+        "quote": "Courier Freight was founded in 2015",
+        "status": "confirmed"
+      },
+      {
+        "area": "legal",
+        "finding": "Lawsuit over refunds",
+        "source_id": "S2",
+        "quote": "filed a lawsuit alleging unpaid refunds",
+        "status": "alleged"
+      }
+    ],
+    "red_flags": [
+      {
+        "flag": "Fraud conviction",
+        "source_ids": [
+          "S7"
+        ],
+        "severity": "high"
+      }
+    ],
+    "conflicts": [
+      {
+        "topic": "Depot count",
+        "source_ids": [
+          "S1",
+          "S3"
+        ],
+        "description": "30 vs 34 depots"
+      }
+    ],
+    "open_questions": [
+      "What is the lawsuit status?"
+    ],
+    "unverified": [
+      "Revenue"
+    ]
+  }
+}
