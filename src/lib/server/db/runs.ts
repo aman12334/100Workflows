@@ -4,6 +4,7 @@ import { addUsage, emptyUsage, type Usage } from "@/lib/runtime/budget";
 import type { Confidence } from "@/lib/runtime/engine";
 import type { EvaluatedCriterion, Evaluation } from "@/lib/runtime/evaluation";
 import { COST_EXCLUSIONS, estimateCostUsd, noPriceReason, type PriceBasis } from "@/lib/runtime/pricing";
+import type { ToolCallRecord } from "@/lib/runtime/tools/runner";
 import type { DB } from "./index";
 
 export type RunStatus = "running" | "completed" | "failed" | "cancelled" | "interrupted";
@@ -66,6 +67,8 @@ export interface WorkflowRunRecord {
   durationMs: number | null;
   costUsd: number | null;
   steps: StepRecord[];
+  /** Tool calls in order (empty for runs before migration 005 and for model-only workflows). */
+  toolCalls: Array<ToolCallRecord & { seq: number }>;
   evaluations: EvaluationRecord[];
 }
 
@@ -89,6 +92,10 @@ export interface RunRecord {
 /** Totals across every workflow in a run. */
 export interface RunUsageSummary {
   usage: Usage;
+  /** Tool calls by tool id, with how many failed. */
+  tools: Record<string, { calls: number; failed: number }>;
+  /** Tool costs are never estimated: what they are, in plain language. */
+  toolCostNote: string | null;
   durationMs: number | null;
   /** Null when no verified price applies; see costNote. */
   costUsd: number | null;
@@ -205,6 +212,16 @@ export function finishStep(db: DB, id: string, status: "done" | "failed", detail
   );
 }
 
+export function insertToolCall(db: DB, workflowRunId: string, c: ToolCallRecord) {
+  db.transaction(() => {
+    const { next } = db.prepare("SELECT COALESCE(MAX(seq), 0) + 1 AS next FROM tool_calls WHERE workflow_run_id = ?").get(workflowRunId) as { next: number };
+    db.prepare(
+      `INSERT INTO tool_calls (id, workflow_run_id, seq, step_id, tool_id, tool_version, status, error_kind, error, attempts, target, started_at, finished_at, duration_ms, input_bytes, output_bytes)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(randomUUID(), workflowRunId, next, c.stepId, c.toolId, c.toolVersion, c.status, c.errorKind, c.error, c.attempts, c.target, c.startedAt, c.finishedAt, c.durationMs, c.inputBytes, c.outputBytes);
+  })();
+}
+
 export function insertEvaluation(db: DB, workflowRunId: string, e: Evaluation) {
   db.prepare(
     "INSERT INTO evaluations (id, workflow_run_id, attempt, score, passed, decision, criteria_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -254,6 +271,7 @@ export function getRun(db: DB, runId: string): RunRecord | null {
   const rows = db.prepare("SELECT * FROM workflow_runs WHERE run_id = ? ORDER BY position").all(runId) as WorkflowRunRow[];
   const steps = db.prepare("SELECT * FROM run_steps WHERE workflow_run_id = ? ORDER BY seq");
   const evals = db.prepare("SELECT * FROM evaluations WHERE workflow_run_id = ? ORDER BY attempt");
+  const toolRows = db.prepare("SELECT * FROM tool_calls WHERE workflow_run_id = ? ORDER BY seq");
   const workflows: WorkflowRunRecord[] = rows.map((r) => ({
     id: r.id,
     workflowId: r.workflow_id,
@@ -287,6 +305,22 @@ export function getRun(db: DB, runId: string): RunRecord | null {
       durationMs: durationMs(s.started_at as string, s.finished_at as string | null),
       costUsd: cost(json<Usage>(s.usage_json as string | null)),
     })),
+    toolCalls: (toolRows.all(r.id) as Array<Record<string, unknown>>).map((t) => ({
+      seq: t.seq as number,
+      stepId: t.step_id as string,
+      toolId: t.tool_id as string,
+      toolVersion: t.tool_version as string,
+      status: t.status as "ok" | "error",
+      errorKind: (t.error_kind as ToolCallRecord["errorKind"]) ?? null,
+      error: (t.error as string | null) ?? null,
+      attempts: t.attempts as number,
+      target: t.target as string,
+      startedAt: t.started_at as string,
+      finishedAt: t.finished_at as string,
+      durationMs: t.duration_ms as number,
+      inputBytes: t.input_bytes as number,
+      outputBytes: t.output_bytes as number,
+    })),
     evaluations: (evals.all(r.id) as Array<Record<string, unknown>>).map((e) => {
       const body = JSON.parse(e.criteria_json as string) as { criteria: EvaluatedCriterion[]; threshold: number; criticalFailures: string[] };
       return {
@@ -310,8 +344,20 @@ function summarize(
   pricing: PriceBasis | null,
 ): RunUsageSummary {
   const usage = workflows.reduce((total, w) => (w.usage ? addUsage(total, w.usage) : total), emptyUsage());
+  const tools: RunUsageSummary["tools"] = {};
+  for (const c of workflows.flatMap((w) => w.toolCalls)) {
+    const t = (tools[c.toolId] ??= { calls: 0, failed: 0 });
+    t.calls++;
+    if (c.status === "error") t.failed++;
+  }
+  const notes = [
+    usage.webSearches ? `${usage.webSearches} web search${usage.webSearches === 1 ? "" : "es"} not priced (no verified price; billed by Anthropic separately from tokens)` : "",
+    tools["web-fetch"] ? `${tools["web-fetch"].calls} page read${tools["web-fetch"].calls === 1 ? "" : "s"} run on this computer (no provider charge)` : "",
+  ].filter(Boolean);
   return {
     usage,
+    tools,
+    toolCostNote: notes.length ? `Tool costs: ${notes.join("; ")}.` : null,
     durationMs: durationMs(run.startedAt, run.finishedAt),
     costUsd: pricing ? estimateCostUsd(usage, pricing) : null,
     costNote: pricing

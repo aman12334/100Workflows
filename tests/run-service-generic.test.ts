@@ -336,6 +336,7 @@ describe("observability", () => {
     const old = openDatabase(":memory:");
     const migrations = readMigrations();
     migrate(old, migrations.filter((m) => m.id < "004"));
+    // Later migrations (004 observability, 005 tool calls) are applied below and must read this run unchanged.
     old.prepare("INSERT INTO packages (id, name, goal, created_at, updated_at) VALUES ('p', 'P', '', 'x', 'x')").run();
     old.prepare("INSERT INTO runs (id, package_id, status, created_at, started_at, finished_at) VALUES ('r', 'p', 'completed', 't', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:02.000Z')").run();
     old.prepare("INSERT INTO workflow_runs (id, run_id, workflow_id, version, position, status, usage_json) VALUES ('w', 'r', 'icp-builder', '0.2.0', 1, 'succeeded', ?)").run(
@@ -347,6 +348,8 @@ describe("observability", () => {
     expect([r.provider, r.model, r.pricing]).toEqual([null, null, null]);
     expect(r.summary).toEqual({
       usage: { inputTokens: 10, outputTokens: 5, modelCalls: 1, webSearches: 0 },
+      tools: {},
+      toolCostNote: null,
       durationMs: 2000,
       costUsd: null,
       costNote: "Cost not estimated: this run was recorded before cost tracking.",
