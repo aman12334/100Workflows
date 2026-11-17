@@ -1,0 +1,76 @@
+{
+  "inputs": {
+    "product": "LedgerLoop"
+  },
+  "search": {
+    "results": [
+      {
+        "url": "https://reviews.example.com/ledgerloop",
+        "title": "LedgerLoop reviews"
+      },
+      {
+        "url": "https://appstore.example.com/ledgerloop-reviews",
+        "title": "LedgerLoop app reviews"
+      }
+    ],
+    "cited": []
+  },
+  "pages": {
+    "https://reviews.example.com/ledgerloop": "<html><head><title>LedgerLoop reviews</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>LedgerLoop reviews</h1><p>Review: \"The mobile app is great but Xero sync breaks every week.\"</p><p>Review: \"Support takes days to reply.\"</p></main></body></html>",
+    "https://appstore.example.com/ledgerloop-reviews": "<html><head><title>LedgerLoop app reviews</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>LedgerLoop app reviews</h1><p>Review: \"Love the receipt scanning, so fast.\"</p><p>Review: \"Sync with Xero keeps duplicating invoices.\"</p></main></body></html>"
+  },
+  "good": {
+    "themes": [
+      {
+        "theme": "Xero sync problems",
+        "sentiment": "complaint",
+        "reviews_mentioning": 2,
+        "quotes": [
+          {
+            "source_id": "S1",
+            "quote": "Xero sync breaks every week"
+          },
+          {
+            "source_id": "S2",
+            "quote": "Sync with Xero keeps duplicating invoices"
+          }
+        ]
+      },
+      {
+        "theme": "Fast receipt scanning",
+        "sentiment": "praise",
+        "reviews_mentioning": 1,
+        "quotes": [
+          {
+            "source_id": "S2",
+            "quote": "Love the receipt scanning, so fast"
+          }
+        ]
+      }
+    ],
+    "opportunities": [
+      "Reliable Xero sync as a differentiator"
+    ],
+    "coverage_note": "Two review pages read."
+  },
+  "bad_fails": "quotes_verified",
+  "bad": {
+    "themes": [
+      {
+        "theme": "Pricing",
+        "sentiment": "complaint",
+        "reviews_mentioning": 5,
+        "quotes": [
+          {
+            "source_id": "S1",
+            "quote": "Way too expensive for small teams"
+          }
+        ]
+      }
+    ],
+    "opportunities": [
+      "Reliable Xero sync as a differentiator"
+    ],
+    "coverage_note": "Two review pages read."
+  }
+}

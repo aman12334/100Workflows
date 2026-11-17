@@ -405,6 +405,12 @@
       "expect": [
         "fact-checker"
       ]
+    },
+    {
+      "query": "what do users complain about in reviews of a product",
+      "expect": [
+        "review-mining"
+      ]
     }
   ]
 }

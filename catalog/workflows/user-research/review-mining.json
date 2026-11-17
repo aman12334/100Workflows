@@ -1,0 +1,230 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "review-mining",
+  "version": "0.1.0",
+  "name": "Public Review Mining",
+  "category": "user-research",
+  "summary": "Reads public reviews of an app or tool (yours or a competitor's) and finds the praise and complaints that recur, with quotes.",
+  "description": "Searches review sites, app stores and forums for reviews of a product, reads the pages it can access, and groups what reviewers say into praise and complaint themes, each backed by quotes and a count of reviews mentioning it. It ends with opportunities for your product, labelled as inference. Who it's for: product managers, product marketers and founders studying their own or a competitor's product. Limitations: many review sites block automated reading, so coverage can be partial and is reported; reviews skew to strong opinions, and counts reflect only the reviews read, not the whole market.",
+  "status": "available",
+  "problems": [
+    "Users complain about a competitor's app and I want details",
+    "I want to analyse our app store reviews",
+    "I want to know why people like the alternatives"
+  ],
+  "tags": [
+    "reviews",
+    "review-analysis",
+    "voice-of-customer",
+    "competitor-reviews",
+    "app-store"
+  ],
+  "inputs": [
+    {
+      "key": "product",
+      "label": "Product",
+      "type": "text",
+      "required": true,
+      "description": "The product whose reviews to read.",
+      "example": "LedgerLoop"
+    },
+    {
+      "key": "review_urls",
+      "label": "Review pages",
+      "type": "list",
+      "required": false,
+      "description": "Specific review pages to read, one URL per line.",
+      "example": "https://www.g2.com/products/ledgerloop/reviews"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "themes",
+      "label": "Review themes",
+      "description": "Praise and complaint themes with quotes, counts and opportunities.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a user researcher analysing public reviews. Themes must be backed by reviewer quotes from the pages read. Counts are only of reviews read. Opportunities are your inference. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "themes",
+      "opportunities",
+      "coverage_note"
+    ],
+    "properties": {
+      "themes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "theme",
+            "sentiment",
+            "reviews_mentioning",
+            "quotes"
+          ],
+          "properties": {
+            "theme": {
+              "type": "string"
+            },
+            "sentiment": {
+              "type": "string",
+              "enum": [
+                "praise",
+                "complaint",
+                "mixed"
+              ]
+            },
+            "reviews_mentioning": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "quotes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "source_id",
+                  "quote"
+                ],
+                "properties": {
+                  "source_id": {
+                    "type": "string"
+                  },
+                  "quote": {
+                    "type": "string",
+                    "description": "A reviewer's words, copied exactly."
+                  }
+                }
+              },
+              "minItems": 1
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 12,
+        "title": "Themes"
+      },
+      "opportunities": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Opportunities (inference)"
+      },
+      "coverage_note": {
+        "type": "string",
+        "description": "Which review sources were read and which could not be accessed.",
+        "title": "Coverage"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Find public reviews of this product on review sites, app stores and forums.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 3
+        },
+        "fetch": {
+          "fromSearch": 3,
+          "maxPages": 5,
+          "urlInputs": [
+            "review_urls"
+          ]
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "Group what reviewers say into themes. Back each theme with reviewer quotes copied exactly, with source ids, and count the reviews mentioning it. Say in coverage which sources were read and which could not be accessed.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "quotes_verified",
+        "description": "Every reviewer quote appears in the source it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "themes[].quotes[]",
+            "sourceField": "source_id",
+            "quoteField": "quote"
+          }
+        }
+      },
+      {
+        "id": "distinct_themes",
+        "description": "Themes are distinct.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "themes[].theme"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}
