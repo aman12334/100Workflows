@@ -1,0 +1,251 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "seo-page-audit",
+  "version": "0.1.0",
+  "name": "SEO Page Audit",
+  "category": "marketing",
+  "summary": "Reads one of your web pages and audits its on-page SEO for a target keyword, quoting the page itself.",
+  "description": "Fetches a page you specify and audits it for a target keyword: title and headings, how well the copy answers the search intent, thin or missing sections, readability and internal calls to action. Every issue quotes the text on the page it is about (or says it is missing), and recommendations are prioritised. Who it's for: marketers, founders and content writers improving a page that should rank. Limitations: it reads the page text and headings as served, without running JavaScript, so content rendered client-side may be missed. It does not measure rankings, backlinks, speed or Core Web Vitals.",
+  "status": "available",
+  "problems": [
+    "Why doesn't our page rank on Google",
+    "I want an SEO review of a landing page",
+    "How can I improve this page for a keyword"
+  ],
+  "tags": [
+    "seo",
+    "on-page-seo",
+    "page-audit",
+    "website",
+    "content-optimization"
+  ],
+  "inputs": [
+    {
+      "key": "page_url",
+      "label": "Page URL",
+      "type": "url",
+      "required": true,
+      "description": "The public page to audit.",
+      "example": "https://www.example.com/pricing"
+    },
+    {
+      "key": "keyword",
+      "label": "Target keyword",
+      "type": "text",
+      "required": true,
+      "description": "The search query the page should rank for.",
+      "example": "month-end close software"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "audit",
+      "label": "SEO audit",
+      "description": "Findings quoting the page, and prioritised recommendations.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are an on-page SEO specialist. Judge the page as served (text and headings); quote the page for every finding about existing content, and say plainly when something is missing. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "page_summary",
+      "keyword_alignment",
+      "findings",
+      "missing",
+      "recommendations"
+    ],
+    "properties": {
+      "page_summary": {
+        "type": "string",
+        "title": "What the page is about"
+      },
+      "keyword_alignment": {
+        "type": "string",
+        "enum": [
+          "strong",
+          "partial",
+          "weak"
+        ]
+      },
+      "findings": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "area",
+            "finding",
+            "source_id",
+            "quote",
+            "severity"
+          ],
+          "properties": {
+            "area": {
+              "type": "string",
+              "enum": [
+                "title",
+                "headings",
+                "intent",
+                "content_depth",
+                "readability",
+                "calls_to_action",
+                "trust"
+              ]
+            },
+            "finding": {
+              "type": "string"
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied exactly from the page."
+            },
+            "severity": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 15,
+        "title": "Findings"
+      },
+      "missing": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Missing from the page"
+      },
+      "recommendations": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "change",
+            "priority"
+          ],
+          "properties": {
+            "change": {
+              "type": "string"
+            },
+            "priority": {
+              "type": "string",
+              "enum": [
+                "now",
+                "next",
+                "later"
+              ]
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Recommendations"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_pages",
+      "name": "Read pages",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Read the page to audit.",
+      "tools": [
+        "web-fetch"
+      ],
+      "gather": {
+        "fetch": {
+          "urlInputs": [
+            "page_url"
+          ],
+          "maxPages": 1
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "Audit the page for the keyword. For each finding about existing content, give the source id and copy the page text exactly into quote. List things that are absent under missing instead. Prioritise recommendations.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the public pages you supply.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "findings_quoted",
+        "description": "Every finding quotes the page.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "findings[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true,
+            "minChars": 6
+          }
+        }
+      },
+      {
+        "id": "distinct_findings",
+        "description": "Findings are not repeated.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "findings[].finding"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 2
+  }
+}

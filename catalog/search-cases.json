@@ -435,6 +435,12 @@
       "expect": [
         "salary-benchmark"
       ]
+    },
+    {
+      "query": "SEO audit of a page for a keyword",
+      "expect": [
+        "seo-page-audit"
+      ]
     }
   ]
 }
