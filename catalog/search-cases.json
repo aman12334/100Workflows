@@ -423,6 +423,12 @@
       "expect": [
         "vendor-shortlist"
       ]
+    },
+    {
+      "query": "check our suppliers for supply chain risk",
+      "expect": [
+        "supplier-risk-scan"
+      ]
     }
   ]
 }
