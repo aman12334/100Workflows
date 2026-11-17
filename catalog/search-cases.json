@@ -387,6 +387,12 @@
       "expect": [
         "grant-finder"
       ]
+    },
+    {
+      "query": "content brief for a keyword based on what ranks",
+      "expect": [
+        "serp-content-brief"
+      ]
     }
   ]
 }

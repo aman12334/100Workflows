@@ -1,0 +1,262 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "serp-content-brief",
+  "version": "0.1.0",
+  "name": "Search-Led Content Brief",
+  "category": "marketing",
+  "summary": "Researches the pages that rank for a keyword, reads the top pages, and writes a content brief that covers their gaps.",
+  "description": "Searches a keyword or question, reads the top-ranking pages, and summarises what each one covers (quoted), the search intent they serve, the subtopics they share, and what they miss. The brief proposes a title, outline and angle that answer the intent better, with each \"competitor covers\" point tied to a page that was actually read. Who it's for: content marketers, SEO leads and writers planning an article. Limitations: search results differ by location and personalisation and change over time; it reads pages, not ranking data, so it gives no search volumes or difficulty scores.",
+  "status": "available",
+  "problems": [
+    "I need a content brief for a keyword",
+    "I want to know which topics top ranking articles cover",
+    "Our blog posts don't rank"
+  ],
+  "tags": [
+    "seo",
+    "content-brief",
+    "keyword-research",
+    "serp",
+    "blog"
+  ],
+  "inputs": [
+    {
+      "key": "keyword",
+      "label": "Keyword or question",
+      "type": "text",
+      "required": true,
+      "description": "What searchers type.",
+      "example": "month-end close checklist"
+    },
+    {
+      "key": "audience",
+      "label": "Audience",
+      "type": "text",
+      "required": false,
+      "description": "Who the article is for.",
+      "example": "Agency finance managers"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "brief",
+      "label": "Content brief",
+      "description": "Intent, what top pages cover, gaps, title and outline.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are an SEO content strategist. Base what competitors cover on the pages read, quoted; your recommendations are inference built on those gaps. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "search_intent",
+      "intent_notes",
+      "competitor_coverage",
+      "gaps",
+      "title",
+      "outline",
+      "faq"
+    ],
+    "properties": {
+      "search_intent": {
+        "type": "string",
+        "enum": [
+          "informational",
+          "commercial",
+          "transactional",
+          "navigational"
+        ]
+      },
+      "intent_notes": {
+        "type": "string",
+        "title": "Intent"
+      },
+      "competitor_coverage": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source_id",
+            "covers",
+            "quote"
+          ],
+          "properties": {
+            "source_id": {
+              "type": "string"
+            },
+            "covers": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied exactly from the page."
+            }
+          }
+        },
+        "title": "What ranking pages cover",
+        "description": "At least two different pages."
+      },
+      "gaps": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "title": "Gaps to fill"
+      },
+      "title": {
+        "type": "string",
+        "title": "Proposed title"
+      },
+      "outline": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "heading",
+            "points"
+          ],
+          "properties": {
+            "heading": {
+              "type": "string"
+            },
+            "points": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "minItems": 3,
+        "maxItems": 12,
+        "title": "Outline"
+      },
+      "faq": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Questions to answer"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Search this keyword as a searcher would and find the top-ranking articles and guides. Read the leading pages.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 3
+        },
+        "fetch": {
+          "fromSearch": 4,
+          "maxPages": 4
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "Summarise what each read page covers, citing its id and copying a supporting passage exactly into quote. Identify gaps none of them cover well, then propose a title and outline that serves the intent better. Keep the title under 65 characters.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "coverage_quoted",
+        "description": "Competitor coverage quotes pages read in full.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "competitor_coverage[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "two_pages",
+        "description": "At least two different pages were analysed.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "cites_sources",
+          "params": {
+            "path": "competitor_coverage[].source_id",
+            "min": 2
+          }
+        }
+      },
+      {
+        "id": "distinct_headings",
+        "description": "Outline headings are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "outline[].heading"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}
