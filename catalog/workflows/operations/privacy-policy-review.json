@@ -1,0 +1,236 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "privacy-policy-review",
+  "version": "0.1.0",
+  "name": "Vendor Privacy Policy Review",
+  "category": "operations",
+  "summary": "Reads a vendor's privacy policy or terms and extracts how it handles your data, quoting each clause and flagging concerns.",
+  "description": "Fetches a vendor's privacy policy, data processing terms or terms of service and extracts what matters when you share data with them: what they collect, how they use it (including model training), who they share it with, where data is stored, retention, deletion, security commitments and breach notification. Every point quotes the clause, and topics the document does not address are listed as not found. Who it's for: operations, security and procurement leads, and founders reviewing a new SaaS vendor. Limitations: it reads the documents you link and nothing else; it is not legal advice and cannot verify that the vendor follows its policy.",
+  "status": "available",
+  "problems": [
+    "I need to know how a vendor handles our data",
+    "I need to review a SaaS privacy policy quickly",
+    "Does this tool train AI on our data"
+  ],
+  "tags": [
+    "privacy-policy",
+    "vendor-review",
+    "data-protection",
+    "gdpr",
+    "security-review"
+  ],
+  "inputs": [
+    {
+      "key": "policy_urls",
+      "label": "Policy URLs",
+      "type": "list",
+      "required": true,
+      "description": "Privacy policy, DPA or terms URLs, one per line.",
+      "example": "https://www.example.com/privacy"
+    },
+    {
+      "key": "data_shared",
+      "label": "Data you would share",
+      "type": "text",
+      "required": false,
+      "description": "What kind of data.",
+      "example": "Customer invoices and employee names"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "privacy_review",
+      "label": "Privacy review",
+      "description": "Data practices with quoted clauses, concerns and questions.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a privacy analyst reviewing vendor documents. Quote the clause for every practice; when a topic is not addressed, say \"not found\" rather than assuming. Flag concerns plainly; no legal advice. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "practices",
+      "not_found",
+      "concerns",
+      "questions_for_vendor"
+    ],
+    "properties": {
+      "practices": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "topic",
+            "what_it_says",
+            "source_id",
+            "quote"
+          ],
+          "properties": {
+            "topic": {
+              "type": "string",
+              "enum": [
+                "collection",
+                "use",
+                "model_training",
+                "sharing",
+                "subprocessors",
+                "storage_location",
+                "retention",
+                "deletion",
+                "security",
+                "breach_notification"
+              ]
+            },
+            "what_it_says": {
+              "type": "string"
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied exactly from the document."
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Data practices"
+      },
+      "not_found": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Not addressed"
+      },
+      "concerns": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "concern",
+            "severity"
+          ],
+          "properties": {
+            "concern": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            }
+          }
+        },
+        "title": "Concerns"
+      },
+      "questions_for_vendor": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Questions for the vendor"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_pages",
+      "name": "Read pages",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Read the policy documents you supplied.",
+      "tools": [
+        "web-fetch"
+      ],
+      "gather": {
+        "fetch": {
+          "urlInputs": [
+            "policy_urls"
+          ],
+          "maxPages": 4
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "Extract each data practice with the clause copied exactly and its source id. List topics the documents do not address under not_found. Flag concerns for the data the user plans to share.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the public pages you supply.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "clauses_quoted",
+        "description": "Every practice quotes the document it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "practices[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "topics_once",
+        "description": "Each topic is reported once.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "practices[].topic"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 2
+  }
+}

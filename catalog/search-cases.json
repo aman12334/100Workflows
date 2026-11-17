@@ -441,6 +441,12 @@
       "expect": [
         "seo-page-audit"
       ]
+    },
+    {
+      "query": "review a vendor privacy policy, what do they do with our data",
+      "expect": [
+        "privacy-policy-review"
+      ]
     }
   ]
 }

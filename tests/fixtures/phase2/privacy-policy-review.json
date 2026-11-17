@@ -1,0 +1,67 @@
+{
+  "inputs": {
+    "policy_urls": [
+      "https://www.vendor.example.com/privacy"
+    ]
+  },
+  "pages": {
+    "https://www.vendor.example.com/privacy": "<html><head><title>Privacy policy</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Privacy policy</h1><p>We may use customer content to improve and train our models.</p><p>Data is stored in the United States.</p><p>We retain data for 90 days after account closure.</p></main></body></html>"
+  },
+  "good": {
+    "practices": [
+      {
+        "topic": "model_training",
+        "what_it_says": "May train on customer content",
+        "source_id": "S1",
+        "quote": "We may use customer content to improve and train our models."
+      },
+      {
+        "topic": "storage_location",
+        "what_it_says": "US storage",
+        "source_id": "S1",
+        "quote": "Data is stored in the United States."
+      },
+      {
+        "topic": "retention",
+        "what_it_says": "90 days after closure",
+        "source_id": "S1",
+        "quote": "We retain data for 90 days after account closure."
+      }
+    ],
+    "not_found": [
+      "Breach notification"
+    ],
+    "concerns": [
+      {
+        "concern": "Training on invoices",
+        "severity": "high"
+      }
+    ],
+    "questions_for_vendor": [
+      "Can we opt out of training?"
+    ]
+  },
+  "bad_fails": "clauses_quoted",
+  "bad": {
+    "practices": [
+      {
+        "topic": "model_training",
+        "what_it_says": "Never trains",
+        "source_id": "S1",
+        "quote": "We never use customer data for training"
+      }
+    ],
+    "not_found": [
+      "Breach notification"
+    ],
+    "concerns": [
+      {
+        "concern": "Training on invoices",
+        "severity": "high"
+      }
+    ],
+    "questions_for_vendor": [
+      "Can we opt out of training?"
+    ]
+  }
+}
