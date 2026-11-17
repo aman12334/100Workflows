@@ -1,0 +1,349 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "company-research-brief",
+  "version": "0.1.0",
+  "name": "Company Research Brief",
+  "category": "sales",
+  "summary": "Researches one company on the web: its business, size signals, recent news and likely priorities, every point cited.",
+  "description": "Searches for a named company, reads its own site and the most relevant coverage, and writes an account brief: what the company does, size and funding signals, recent events with dates, likely priorities (labelled as inference), and conversation angles for your product. Every fact quotes the page it came from, and anything the sources do not cover is listed as unverified. Who it's for: account executives, SDRs and founders preparing outreach or a first meeting. Limitations: it only knows what public pages say on the day it runs; private companies often publish little, and figures such as headcount or revenue are reported only when a source states them.",
+  "status": "available",
+  "problems": [
+    "I need to research an account before a sales meeting",
+    "I know nothing about a prospect company",
+    "Account research takes me an hour per company"
+  ],
+  "tags": [
+    "account-research",
+    "company-profile",
+    "prospecting",
+    "sales-intelligence",
+    "web-research"
+  ],
+  "inputs": [
+    {
+      "key": "company",
+      "label": "Company",
+      "type": "text",
+      "required": true,
+      "description": "The company to research, ideally with its website.",
+      "example": "Northpeak Logistics (northpeak.com)"
+    },
+    {
+      "use": "product_description",
+      "required": false
+    },
+    {
+      "key": "focus",
+      "label": "What to look for",
+      "type": "text",
+      "required": false,
+      "description": "Anything specific you want to know.",
+      "example": "Finance team size and recent funding"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "brief",
+      "label": "Account brief",
+      "description": "Overview, facts with sources, recent events, inferred priorities and angles.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a sales researcher writing an account brief. Facts come from retrieved pages; priorities and angles are your inference and must be labelled as such. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "overview",
+      "facts",
+      "recent_events",
+      "inferred_priorities",
+      "conversation_angles",
+      "conflicts",
+      "unverified"
+    ],
+    "properties": {
+      "overview": {
+        "type": "string",
+        "description": "Two or three sentences, using only sourced facts.",
+        "title": "Overview"
+      },
+      "facts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "statement",
+            "source_id",
+            "quote"
+          ],
+          "properties": {
+            "statement": {
+              "type": "string",
+              "description": "A fact about the company."
+            },
+            "source_id": {
+              "type": "string",
+              "description": "The id of the source (S1, S2, ...)."
+            },
+            "quote": {
+              "type": "string",
+              "description": "Words copied exactly from that source."
+            }
+          }
+        },
+        "minItems": 2,
+        "maxItems": 15,
+        "title": "Key facts"
+      },
+      "recent_events": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "date",
+            "event",
+            "source_id",
+            "quote"
+          ],
+          "properties": {
+            "date": {
+              "type": "string",
+              "description": "As stated in the source, or \"undated\"."
+            },
+            "event": {
+              "type": "string"
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied exactly from the source."
+            }
+          }
+        },
+        "title": "Recent events"
+      },
+      "inferred_priorities": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "priority",
+            "reasoning",
+            "based_on"
+          ],
+          "properties": {
+            "priority": {
+              "type": "string"
+            },
+            "reasoning": {
+              "type": "string"
+            },
+            "based_on": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1,
+              "description": "Source ids."
+            }
+          }
+        },
+        "title": "Likely priorities (inference)"
+      },
+      "conversation_angles": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Conversation angles"
+      },
+      "conflicts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "topic",
+            "source_ids",
+            "description"
+          ],
+          "properties": {
+            "topic": {
+              "type": "string"
+            },
+            "source_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 2
+            },
+            "description": {
+              "type": "string",
+              "description": "How the sources disagree."
+            }
+          }
+        },
+        "title": "Conflicting information"
+      },
+      "unverified": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Could not be verified",
+        "description": "Things the task asked about that no retrieved source supports."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Research this company: what it does, its size, funding, leadership changes and news from the last 12 months. Start with its own website.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 4
+        },
+        "fetch": {
+          "fromSearch": 3,
+          "maxPages": 4
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "Write the brief. For every fact and event, give the source id and copy supporting words exactly into quote. Label priorities as inference and list the source ids they rest on. Put anything you could not find under unverified.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "facts_quoted",
+        "description": "Every fact quotes the source it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "facts[]",
+            "sourceField": "source_id",
+            "quoteField": "quote"
+          }
+        }
+      },
+      {
+        "id": "facts_read",
+        "description": "Facts rest on pages read in full, not only search snippets.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "facts[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "events_quoted",
+        "description": "Every event quotes the source it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "recent_events[]",
+            "sourceField": "source_id",
+            "quoteField": "quote"
+          }
+        }
+      },
+      {
+        "id": "inferences_cite_sources",
+        "description": "Inferred priorities cite retrieved sources.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "cites_sources",
+          "params": {
+            "path": "inferred_priorities[].based_on[]",
+            "min": 1
+          }
+        }
+      },
+      {
+        "id": "enough_sources",
+        "description": "Facts draw on at least two different sources.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "cites_sources",
+          "params": {
+            "path": "facts[].source_id",
+            "min": 2
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}

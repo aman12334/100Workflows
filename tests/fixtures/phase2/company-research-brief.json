@@ -1,0 +1,110 @@
+{
+  "inputs": {
+    "company": "Northpeak Logistics (northpeak.example.com)"
+  },
+  "search": {
+    "results": [
+      {
+        "url": "https://www.northpeak.example.com/about",
+        "title": "About Northpeak"
+      },
+      {
+        "url": "https://news.example.org/northpeak-series-a",
+        "title": "Northpeak raises Series A"
+      },
+      {
+        "url": "https://jobs.example.net/northpeak",
+        "title": "Northpeak careers"
+      }
+    ],
+    "cited": [
+      {
+        "url": "https://news.example.org/northpeak-series-a",
+        "text": "Northpeak raised a $12 million Series A in August 2026."
+      }
+    ]
+  },
+  "pages": {
+    "https://news.example.org/northpeak-series-a": "<html><head><title>Northpeak raises Series A</title><meta property=\"og:site_name\" content=\"Example News\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Northpeak raises Series A</h1><p>Northpeak raised a $12 million Series A in August 2026.</p><p>The company plans to expand into Germany and hire a finance lead.</p></main></body></html>",
+    "https://www.northpeak.example.com/about": "<html><head><title>About Northpeak</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>About Northpeak</h1><p>Northpeak runs freight brokerage for mid-size retailers across Europe.</p><p>We employ 140 people across four offices.</p></main></body></html>"
+  },
+  "good": {
+    "overview": "Northpeak is a European freight broker that recently raised a Series A.",
+    "facts": [
+      {
+        "statement": "Raised a Series A",
+        "source_id": "S1",
+        "quote": "raised a $12 million Series A in August 2026"
+      },
+      {
+        "statement": "Freight brokerage",
+        "source_id": "S2",
+        "quote": "Northpeak runs freight brokerage for mid-size retailers"
+      }
+    ],
+    "recent_events": [
+      {
+        "date": "August 2026",
+        "event": "Series A",
+        "source_id": "S1",
+        "quote": "raised a $12 million Series A in August 2026"
+      }
+    ],
+    "inferred_priorities": [
+      {
+        "priority": "Build a finance function",
+        "reasoning": "Hiring a finance lead after funding",
+        "based_on": [
+          "S1"
+        ]
+      }
+    ],
+    "conversation_angles": [
+      "Finance setup for expansion"
+    ],
+    "conflicts": [],
+    "unverified": [
+      "Revenue"
+    ]
+  },
+  "bad_fails": "facts_quoted",
+  "bad": {
+    "overview": "Northpeak is a European freight broker that recently raised a Series A.",
+    "facts": [
+      {
+        "statement": "Revenue",
+        "source_id": "S1",
+        "quote": "Northpeak has annual revenue of $80 million"
+      },
+      {
+        "statement": "x",
+        "source_id": "S2",
+        "quote": "Northpeak runs freight brokerage for mid-size retailers"
+      }
+    ],
+    "recent_events": [
+      {
+        "date": "August 2026",
+        "event": "Series A",
+        "source_id": "S1",
+        "quote": "raised a $12 million Series A in August 2026"
+      }
+    ],
+    "inferred_priorities": [
+      {
+        "priority": "Build a finance function",
+        "reasoning": "Hiring a finance lead after funding",
+        "based_on": [
+          "S1"
+        ]
+      }
+    ],
+    "conversation_angles": [
+      "Finance setup for expansion"
+    ],
+    "conflicts": [],
+    "unverified": [
+      "Revenue"
+    ]
+  }
+}

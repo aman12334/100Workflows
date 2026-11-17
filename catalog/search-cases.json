@@ -351,6 +351,12 @@
       "expect": [
         "vendor-evaluation"
       ]
+    },
+    {
+      "query": "research a company before a sales meeting",
+      "expect": [
+        "company-research-brief"
+      ]
     }
   ]
 }

@@ -57,11 +57,12 @@ function run(wf: Workflow, f: Fixture, write: unknown[]) {
 }
 
 describe("Phase 1 catalog", () => {
-  it("adds exactly 45 schema-v2 workflows to the 12 existing ones", () => {
+  it("adds exactly 45 schema-v2 workflows to the 12 existing ones (later phases add their own)", () => {
     expect(IDS).toHaveLength(45);
-    expect(catalog).toHaveLength(57);
+    const later = readdirSync(path.join(process.cwd(), "tests", "fixtures", "phase2")).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5));
+    expect(catalog).toHaveLength(57 + later.length);
     for (const id of IDS) expect(byId(id), id).toBeDefined();
-    const original = catalog.filter((w) => !IDS.includes(w.id)).map((w) => w.id);
+    const original = catalog.filter((w) => !IDS.includes(w.id) && !later.includes(w.id)).map((w) => w.id);
     expect(original).toHaveLength(12);
   });
 });
