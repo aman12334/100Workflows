@@ -1,0 +1,253 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "vendor-shortlist",
+  "version": "0.1.0",
+  "name": "Vendor Shortlist Research",
+  "category": "operations",
+  "summary": "Researches vendors for a need on the web and builds a shortlist, with capabilities and pricing quoted from their own pages.",
+  "description": "Searches for tools or service providers that meet a need you describe, reads their product and pricing pages, and builds a shortlist: what each vendor offers against your must-haves (quoted from their pages), pricing as published or \"not published\", and questions to ask in a demo. It finds candidates; the Vendor Evaluation Scorecard compares the ones you have already demoed. Who it's for: operations leads, founders and procurement teams starting a tool search. Limitations: vendor pages are marketing; claims are reported as the vendor's own and should be confirmed in a demo. Pricing behind \"contact sales\" is not available.",
+  "status": "available",
+  "problems": [
+    "I need to find tools for this job",
+    "I need a shortlist of software vendors",
+    "I don't know which providers exist for this need"
+  ],
+  "tags": [
+    "vendor-research",
+    "software-selection",
+    "shortlist",
+    "procurement",
+    "tools"
+  ],
+  "inputs": [
+    {
+      "key": "need",
+      "label": "What you need",
+      "type": "long_text",
+      "required": true,
+      "description": "The problem and your must-haves.",
+      "example": "Payroll for 25 staff in the UK and Ireland; must integrate with Xero."
+    },
+    {
+      "key": "budget",
+      "label": "Budget",
+      "type": "text",
+      "required": false,
+      "description": "Rough budget.",
+      "example": "Under £300 per month"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "shortlist",
+      "label": "Vendor shortlist",
+      "description": "Vendors with quoted capabilities, pricing and demo questions.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a procurement analyst. Capabilities and prices must be quoted from the vendor pages read; treat them as the vendor's claims. Never fill gaps from memory. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "vendors",
+      "recommendation",
+      "unverified"
+    ],
+    "properties": {
+      "vendors": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "vendor",
+            "capabilities",
+            "pricing",
+            "demo_questions"
+          ],
+          "properties": {
+            "vendor": {
+              "type": "string"
+            },
+            "capabilities": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "requirement",
+                  "meets",
+                  "source_id",
+                  "quote"
+                ],
+                "properties": {
+                  "requirement": {
+                    "type": "string"
+                  },
+                  "meets": {
+                    "type": "string",
+                    "enum": [
+                      "yes",
+                      "partly",
+                      "no",
+                      "unknown"
+                    ]
+                  },
+                  "source_id": {
+                    "type": "string"
+                  },
+                  "quote": {
+                    "type": "string",
+                    "description": "Copied exactly from the vendor page."
+                  }
+                }
+              }
+            },
+            "pricing": {
+              "type": "string",
+              "description": "As published, or \"not published\"."
+            },
+            "demo_questions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 8,
+        "title": "Vendors"
+      },
+      "recommendation": {
+        "type": "string",
+        "title": "Who to talk to first"
+      },
+      "unverified": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Could not be verified",
+        "description": "Things the task asked about that no retrieved source supports."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Find vendors that meet this need. Read their product, feature and pricing pages.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 4
+        },
+        "fetch": {
+          "fromSearch": 4,
+          "maxPages": 5
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "For each vendor, check each must-have against its pages and copy the supporting words exactly with the source id. Give pricing as published or \"not published\". Suggest demo questions for anything unknown.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "capabilities_quoted",
+        "description": "Every capability claim quotes the vendor page it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "vendors[].capabilities[]",
+            "sourceField": "source_id",
+            "quoteField": "quote"
+          }
+        }
+      },
+      {
+        "id": "capabilities_read",
+        "description": "Capabilities rest on pages read in full.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "vendors[].capabilities[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "distinct_vendors",
+        "description": "Each vendor appears once.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "vendors[].vendor"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}

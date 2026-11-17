@@ -417,6 +417,12 @@
       "expect": [
         "regulation-research"
       ]
+    },
+    {
+      "query": "research vendors and build a shortlist of tools",
+      "expect": [
+        "vendor-shortlist"
+      ]
     }
   ]
 }

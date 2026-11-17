@@ -1,0 +1,82 @@
+{
+  "inputs": {
+    "need": "Payroll for UK and Ireland with Xero integration."
+  },
+  "search": {
+    "results": [
+      {
+        "url": "https://www.payflow.example.com/features",
+        "title": "PayFlow features"
+      },
+      {
+        "url": "https://www.staffpay.example.com/pricing",
+        "title": "StaffPay pricing"
+      }
+    ],
+    "cited": []
+  },
+  "pages": {
+    "https://www.payflow.example.com/features": "<html><head><title>PayFlow features</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>PayFlow features</h1><p>PayFlow runs payroll in the UK and syncs journals to Xero automatically.</p><p>Ireland support is on our roadmap.</p></main></body></html>",
+    "https://www.staffpay.example.com/pricing": "<html><head><title>StaffPay pricing</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>StaffPay pricing</h1><p>StaffPay supports UK and Irish payroll from £9 per employee per month.</p><p>Exports a CSV for Xero.</p></main></body></html>"
+  },
+  "good": {
+    "vendors": [
+      {
+        "vendor": "PayFlow",
+        "capabilities": [
+          {
+            "requirement": "Xero",
+            "meets": "yes",
+            "source_id": "S1",
+            "quote": "syncs journals to Xero automatically"
+          },
+          {
+            "requirement": "Ireland",
+            "meets": "no",
+            "source_id": "S1",
+            "quote": "Ireland support is on our roadmap."
+          }
+        ],
+        "pricing": "not published",
+        "demo_questions": [
+          "When is Ireland due?"
+        ]
+      },
+      {
+        "vendor": "StaffPay",
+        "capabilities": [
+          {
+            "requirement": "Ireland",
+            "meets": "yes",
+            "source_id": "S2",
+            "quote": "supports UK and Irish payroll"
+          }
+        ],
+        "pricing": "from £9 per employee per month",
+        "demo_questions": []
+      }
+    ],
+    "recommendation": "StaffPay first.",
+    "unverified": []
+  },
+  "bad_fails": "capabilities_quoted",
+  "bad": {
+    "vendors": [
+      {
+        "vendor": "PayFlow",
+        "capabilities": [
+          {
+            "requirement": "Ireland",
+            "meets": "yes",
+            "source_id": "S1",
+            "quote": "PayFlow supports Irish payroll today"
+          }
+        ],
+        "pricing": "x",
+        "demo_questions": []
+      }
+    ],
+    "recommendation": "StaffPay first.",
+    "unverified": []
+  }
+}
