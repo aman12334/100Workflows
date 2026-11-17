@@ -369,6 +369,12 @@
       "expect": [
         "partner-prospect-research"
       ]
+    },
+    {
+      "query": "which investors and VCs invest in our space",
+      "expect": [
+        "investor-research"
+      ]
     }
   ]
 }

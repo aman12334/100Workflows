@@ -1,0 +1,220 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "investor-research",
+  "version": "0.1.0",
+  "name": "Investor Research",
+  "category": "finance",
+  "summary": "Finds investors active in your space and stage, with cited evidence of relevant deals and how to approach each.",
+  "description": "Searches for funds and angels that invest in your sector and stage, reads their portfolio pages and fund announcements, and lists each investor with evidence of relevant investments (quoted), stated stage and cheque size when published, possible conflicts with portfolio companies, and an approach note. Who it's for: founders preparing a fundraise and building a target investor list. Limitations: portfolio pages can be out of date and cheque sizes are often unpublished; it lists only what sources state and does not know whether a fund is actively deploying.",
+  "status": "available",
+  "problems": [
+    "I need a list of investors to pitch",
+    "Which VCs invest in our space",
+    "I'm preparing a fundraise and don't know who to contact"
+  ],
+  "tags": [
+    "fundraising",
+    "investors",
+    "venture-capital",
+    "investor-list",
+    "seed"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "stage",
+      "label": "Round",
+      "type": "select",
+      "required": true,
+      "description": "The round you are raising.",
+      "options": [
+        "pre-seed",
+        "seed",
+        "series a",
+        "series b+"
+      ]
+    },
+    {
+      "key": "geography",
+      "label": "Geography",
+      "type": "text",
+      "required": false,
+      "description": "Where investors should be based or invest.",
+      "example": "Europe"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "investors",
+      "label": "Investor list",
+      "description": "Investors with evidence, stage, conflicts and approach.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a fundraising advisor building a target list. An investor qualifies only with sourced evidence of investing in the space or stage; flag possible portfolio conflicts. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "investors",
+      "unverified"
+    ],
+    "properties": {
+      "investors": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "evidence",
+            "source_id",
+            "stage_focus",
+            "possible_conflicts",
+            "approach"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "evidence": {
+              "type": "string",
+              "description": "Copied exactly from the source."
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "stage_focus": {
+              "type": "string",
+              "description": "As stated, or \"not stated\"."
+            },
+            "possible_conflicts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "approach": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 15,
+        "title": "Investors"
+      },
+      "unverified": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Could not be verified",
+        "description": "Things the task asked about that no retrieved source supports."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Find venture funds and angel investors who invest in this sector at this stage and geography. Look for portfolio pages and new fund announcements.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 5
+        },
+        "fetch": {
+          "fromSearch": 3,
+          "maxPages": 4
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "List investors that have sourced evidence of investing in this space or stage. Copy the evidence exactly with its source id. Use \"not stated\" where stage or cheque size is not published. Flag portfolio companies that might compete.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "evidence_quoted",
+        "description": "Every investor's evidence quotes the source it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "investors[]",
+            "sourceField": "source_id",
+            "quoteField": "evidence"
+          }
+        }
+      },
+      {
+        "id": "distinct_investors",
+        "description": "Each investor appears once.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "investors[].name"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}
