@@ -5,6 +5,17 @@ const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
 
 const METHOD: Record<string, string> = { schema: "schema", rule: "rule", model: "model review" };
 
+/** One sentence on what the gather step retrieves, from its settings. */
+function researchSummary(w: Workflow): string {
+  const g = w.steps.find((s) => s.mode === "gather")?.gather;
+  if (!g) return "";
+  const parts: string[] = [];
+  if (g.search) parts.push(`up to ${g.search.maxSearches} web searches`);
+  if (g.fetch?.urlInputs?.length) parts.push(`reads the pages you link`);
+  if (g.fetch?.fromSearch) parts.push(`reads the top ${g.fetch.fromSearch} results in full`);
+  return parts.length ? `Each run: ${parts.join(", ")}, at most ${g.fetch?.maxPages ?? 0} pages.` : "";
+}
+
 /** One workflow's reference entry. Descriptions may carry "Who it's for:" and "Limitations:" sentences, shown as their own lines. */
 function workflowDetails(w: Workflow): string[] {
   const [what, rest = ""] = w.description.split(" Who it's for: ");
@@ -18,6 +29,14 @@ function workflowDetails(w: Workflow): string[] {
     `**Inputs:** ${w.inputs.map((i) => `${i.label}${i.required ? "" : " (optional)"}`).join(", ")}`,
     "",
     `**Output:** ${outputs.join(", ")}`,
+    ...(w.tools.length
+      ? [
+          "",
+          `**Tools:** ${w.tools.map((t) => `\`${t.id}\``).join(", ")} (read-only). ${researchSummary(w)}`,
+          "",
+          "**Evidence:** every source the run retrieved is stored with the result and listed with its URL, title, date and whether the page was read in full or only seen as a search result. Pages that could not be read are listed too. Cited claims are checked against the retrieved text before the output is accepted.",
+        ]
+      : []),
     "",
     "**Checks:**",
     "",

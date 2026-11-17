@@ -1,5 +1,8 @@
 import { RULES, validateRuleRef } from "@/lib/runtime/rules/registry";
 import { callsPerAttempt, producerSteps } from "@/lib/runtime/executors/generic";
+import { gatherModelCalls } from "@/lib/runtime/executors/research";
+import { SOURCE_RULE_IDS } from "@/lib/runtime/rules/sources";
+import { TOOLS } from "@/lib/runtime/tools/registry";
 import { InputRefSchema, WorkflowSchema, type SharedInputDef, type ToolDef, type Workflow } from "./schema";
 
 export interface CatalogError {
@@ -79,12 +82,52 @@ export function validateGenericDefinition(wf: Workflow): string[] {
   const problems: string[] = [];
   const steps = new Map(wf.steps.map((s) => [s.id, s]));
 
-  // Phase 0 scope: no tools, no integrations, no side effects.
-  if (wf.tools.length) problems.push("generic workflows can't use tools yet; remove \"tools\" or use a hand-written executor");
+  // Read-only tools only, through a gather step; no integrations or side effects.
   if (wf.integrations.length) problems.push("generic workflows can't use integrations yet; remove \"integrations\"");
+  const gatherSteps = wf.steps.filter((s) => s.mode === "gather");
+  const gatherStep = gatherSteps[0];
+  if (wf.tools.length && !gatherStep) problems.push('generic workflows use tools only in a "gather" step; add one or remove "tools"');
+  for (const t of wf.tools) {
+    if (!Object.hasOwn(TOOLS, t.id)) problems.push(`tool "${t.id}" is not provided by the runtime (available: ${Object.keys(TOOLS).sort().join(", ")})`);
+  }
   for (const st of wf.steps) {
-    if (st.tools.length) problems.push(`step "${st.id}" lists tools, which generic workflows can't use yet`);
-    if (st.kind === "check" && (st.mode || st.prompt)) problems.push(`step "${st.id}" is a check step, so it can't have a mode or prompt`);
+    if (st.kind === "check" && (st.mode || st.prompt || st.gather)) problems.push(`step "${st.id}" is a check step, so it can't have a mode, prompt or gather`);
+    if (st.gather && st.mode !== "gather") problems.push(`step "${st.id}" has "gather" settings but its mode is not "gather"`);
+    if (st.tools.length && st.mode !== "gather") problems.push(`step "${st.id}" lists tools; only a "gather" step can use tools`);
+  }
+  if (gatherSteps.length > 1) problems.push('only one step can "gather"');
+  if (gatherStep) {
+    const g = gatherStep.gather;
+    const declared = new Set(wf.tools.map((t) => t.id));
+    const needs = [...(g?.search ? ["web-search"] : []), ...(g?.fetch ? ["web-fetch"] : [])];
+    if (gatherStep.kind !== "agent") problems.push(`gather step "${gatherStep.id}" must be an agent step`);
+    if (!g) problems.push(`gather step "${gatherStep.id}" needs "gather" settings (search, fetch or both)`);
+    if (wf.steps.indexOf(gatherStep) > wf.steps.findIndex((s) => s.mode === "generate")) problems.push(`gather step "${gatherStep.id}" must come before the generate step`);
+    for (const id of needs) {
+      if (!declared.has(id)) problems.push(`gather step "${gatherStep.id}" uses ${id}; declare it in "tools"`);
+      if (!gatherStep.tools.includes(id)) problems.push(`gather step "${gatherStep.id}" uses ${id}; list it in the step's "tools"`);
+    }
+    for (const id of gatherStep.tools) if (!needs.includes(id)) problems.push(`gather step "${gatherStep.id}" lists ${id} but its settings don't use it`);
+    if (g?.fetch) {
+      if (!g.fetch.urlInputs?.length && !g.fetch.fromSearch) problems.push(`gather step "${gatherStep.id}": fetch needs urlInputs, fromSearch or both`);
+      if (g.fetch.fromSearch && !g.search) problems.push(`gather step "${gatherStep.id}": fetch.fromSearch needs search`);
+      for (const key of g.fetch.urlInputs ?? []) {
+        const input = wf.inputs.find((i) => i.key === key);
+        if (!input) problems.push(`gather step "${gatherStep.id}": url input "${key}" is not declared`);
+        else if (input.type !== "url" && input.type !== "list") problems.push(`gather step "${gatherStep.id}": input "${key}" must be of type url or list`);
+      }
+    }
+    if (wf.outputSchema.type === "object") {
+      for (const reserved of ["retrieved_sources", "unavailable_sources"]) {
+        if (Object.hasOwn(wf.outputSchema.properties, reserved)) problems.push(`outputSchema can't define "${reserved}"; the runtime adds it`);
+      }
+    }
+    const citationCheck = wf.evaluation.criteria.some((c) => c.critical && c.rule && SOURCE_RULE_IDS.has(c.rule.id));
+    if (!citationCheck) problems.push(`research workflows need a critical citation rule (${[...SOURCE_RULE_IDS].sort().join(" or ")})`);
+  } else {
+    for (const c of wf.evaluation.criteria) {
+      if (c.rule && SOURCE_RULE_IDS.has(c.rule.id)) problems.push(`criterion "${c.id}": rule "${c.rule.id}" checks retrieved sources, so it needs a gather step`);
+    }
   }
 
   const producers = producerSteps(wf);
@@ -144,9 +187,10 @@ export function validateGenericDefinition(wf: Workflow): string[] {
     if (st.kind === "check" && !checkStepsUsed.has(st.id)) problems.push(`check step "${st.id}" runs no rules; remove it or point a rule at it`);
   }
 
-  const calls = callsPerAttempt(wf);
+  const calls = callsPerAttempt(wf) + gatherModelCalls(wf);
   if (calls > wf.limits.maxModelCalls) {
-    problems.push(`one attempt needs ${calls} model calls, but limits.maxModelCalls is ${wf.limits.maxModelCalls}`);
+    const why = gatherModelCalls(wf) ? ` (including ${gatherModelCalls(wf)} for web search)` : "";
+    problems.push(`one attempt needs ${calls} model calls${why}, but limits.maxModelCalls is ${wf.limits.maxModelCalls}`);
   }
   return problems;
 }

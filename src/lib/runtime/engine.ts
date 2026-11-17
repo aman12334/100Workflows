@@ -2,6 +2,7 @@ import type { Workflow } from "@/lib/catalog/schema";
 import { Budget, LimitError, type Usage } from "./budget";
 import { evaluate, feedbackFor, type CriterionResult, type Evaluation } from "./evaluation";
 import { COMMON_PARAMS, OutputInvalidError, type CreateMessage, type CreateParams, type Message } from "./model";
+import { ToolRunner, toolLimitsFor, type ToolCallRecord, type ToolOverrides } from "./tools/runner";
 
 /**
  * The workflow runtime: a small, explicit state machine.
@@ -36,6 +37,8 @@ export interface StepHandle {
 export interface Recorder {
   step(stepId: string, kind: "agent" | "check", attempt: number): StepHandle;
   evaluation(evaluation: Evaluation): void;
+  /** Optional: one record per tool call (see tools/runner.ts). */
+  tool?(call: ToolCallRecord): void;
 }
 
 export interface ExecContext {
@@ -48,6 +51,9 @@ export interface ExecContext {
   call(params: Omit<CreateParams, "model">): Promise<Message>;
   /** Runs `fn` as a traced step. `stepId` must be one of the manifest's steps. */
   step<T>(stepId: string, fn: () => Promise<{ value: T; detail?: string }>): Promise<T>;
+  /** Registered, allowlisted tools for this execution; budgets span all attempts. */
+  tools: ToolRunner;
+  signal?: AbortSignal;
 }
 
 /** Honest, non-retryable failure (e.g. search found no sources). Never papered over with invented content. */
@@ -92,6 +98,12 @@ export interface ExecuteOptions {
   signal?: AbortSignal;
   describeError?: (err: unknown) => string;
   now?: () => number;
+  /** Environment for tool availability checks. Defaults to process.env. */
+  env?: Record<string, string | undefined>;
+  /** Test seam: replaces tool transports (never the allowlist, validation or budgets). */
+  toolOverrides?: ToolOverrides;
+  /** Per-tool limits from the definition, applied on top of each tool's own limit. */
+  toolLimits?: Record<string, number>;
 }
 
 const SCHEMA_CRITERION = "schema_valid";
@@ -105,21 +117,35 @@ export async function executeWorkflow(opts: ExecuteOptions): Promise<WorkflowOut
   let best: { state: unknown; output: unknown; evaluation: Evaluation } | null = null;
   let state: unknown;
 
+  const call = async (params: Omit<CreateParams, "model">) => {
+    budget.beforeCall();
+    const response = await opts.createMessage(
+      { ...COMMON_PARAMS, ...params, model: opts.model } as CreateParams,
+      { signal: opts.signal, timeout: budget.remainingMs },
+    );
+    budget.record(response.usage);
+    return response;
+  };
+  const tools = new ToolRunner({
+    workflow,
+    env: opts.env ?? process.env,
+    signal: opts.signal,
+    callModel: call,
+    record: recorder.tool ? (c) => recorder.tool!(c) : undefined,
+    overrides: opts.toolOverrides,
+    limits: opts.toolLimits ?? toolLimitsFor(workflow),
+    now: opts.now,
+  });
+
   const ctx = (): ExecContext => ({
     workflow,
     inputs: opts.inputs,
     upstream: opts.upstream,
     attempt,
     budget,
-    call: async (params) => {
-      budget.beforeCall();
-      const response = await opts.createMessage(
-        { ...COMMON_PARAMS, ...params, model: opts.model } as CreateParams,
-        { signal: opts.signal, timeout: budget.remainingMs },
-      );
-      budget.record(response.usage);
-      return response;
-    },
+    tools,
+    signal: opts.signal,
+    call,
     step: async (stepId, fn) => {
       const def = workflow.steps.find((s) => s.id === stepId);
       if (!def) throw new Error(`Executor used step "${stepId}", which ${workflow.id}@${workflow.version} does not declare.`);

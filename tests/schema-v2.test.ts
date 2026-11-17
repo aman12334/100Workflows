@@ -129,7 +129,7 @@ describe("validateGenericDefinition", () => {
     threshold: 0.7,
   });
 
-  it("keeps Phase 0 free of tools and integrations", async () => {
+  it("allows tools only through a gather step, and no integrations", async () => {
     expect(await problemsFor(surveyData, { integrations: [{ id: "crm", name: "CRM", purpose: "Sync", required: true }] })).toContain(
       'generic workflows can\'t use integrations yet; remove "integrations"',
     );
@@ -137,7 +137,8 @@ describe("validateGenericDefinition", () => {
       tools: [{ id: "web-search", purpose: "Search", required: true }],
       steps: surveyData.steps.map((s) => (s.id === "draft" ? { ...s, tools: ["web-search"] } : s)),
     });
-    expect(withTool).toContain('generic workflows can\'t use tools yet; remove "tools" or use a hand-written executor');
+    expect(withTool).toContain('generic workflows use tools only in a "gather" step; add one or remove "tools"');
+    expect(withTool).toContain('step "draft" lists tools; only a "gather" step can use tools');
   });
 
   it("requires exactly one generate step, before any revise", async () => {
@@ -158,7 +159,7 @@ describe("validateGenericDefinition", () => {
   it("wires every rule criterion to a known, valid rule in a check step", async () => {
     const run = (extra: unknown[]) => problemsFor(surveyData, { evaluation: criteria([...surveyData.evaluation.criteria.slice(1), ...extra]) });
     expect(await run([{ id: "x", description: "No rule.", method: "rule" }])).toContain(
-      'criterion "x": method "rule" needs a "rule" (one of count, distinct, max_words, references, required_fields, verbatim_in_inputs)',
+      'criterion "x": method "rule" needs a "rule" (one of cites_sources, count, distinct, max_words, quoted_from_sources, references, required_fields, verbatim_in_inputs)',
     );
     expect((await run([{ id: "x", description: "Bad.", method: "rule", rule: { id: "vibes", params: {} } }]))[0]).toMatch(/criterion "x": unknown rule "vibes"/);
     expect(await run([{ id: "x", description: "Bad path.", method: "rule", rule: { id: "count", params: { path: "answers", max: 3 } } }])).toContain(
@@ -192,7 +193,7 @@ describe("validateGenericDefinition", () => {
 
   it("rejects a check step with a prompt or mode", async () => {
     const steps = surveyData.steps.map((s) => (s.id === "check_survey" ? { ...s, prompt: "Do it" } : s));
-    expect(await problemsFor(surveyData, { steps })).toContain('step "check_survey" is a check step, so it can\'t have a mode or prompt');
+    expect(await problemsFor(surveyData, { steps })).toContain('step "check_survey" is a check step, so it can\'t have a mode, prompt or gather');
   });
 
   it("rejects definitions where one attempt can't fit the model-call budget", async () => {

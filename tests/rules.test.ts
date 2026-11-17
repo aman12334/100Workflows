@@ -62,13 +62,13 @@ describe("select", () => {
 });
 
 describe("registry", () => {
-  it("registers the six Phase 0 rules with permanent ids", () => {
-    expect(Object.keys(RULES).sort()).toEqual(["count", "distinct", "max_words", "references", "required_fields", "verbatim_in_inputs"]);
+  it("registers the six Phase 0 rules and the two Phase 2 citation rules with permanent ids", () => {
+    expect(Object.keys(RULES).sort()).toEqual(["cites_sources", "count", "distinct", "max_words", "quoted_from_sources", "references", "required_fields", "verbatim_in_inputs"]);
     expect(Object.isFrozen(RULES)).toBe(true);
   });
 
   it("rejects unknown rules and invalid params when the catalog loads", () => {
-    expect(validateRuleRef({ id: "vibes", params: {} }, target)[0]).toMatch(/unknown rule "vibes" \(available: count, distinct/);
+    expect(validateRuleRef({ id: "vibes", params: {} }, target)[0]).toMatch(/unknown rule "vibes" \(available: cites_sources, count, distinct/);
     expect(validateRuleRef({ id: "count", params: { path: "questions" } }, target)).toEqual(['rule "count" params: set min, max or maxFromInput']);
     expect(validateRuleRef({ id: "count", params: { path: "questions", min: 5, max: 2 } }, target)).toEqual(['rule "count" params: min is greater than max']);
     expect(validateRuleRef({ id: "count", params: { path: "questions", max: 3, extra: 1 } }, target)[0]).toMatch(/Unrecognized key/);
@@ -273,7 +273,8 @@ describe("determinism and safety", () => {
         id === "required_fields" ? { path: "steps[]", fields: ["owner"] } :
         id === "verbatim_in_inputs" ? { path: "facts[].evidence", inputs: ["prospect"] } :
         id === "references" ? { from: "questions[].tests[]", to: "hypotheses[].id" } :
-        id === "max_words" ? { path: "summary", max: 1 } : { path: "tags[]" };
+        id === "max_words" ? { path: "summary", max: 1 } :
+        id === "quoted_from_sources" ? { path: "facts[]", sourceField: "evidence", quoteField: "evidence" } : { path: "tags[]" };
       for (const output of [{}, null, "junk", { questions: [], steps: [], facts: [], tags: [] }]) {
         const r = run(id, params, output);
         expect(r.score, `${id} ${JSON.stringify(output)}`).toBeGreaterThanOrEqual(0);

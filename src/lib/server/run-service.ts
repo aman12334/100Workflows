@@ -3,6 +3,7 @@ import { formFields, inputsFor, missingRequired, type MissingInput } from "@/lib
 import { executeWorkflow, type Recorder, type UpstreamOutput } from "@/lib/runtime/engine";
 import { resolveExecutor, runnability } from "@/lib/runtime/executors";
 import type { CreateMessage } from "@/lib/runtime/model";
+import type { ToolOverrides } from "@/lib/runtime/tools/runner";
 import { pricingFor } from "@/lib/runtime/pricing";
 import { createMessage as providerCreateMessage, mapModelError } from "./model-client";
 import { getModelConfig } from "./config";
@@ -16,6 +17,7 @@ import {
   getRun,
   insertEvaluation,
   insertStep,
+  insertToolCall,
   setWorkflowRunStatus,
   type WorkflowRunStatus,
 } from "./db/runs";
@@ -100,7 +102,11 @@ export class RunError extends Error {
 }
 
 /** Creates the run and starts it in the background. Returns as soon as the run is recorded. */
-export function startRun(db: DB, view: PackageView, deps: { createMessage?: CreateMessage; env?: Record<string, string | undefined> } = {}): string {
+export function startRun(
+  db: DB,
+  view: PackageView,
+  deps: { createMessage?: CreateMessage; env?: Record<string, string | undefined>; toolOverrides?: ToolOverrides } = {},
+): string {
   const env = deps.env ?? process.env;
   if (activeRunFor(db, view.pkg.id)) throw new RunError("This package is already running. Wait for it to finish or cancel it.", 409);
   const check = preflight(view, env);
@@ -119,7 +125,7 @@ export function startRun(db: DB, view: PackageView, deps: { createMessage?: Crea
   active.set(runId, controller);
   log.info("run.started", { runId, packageId: view.pkg.id, provider: config.provider, model: config.model, workflows: plan.map((p) => `${p.workflowId}:${p.status}`) });
 
-  void executeRun(db, view, runId, workflowRunIds, controller.signal, deps.createMessage ?? providerCreateMessage, config.model)
+  void executeRun(db, view, runId, workflowRunIds, controller.signal, deps.createMessage ?? providerCreateMessage, config.model, { env, toolOverrides: deps.toolOverrides })
     .catch((err) => {
       log.error("run.crashed", { runId, error: err });
       finishRun(db, runId, "failed", "The run stopped because of an internal error. Check the terminal log.");
@@ -137,6 +143,7 @@ export async function executeRun(
   signal: AbortSignal,
   createMessage: CreateMessage,
   model: string,
+  tools: { env?: Record<string, string | undefined>; toolOverrides?: ToolOverrides } = {},
 ): Promise<void> {
   const outcomes = new Map<string, { status: WorkflowRunStatus; output: unknown; version: string }>();
   const run = getRun(db, runId)!;
@@ -178,6 +185,7 @@ export async function executeRun(
         };
       },
       evaluation: (e) => insertEvaluation(db, wrId, e),
+      tool: (c) => insertToolCall(db, wrId, c),
     };
 
     const outcome = await executeWorkflow({
@@ -191,6 +199,8 @@ export async function executeRun(
       recorder,
       signal,
       describeError: (err) => mapModelError(err).message,
+      env: tools.env,
+      toolOverrides: tools.toolOverrides,
     });
     finishWorkflowRun(db, wrId, outcome);
     outcomes.set(wf.id, { status: outcome.status, output: outcome.result?.json ?? null, version: wf.version });
