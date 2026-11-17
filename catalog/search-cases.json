@@ -363,6 +363,12 @@
       "expect": [
         "industry-news-digest"
       ]
+    },
+    {
+      "query": "find integration partners for our product",
+      "expect": [
+        "partner-prospect-research"
+      ]
     }
   ]
 }

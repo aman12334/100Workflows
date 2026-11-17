@@ -1,0 +1,221 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "partner-prospect-research",
+  "version": "0.1.0",
+  "name": "Partner Prospect Research",
+  "category": "gtm",
+  "summary": "Finds potential integration or channel partners on the web and explains, with sources, why each one fits.",
+  "description": "Searches for companies that could be integration, referral or channel partners for your product, reads their partner and integration pages, and lists each candidate with what they do, evidence that they run a partner program or integrate with similar tools (quoted), the fit, and a first step to approach them. Who it's for: founders, partnerships and business development leads building an ecosystem. Limitations: it finds publicly visible partner programs; it cannot see private agreements or judge partner quality beyond what their pages say.",
+  "status": "available",
+  "problems": [
+    "I want to find integration partners for our software",
+    "I need partners to grow distribution",
+    "I need a list of companies with partner programs"
+  ],
+  "tags": [
+    "partnerships",
+    "channel-partners",
+    "integrations",
+    "business-development",
+    "ecosystem"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "partner_type",
+      "label": "Partner type",
+      "type": "select",
+      "required": true,
+      "description": "What kind of partner you want.",
+      "options": [
+        "integration",
+        "referral",
+        "reseller",
+        "any"
+      ]
+    },
+    {
+      "use": "target_market",
+      "required": false
+    }
+  ],
+  "outputs": [
+    {
+      "key": "partners",
+      "label": "Partner candidates",
+      "description": "Candidates with evidence, fit and a first step.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a partnerships lead. Recommend partners whose customers overlap with the user's and who visibly work with partners. Evidence of a partner program must be quoted. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "candidates",
+      "unverified"
+    ],
+    "properties": {
+      "candidates": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "company",
+            "what_they_do",
+            "partner_evidence",
+            "source_id",
+            "fit",
+            "why",
+            "first_step"
+          ],
+          "properties": {
+            "company": {
+              "type": "string"
+            },
+            "what_they_do": {
+              "type": "string"
+            },
+            "partner_evidence": {
+              "type": "string",
+              "description": "Copied exactly from the source."
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "fit": {
+              "type": "string",
+              "enum": [
+                "strong",
+                "moderate",
+                "weak"
+              ]
+            },
+            "why": {
+              "type": "string"
+            },
+            "first_step": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 10,
+        "title": "Candidates"
+      },
+      "unverified": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Could not be verified",
+        "description": "Things the task asked about that no retrieved source supports."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Find companies that serve the same customers as this product and run integration, referral or reseller partner programs. Look for partner program and integration directory pages.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 4
+        },
+        "fetch": {
+          "fromSearch": 3,
+          "maxPages": 4
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "List partner candidates. For each, copy the words that show they run a partner program or integrate with similar products exactly into partner_evidence, with its source id. Rate fit honestly and suggest a first step.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "evidence_quoted",
+        "description": "Partner evidence quotes the source it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "candidates[]",
+            "sourceField": "source_id",
+            "quoteField": "partner_evidence"
+          }
+        }
+      },
+      {
+        "id": "distinct_candidates",
+        "description": "Each company appears once.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "candidates[].company"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}
