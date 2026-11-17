@@ -1,0 +1,227 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "statistics-finder",
+  "version": "0.1.0",
+  "name": "Statistics Finder",
+  "category": "marketing",
+  "summary": "Finds credible, citable statistics on a topic, each quoted from its source with publisher and date, and flags weak ones.",
+  "description": "Searches for statistics you can cite in content, sales decks or reports, reads the sources, and returns each number exactly as stated with the publisher, publication date and how it was measured when the source says so. Each statistic gets a credibility rating, so second-hand figures from blogs are flagged in favour of the original study. Who it's for: content marketers, product marketers and founders writing decks, articles or reports. Limitations: it can only verify a number against the page it read; it does not trace citations back through several sites, and paywalled reports are listed as unavailable.",
+  "status": "available",
+  "problems": [
+    "I need statistics for a blog post or pitch deck",
+    "I can't find a credible source for this number",
+    "Our content cites outdated stats"
+  ],
+  "tags": [
+    "statistics",
+    "data-points",
+    "citations",
+    "research",
+    "content"
+  ],
+  "inputs": [
+    {
+      "key": "topic",
+      "label": "Topic",
+      "type": "text",
+      "required": true,
+      "description": "What the statistics should be about.",
+      "example": "Time small businesses spend on bookkeeping"
+    },
+    {
+      "key": "use",
+      "label": "Where you will use them",
+      "type": "text",
+      "required": false,
+      "description": "Article, deck, report...",
+      "example": "Landing page and sales deck"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "statistics",
+      "label": "Statistics",
+      "description": "Statistics quoted with source, publisher, date and credibility.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a research librarian. A statistic is only listed if the number appears in a retrieved source; prefer original studies over pages that repeat them, and say when a figure is second-hand. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "statistics",
+      "cautions",
+      "unverified"
+    ],
+    "properties": {
+      "statistics": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "statistic",
+            "source_id",
+            "quote",
+            "publisher",
+            "date",
+            "methodology",
+            "credibility"
+          ],
+          "properties": {
+            "statistic": {
+              "type": "string"
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "The sentence with the number, copied exactly."
+            },
+            "publisher": {
+              "type": "string"
+            },
+            "date": {
+              "type": "string",
+              "description": "As stated, or \"undated\"."
+            },
+            "methodology": {
+              "type": "string",
+              "description": "Sample and method if stated, otherwise \"not stated\"."
+            },
+            "credibility": {
+              "type": "string",
+              "enum": [
+                "original_research",
+                "reputable_secondary",
+                "weak_secondary"
+              ]
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 15,
+        "title": "Statistics"
+      },
+      "cautions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Use with care"
+      },
+      "unverified": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Could not be verified",
+        "description": "Things the task asked about that no retrieved source supports."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Find statistics on this topic from surveys, studies and official data. Prefer original research and government statistics; also note pages that repeat numbers from elsewhere.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 4
+        },
+        "fetch": {
+          "fromSearch": 4,
+          "maxPages": 4
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "List statistics found in the sources. Copy the sentence containing each number exactly into quote with the source id. Give the publisher and date as stated. Rate credibility: original research, reputable secondary, or weak secondary.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "numbers_quoted",
+        "description": "Every statistic quotes a page read in full.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "statistics[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "distinct_statistics",
+        "description": "No statistic is listed twice.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "statistics[].statistic"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}

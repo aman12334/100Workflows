@@ -393,6 +393,12 @@
       "expect": [
         "serp-content-brief"
       ]
+    },
+    {
+      "query": "find credible statistics to cite",
+      "expect": [
+        "statistics-finder"
+      ]
     }
   ]
 }
