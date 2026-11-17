@@ -235,8 +235,56 @@
             "type": "string",
             "enum": [
               "generate",
-              "revise"
+              "revise",
+              "gather"
             ]
+          },
+          "gather": {
+            "type": "object",
+            "properties": {
+              "search": {
+                "type": "object",
+                "properties": {
+                  "maxSearches": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  }
+                },
+                "required": [
+                  "maxSearches"
+                ],
+                "additionalProperties": false
+              },
+              "fetch": {
+                "type": "object",
+                "properties": {
+                  "urlInputs": {
+                    "maxItems": 5,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_]*$"
+                    }
+                  },
+                  "fromSearch": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 6
+                  },
+                  "maxPages": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 10
+                  }
+                },
+                "required": [
+                  "maxPages"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
           }
         },
         "required": [

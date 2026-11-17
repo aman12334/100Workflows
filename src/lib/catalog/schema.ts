@@ -66,6 +66,30 @@ export const OutputSchema = z
   })
   .strict();
 
+/**
+ * Schema v2, "gather" steps: research done once before writing, with registered
+ * tools only. Definitions describe what to retrieve; the runtime does the fetching.
+ */
+export const GatherSchema = z
+  .object({
+    /** Web search through the registered web-search tool. The step prompt says what to look for. */
+    search: z.object({ maxSearches: z.number().int().min(1).max(5) }).strict().optional(),
+    /** Reading pages through the registered web-fetch tool. */
+    fetch: z
+      .object({
+        /** URL or list inputs whose URLs are read. */
+        urlInputs: z.array(key).max(5).optional(),
+        /** How many top search results to open and read in full. */
+        fromSearch: z.number().int().min(0).max(6).optional(),
+        /** Upper limit on pages read in one run. */
+        maxPages: z.number().int().min(1).max(10),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict()
+  .refine((g) => g.search || g.fetch, "a gather step needs search, fetch or both");
+
 export const StepSchema = z
   .object({
     id: key,
@@ -81,7 +105,9 @@ export const StepSchema = z
      * "revise" rewrites the previous step's output in the same schema. Agent steps
      * without a mode are review steps used by model-graded criteria.
      */
-    mode: z.enum(["generate", "revise"]).optional(),
+    mode: z.enum(["generate", "revise", "gather"]).optional(),
+    /** Schema v2, "gather" steps only: what to retrieve with tools. */
+    gather: GatherSchema.optional(),
   })
   .strict();
 
@@ -231,6 +257,7 @@ export const WorkflowSchema = z
       wf.steps.forEach((st, i) => {
         if (st.prompt !== undefined) v2only(["steps", i, "prompt"], "prompt");
         if (st.mode !== undefined) v2only(["steps", i, "mode"], "mode");
+        if (st.gather !== undefined) v2only(["steps", i, "gather"], "gather");
       });
       wf.evaluation.criteria.forEach((c, i) => {
         if (c.rule) v2only(["evaluation", "criteria", i, "rule"], "rule");
