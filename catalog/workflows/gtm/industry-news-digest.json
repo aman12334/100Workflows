@@ -1,0 +1,270 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "industry-news-digest",
+  "version": "0.1.0",
+  "name": "Industry News Digest",
+  "category": "gtm",
+  "summary": "Finds recent news on a topic or industry and turns it into a dated digest with why each item matters to you.",
+  "description": "Searches for recent news and announcements on a topic you follow, reads the most relevant articles, and writes a digest: each item with its date as the source states it, what happened (quoted), why it matters for your business, and a suggested action. Items without a date in the source are marked undated rather than guessed. Who it's for: founders, product marketers and strategy leads who need a weekly or monthly briefing on their market. Limitations: search coverage varies by topic and region and the digest only covers what search returns that day; it is not a monitoring service and does not run on a schedule.",
+  "status": "available",
+  "problems": [
+    "I can't keep up with news in my industry",
+    "I need a weekly briefing on our market",
+    "I miss announcements that affect our business"
+  ],
+  "tags": [
+    "news",
+    "digest",
+    "industry-news",
+    "market-monitoring",
+    "briefing"
+  ],
+  "inputs": [
+    {
+      "key": "topic",
+      "label": "Topic or industry",
+      "type": "text",
+      "required": true,
+      "description": "What to follow.",
+      "example": "E-invoicing regulation in the EU"
+    },
+    {
+      "key": "period",
+      "label": "Period",
+      "type": "text",
+      "required": false,
+      "description": "How recent.",
+      "example": "Last 30 days"
+    },
+    {
+      "use": "product_description",
+      "required": false
+    }
+  ],
+  "outputs": [
+    {
+      "key": "digest",
+      "label": "News digest",
+      "description": "Dated items with what happened, why it matters and actions.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are an industry analyst writing a news digest for a busy executive. Lead with what changed and why it matters for the reader; dates come from the sources. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "headline",
+      "items",
+      "conflicts",
+      "gaps"
+    ],
+    "properties": {
+      "headline": {
+        "type": "string",
+        "title": "Headline"
+      },
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "date",
+            "what_happened",
+            "source_id",
+            "quote",
+            "why_it_matters",
+            "importance",
+            "action"
+          ],
+          "properties": {
+            "date": {
+              "type": "string",
+              "description": "As stated in the source, or \"undated\"."
+            },
+            "what_happened": {
+              "type": "string"
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied exactly from the source."
+            },
+            "why_it_matters": {
+              "type": "string"
+            },
+            "importance": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "action": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 12,
+        "title": "News"
+      },
+      "conflicts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "topic",
+            "source_ids",
+            "description"
+          ],
+          "properties": {
+            "topic": {
+              "type": "string"
+            },
+            "source_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 2
+            },
+            "description": {
+              "type": "string",
+              "description": "How the sources disagree."
+            }
+          }
+        },
+        "title": "Conflicting information"
+      },
+      "gaps": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Not covered"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Find news, announcements and regulatory updates on this topic from the requested period. Prefer original announcements and reputable trade press.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 5
+        },
+        "fetch": {
+          "fromSearch": 3,
+          "maxPages": 4
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "Write the digest, most important first. Each item cites one source and copies the supporting words exactly into quote. Use the date the source gives, or \"undated\". Explain why each item matters for the user's business.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "items_quoted",
+        "description": "Every news item quotes the source it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "items[]",
+            "sourceField": "source_id",
+            "quoteField": "quote"
+          }
+        }
+      },
+      {
+        "id": "items_read",
+        "description": "News items rest on articles read in full.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "items[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "distinct_items",
+        "description": "No story appears twice.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "items[].what_happened"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}

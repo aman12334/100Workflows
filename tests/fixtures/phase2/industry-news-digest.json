@@ -1,0 +1,64 @@
+{
+  "inputs": {
+    "topic": "E-invoicing regulation in the EU"
+  },
+  "search": {
+    "results": [
+      {
+        "url": "https://news.example.org/eu-einvoicing-mandate",
+        "title": "EU sets e-invoicing deadline"
+      },
+      {
+        "url": "https://trade.example.com/einvoicing-vendors",
+        "title": "Vendors respond to mandate"
+      }
+    ],
+    "cited": []
+  },
+  "pages": {
+    "https://news.example.org/eu-einvoicing-mandate": "<html><head><title>EU sets e-invoicing deadline</title><meta property=\"og:site_name\" content=\"Example News\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>EU sets e-invoicing deadline</h1><p>Member states must require B2B e-invoicing from July 2030.</p><p>Businesses will need certified software.</p></main></body></html>",
+    "https://trade.example.com/einvoicing-vendors": "<html><head><title>Vendors respond to mandate</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Vendors respond to mandate</h1><p>Three accounting vendors announced compliance features this month.</p><p>Prices were not disclosed.</p></main></body></html>"
+  },
+  "good": {
+    "headline": "EU confirms 2030 e-invoicing deadline.",
+    "items": [
+      {
+        "date": "2026-10-01",
+        "what_happened": "Deadline set",
+        "source_id": "S1",
+        "quote": "require B2B e-invoicing from July 2030",
+        "why_it_matters": "Customers need compliant tools",
+        "importance": "high",
+        "action": "Plan certification"
+      },
+      {
+        "date": "undated",
+        "what_happened": "Vendors ship features",
+        "source_id": "S2",
+        "quote": "Three accounting vendors announced compliance features",
+        "why_it_matters": "Competition",
+        "importance": "medium",
+        "action": "Review roadmap"
+      }
+    ],
+    "conflicts": [],
+    "gaps": []
+  },
+  "bad_fails": "items_quoted",
+  "bad": {
+    "headline": "EU confirms 2030 e-invoicing deadline.",
+    "items": [
+      {
+        "date": "2026-10-01",
+        "what_happened": "Fines",
+        "source_id": "S1",
+        "quote": "fines of up to 4% of turnover",
+        "why_it_matters": "x",
+        "importance": "high",
+        "action": "y"
+      }
+    ],
+    "conflicts": [],
+    "gaps": []
+  }
+}
