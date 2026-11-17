@@ -411,6 +411,12 @@
       "expect": [
         "review-mining"
       ]
+    },
+    {
+      "query": "what regulations apply to us in this country",
+      "expect": [
+        "regulation-research"
+      ]
     }
   ]
 }

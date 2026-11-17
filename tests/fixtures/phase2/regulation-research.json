@@ -1,0 +1,76 @@
+{
+  "inputs": {
+    "question": "How long must we keep invoices?",
+    "jurisdiction": "United Kingdom"
+  },
+  "search": {
+    "results": [
+      {
+        "url": "https://www.ico.example.gov/guidance/data-retention",
+        "title": "Data retention guidance"
+      },
+      {
+        "url": "https://lawfirm.example.com/blog/retention-rules",
+        "title": "Retention rules explained"
+      }
+    ],
+    "cited": []
+  },
+  "pages": {
+    "https://www.ico.example.gov/guidance/data-retention": "<html><head><title>Data retention guidance</title><meta property=\"og:site_name\" content=\"Example Regulator\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Data retention guidance</h1><p>Companies must keep accounting records for six years from the end of the financial year.</p><p>Personal data must not be kept longer than necessary.</p></main></body></html>",
+    "https://lawfirm.example.com/blog/retention-rules": "<html><head><title>Retention rules explained</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Retention rules explained</h1><p>Most firms keep invoices for seven years to be safe.</p><p>This is not legal advice.</p></main></body></html>"
+  },
+  "good": {
+    "summary": "Keep accounting records six years.",
+    "obligations": [
+      {
+        "obligation": "Keep accounting records",
+        "applies_when": "All companies",
+        "source_id": "S1",
+        "quote": "Companies must keep accounting records for six years",
+        "source_type": "official"
+      }
+    ],
+    "conflicts": [
+      {
+        "topic": "Period",
+        "source_ids": [
+          "S1",
+          "S2"
+        ],
+        "description": "Six years official vs seven in commentary"
+      }
+    ],
+    "questions_for_counsel": [
+      "Do receipts count as accounting records?"
+    ],
+    "unverified": []
+  },
+  "bad_fails": "obligations_quoted",
+  "bad": {
+    "summary": "Keep accounting records six years.",
+    "obligations": [
+      {
+        "obligation": "x",
+        "applies_when": "y",
+        "source_id": "S1",
+        "quote": "keep accounting records for ten years",
+        "source_type": "official"
+      }
+    ],
+    "conflicts": [
+      {
+        "topic": "Period",
+        "source_ids": [
+          "S1",
+          "S2"
+        ],
+        "description": "Six years official vs seven in commentary"
+      }
+    ],
+    "questions_for_counsel": [
+      "Do receipts count as accounting records?"
+    ],
+    "unverified": []
+  }
+}

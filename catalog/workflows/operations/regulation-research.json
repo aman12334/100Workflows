@@ -1,0 +1,267 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "regulation-research",
+  "version": "0.1.0",
+  "name": "Regulation Research",
+  "category": "operations",
+  "summary": "Researches the rules that apply to a business question in one jurisdiction, quoting official sources and flagging questions for a lawyer.",
+  "description": "Searches for laws, regulator guidance and official sources on a compliance question (data retention, invoicing rules, licensing, employment rules), reads the most relevant pages, and lists each obligation with when it applies, the exact wording from the source, and whether that source is official or secondary commentary. Open questions for a lawyer are listed separately. Who it's for: founders, operations and compliance leads who need a first map of the rules before talking to counsel. Limitations: this is research, not legal advice; regulations change and secondary sources can be wrong or outdated. Official sources are preferred, but the workflow can only read what is publicly accessible.",
+  "status": "available",
+  "problems": [
+    "I need to know which regulations apply to our business",
+    "I need to understand compliance rules before launching",
+    "I want the legal rules for this in our country"
+  ],
+  "tags": [
+    "regulation",
+    "compliance",
+    "legal-research",
+    "policy",
+    "jurisdiction"
+  ],
+  "inputs": [
+    {
+      "key": "question",
+      "label": "Compliance question",
+      "type": "long_text",
+      "required": true,
+      "description": "What you need to know.",
+      "example": "How long must we keep customer invoices and receipts?"
+    },
+    {
+      "key": "jurisdiction",
+      "label": "Jurisdiction",
+      "type": "text",
+      "required": true,
+      "description": "Country, state or region.",
+      "example": "United Kingdom"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "regulatory_map",
+      "label": "Regulatory map",
+      "description": "Obligations with quoted sources, applicability and open questions.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a regulatory researcher. Report what official sources say, quoted exactly; mark secondary commentary as such. Never present your interpretation as the law, and never give legal advice. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "summary",
+      "obligations",
+      "conflicts",
+      "questions_for_counsel",
+      "unverified"
+    ],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "title": "Summary"
+      },
+      "obligations": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "obligation",
+            "applies_when",
+            "source_id",
+            "quote",
+            "source_type"
+          ],
+          "properties": {
+            "obligation": {
+              "type": "string"
+            },
+            "applies_when": {
+              "type": "string"
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied exactly from the source."
+            },
+            "source_type": {
+              "type": "string",
+              "enum": [
+                "official",
+                "secondary"
+              ]
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 15,
+        "title": "Obligations"
+      },
+      "conflicts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "topic",
+            "source_ids",
+            "description"
+          ],
+          "properties": {
+            "topic": {
+              "type": "string"
+            },
+            "source_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 2
+            },
+            "description": {
+              "type": "string",
+              "description": "How the sources disagree."
+            }
+          }
+        },
+        "title": "Conflicting information"
+      },
+      "questions_for_counsel": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "minItems": 1,
+        "title": "Questions for a lawyer"
+      },
+      "unverified": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Could not be verified",
+        "description": "Things the task asked about that no retrieved source supports."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Find the laws, regulations and official regulator guidance that answer this question in this jurisdiction. Prefer government and regulator websites over law-firm blogs.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 4
+        },
+        "fetch": {
+          "fromSearch": 3,
+          "maxPages": 4
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "List each obligation with the exact supporting words from its source and whether the source is official or secondary. Note where sources disagree. End with questions to take to a lawyer.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "obligations_quoted",
+        "description": "Every obligation quotes the source it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "obligations[]",
+            "sourceField": "source_id",
+            "quoteField": "quote"
+          }
+        }
+      },
+      {
+        "id": "obligations_read",
+        "description": "Obligations rest on pages read in full.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "obligations[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "conflicts_cite_sources",
+        "description": "Conflicts cite retrieved sources.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "cites_sources",
+          "params": {
+            "path": "conflicts[].source_ids[]",
+            "min": 1
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}
