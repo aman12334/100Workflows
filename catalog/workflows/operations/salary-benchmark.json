@@ -1,0 +1,236 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "salary-benchmark",
+  "version": "0.1.0",
+  "name": "Salary Benchmark Research",
+  "category": "operations",
+  "summary": "Finds published salary data for a role and location, quoting each range with its source, date and sample.",
+  "description": "Searches salary surveys, job-market reports and job listings for a role in a location, reads them, and lists each published data point exactly as stated, with the source, date and what it is based on (survey, listings, self-reported). A suggested range is given as your synthesis of those points, clearly labelled, with the spread between sources explained. Who it's for: founders, hiring managers and HR leads setting or checking pay for a role. Limitations: published salary data varies widely in quality and age; it does no statistical calculation and cannot see private compensation databases. Confirm with a recruiter or benchmarking service for critical decisions.",
+  "status": "available",
+  "problems": [
+    "I need a salary range for a new role",
+    "Is our salary offer competitive",
+    "I need salary data for a job in this city"
+  ],
+  "tags": [
+    "salary",
+    "compensation",
+    "pay-benchmark",
+    "hiring",
+    "job-market"
+  ],
+  "inputs": [
+    {
+      "key": "role",
+      "label": "Role",
+      "type": "text",
+      "required": true,
+      "description": "Job title and seniority.",
+      "example": "Customer support manager"
+    },
+    {
+      "key": "location",
+      "label": "Location",
+      "type": "text",
+      "required": true,
+      "description": "City or country, or \"remote\".",
+      "example": "London"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "benchmark",
+      "label": "Salary benchmark",
+      "description": "Published data points with sources, and a labelled suggested range.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a compensation analyst. List only salary figures that appear in the sources, exactly as written, with date and basis. The suggested range is your synthesis and must be labelled as such. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "data_points",
+      "suggested_range",
+      "spread_explained",
+      "unverified"
+    ],
+    "properties": {
+      "data_points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "figure",
+            "basis",
+            "date",
+            "source_id",
+            "quote"
+          ],
+          "properties": {
+            "figure": {
+              "type": "string",
+              "description": "Exactly as published."
+            },
+            "basis": {
+              "type": "string",
+              "enum": [
+                "survey",
+                "job_listings",
+                "self_reported",
+                "government",
+                "unknown"
+              ]
+            },
+            "date": {
+              "type": "string"
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied exactly from the source."
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Published data"
+      },
+      "suggested_range": {
+        "type": "string",
+        "title": "Suggested range (synthesis)"
+      },
+      "spread_explained": {
+        "type": "string",
+        "title": "Why sources differ"
+      },
+      "unverified": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Could not be verified",
+        "description": "Things the task asked about that no retrieved source supports."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Find published salary data for this role and location: salary surveys, recruiter reports, government statistics and job listings with salaries.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 4
+        },
+        "fetch": {
+          "fromSearch": 3,
+          "maxPages": 4
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "List each salary figure exactly as published with its basis, date, source id and an exact quote. Then give a suggested range labelled as your synthesis, and explain why sources differ.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "figures_quoted",
+        "description": "Every salary figure quotes the source it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "data_points[]",
+            "sourceField": "source_id",
+            "quoteField": "quote"
+          }
+        }
+      },
+      {
+        "id": "figures_read",
+        "description": "Figures come from pages read in full.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "data_points[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "two_sources",
+        "description": "Data comes from at least two different sources.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "cites_sources",
+          "params": {
+            "path": "data_points[].source_id",
+            "min": 2
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "inputs": {
+    "role": "Customer support manager",
+    "location": "London"
+  },
+  "search": {
+    "results": [
+      {
+        "url": "https://www.salaries.example.com/uk/support-manager",
+        "title": "Support manager salaries London"
+      },
+      {
+        "url": "https://jobs.example.org/report-2026",
+        "title": "Jobs report 2026"
+      }
+    ],
+    "cited": []
+  },
+  "pages": {
+    "https://www.salaries.example.com/uk/support-manager": "<html><head><title>Support manager salaries</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Support manager salaries</h1><p>The average salary for a customer support manager in London is £48,500.</p><p>Based on 412 self-reported salaries.</p></main></body></html>",
+    "https://jobs.example.org/report-2026": "<html><head><title>Jobs report 2026</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Jobs report 2026</h1><p>Advertised salaries for support managers in London ranged from £45,000 to £60,000.</p><p>Based on job listings in Q2 2026.</p></main></body></html>"
+  },
+  "good": {
+    "data_points": [
+      {
+        "figure": "£48,500",
+        "basis": "self_reported",
+        "date": "undated",
+        "source_id": "S1",
+        "quote": "The average salary for a customer support manager in London is £48,500."
+      },
+      {
+        "figure": "£45,000 to £60,000",
+        "basis": "job_listings",
+        "date": "Q2 2026",
+        "source_id": "S2",
+        "quote": "ranged from £45,000 to £60,000"
+      }
+    ],
+    "suggested_range": "£47,000-£55,000 (synthesis)",
+    "spread_explained": "Listings include senior roles.",
+    "unverified": []
+  },
+  "bad_fails": "figures_quoted",
+  "bad": {
+    "data_points": [
+      {
+        "figure": "£70,000",
+        "basis": "survey",
+        "date": "2026",
+        "source_id": "S1",
+        "quote": "support managers earn £70,000 on average"
+      }
+    ],
+    "suggested_range": "£47,000-£55,000 (synthesis)",
+    "spread_explained": "Listings include senior roles.",
+    "unverified": []
+  }
+}

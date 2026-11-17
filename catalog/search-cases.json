@@ -429,6 +429,12 @@
       "expect": [
         "supplier-risk-scan"
       ]
+    },
+    {
+      "query": "what salary should we pay for this role in our city",
+      "expect": [
+        "salary-benchmark"
+      ]
     }
   ]
 }
