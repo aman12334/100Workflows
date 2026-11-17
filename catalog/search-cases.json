@@ -381,6 +381,12 @@
       "expect": [
         "due-diligence-snapshot"
       ]
+    },
+    {
+      "query": "find grants and government funding we could apply for",
+      "expect": [
+        "grant-finder"
+      ]
     }
   ]
 }

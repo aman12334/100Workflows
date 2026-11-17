@@ -1,0 +1,70 @@
+{
+  "inputs": {
+    "product_description": "AI bookkeeping",
+    "location": "United Kingdom"
+  },
+  "search": {
+    "results": [
+      {
+        "url": "https://www.innovate.example.gov/smart-grants",
+        "title": "Smart Grants"
+      },
+      {
+        "url": "https://www.eu-funding.example.eu/digital-sme",
+        "title": "Digital SME fund"
+      }
+    ],
+    "cited": []
+  },
+  "pages": {
+    "https://www.innovate.example.gov/smart-grants": "<html><head><title>Smart Grants</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Smart Grants</h1><p>Open to UK registered micro, small and medium-sized businesses.</p><p>Projects can receive up to £500,000.</p></main></body></html>",
+    "https://www.eu-funding.example.eu/digital-sme": "<html><head><title>Digital SME fund</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Digital SME fund</h1><p>Applicants must be registered in an EU member state.</p><p>Deadline: 15 January 2027.</p></main></body></html>"
+  },
+  "good": {
+    "programs": [
+      {
+        "name": "Smart Grants",
+        "funder": "Innovate",
+        "source_id": "S1",
+        "eligibility_quote": "Open to UK registered micro, small and medium-sized businesses",
+        "amount": "up to £500,000",
+        "deadline": "not stated",
+        "fit": "likely",
+        "why": "UK SME"
+      },
+      {
+        "name": "Digital SME fund",
+        "funder": "EU",
+        "source_id": "S2",
+        "eligibility_quote": "Applicants must be registered in an EU member state",
+        "amount": "not stated",
+        "deadline": "15 January 2027",
+        "fit": "unlikely",
+        "why": "UK company"
+      }
+    ],
+    "next_steps": [
+      "Check Smart Grants round dates"
+    ],
+    "unverified": []
+  },
+  "bad_fails": "eligibility_quoted",
+  "bad": {
+    "programs": [
+      {
+        "name": "Smart Grants",
+        "funder": "x",
+        "source_id": "S1",
+        "eligibility_quote": "Open to any company worldwide",
+        "amount": "x",
+        "deadline": "x",
+        "fit": "likely",
+        "why": "x"
+      }
+    ],
+    "next_steps": [
+      "Check Smart Grants round dates"
+    ],
+    "unverified": []
+  }
+}

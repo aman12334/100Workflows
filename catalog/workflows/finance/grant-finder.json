@@ -1,0 +1,249 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "grant-finder",
+  "version": "0.1.0",
+  "name": "Grant & Funding Program Finder",
+  "category": "finance",
+  "summary": "Finds grants and public funding programs you may qualify for, with eligibility, amounts and deadlines quoted from the source.",
+  "description": "Searches government and foundation sources for grants, competitions and subsidised programs matching your company, location and project. For each program it quotes eligibility, the amount and the deadline as published, rates your likely fit against the stated criteria, and flags anything that could not be confirmed on the official page. Who it's for: founders, finance leads and grant writers looking for non-dilutive funding. Limitations: programs change often; always confirm on the official page before applying. It does not judge eligibility with legal certainty and cannot see programs that are not published online.",
+  "status": "available",
+  "problems": [
+    "Are there grants we could apply for",
+    "I need non-dilutive funding",
+    "I don't know which government programs fit our company"
+  ],
+  "tags": [
+    "grants",
+    "non-dilutive",
+    "public-funding",
+    "subsidies",
+    "r-and-d"
+  ],
+  "inputs": [
+    {
+      "use": "product_description",
+      "required": true
+    },
+    {
+      "key": "location",
+      "label": "Location",
+      "type": "text",
+      "required": true,
+      "description": "Country or region where the company is registered.",
+      "example": "United Kingdom"
+    },
+    {
+      "key": "project",
+      "label": "Project to fund",
+      "type": "long_text",
+      "required": false,
+      "description": "What you would use the money for.",
+      "example": "Building an AI receipt-matching model"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "programs",
+      "label": "Funding programs",
+      "description": "Programs with quoted eligibility, amounts, deadlines and fit.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a grants advisor. Only list programs found in the sources. Eligibility, amounts and deadlines must be quoted exactly; fit is your judgment against the quoted criteria. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "programs",
+      "next_steps",
+      "unverified"
+    ],
+    "properties": {
+      "programs": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "funder",
+            "source_id",
+            "eligibility_quote",
+            "amount",
+            "deadline",
+            "fit",
+            "why"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "funder": {
+              "type": "string"
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "eligibility_quote": {
+              "type": "string",
+              "description": "Copied exactly from the source."
+            },
+            "amount": {
+              "type": "string",
+              "description": "As published, or \"not stated\"."
+            },
+            "deadline": {
+              "type": "string",
+              "description": "As published, or \"not stated\"."
+            },
+            "fit": {
+              "type": "string",
+              "enum": [
+                "likely",
+                "possible",
+                "unlikely"
+              ]
+            },
+            "why": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 12,
+        "title": "Programs"
+      },
+      "next_steps": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Next steps"
+      },
+      "unverified": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Could not be verified",
+        "description": "Things the task asked about that no retrieved source supports."
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Search the web and read the most relevant pages.",
+      "prompt": "Find grants, innovation competitions and public funding programs for this kind of company and project in this location. Prefer official government and funder pages.",
+      "tools": [
+        "web-search",
+        "web-fetch"
+      ],
+      "gather": {
+        "search": {
+          "maxSearches": 5
+        },
+        "fetch": {
+          "fromSearch": 3,
+          "maxPages": 4
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "List programs found in the sources. Copy the eligibility words exactly into eligibility_quote with the source id. Give amounts and deadlines exactly as published or \"not stated\". Rate fit against the quoted criteria.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Finds current public sources for the task.",
+      "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the most relevant results in full so claims rest on page text, not snippets.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "eligibility_quoted",
+        "description": "Eligibility quotes the program's source.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "programs[]",
+            "sourceField": "source_id",
+            "quoteField": "eligibility_quote"
+          }
+        }
+      },
+      {
+        "id": "eligibility_read",
+        "description": "Eligibility comes from pages read in full.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "programs[]",
+            "sourceField": "source_id",
+            "quoteField": "eligibility_quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "distinct_programs",
+        "description": "Each program appears once.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "programs[].name"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 4
+  }
+}
