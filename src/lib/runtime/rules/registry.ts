@@ -2,6 +2,7 @@ import type { z } from "zod";
 import { parsePath, schemaAt, type JsonSchemaNode } from "@/lib/catalog/output-schema";
 import type { UpstreamOutput } from "../engine";
 import { BUILTIN_RULES } from "./builtin";
+import { CALCULATION_RULES } from "./calculation";
 import { SOURCE_RULES } from "./sources";
 
 /**
@@ -22,6 +23,8 @@ export interface RuleContext {
   upstream: Record<string, UpstreamOutput>;
   /** Research workflows only: what the tools retrieved in this run (page text and/or cited search passages). */
   sources?: Array<{ id: string; via: "page" | "search_result"; text: string }>;
+  /** Calculation workflows only: the calculation's validated input and output. */
+  calculation?: { input: unknown; output: unknown };
 }
 
 export interface RuleOutcome {
@@ -66,7 +69,7 @@ export interface RuleTarget {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const RULES: Readonly<Record<string, RuleDefinition<any>>> = Object.freeze(
-  Object.fromEntries([...BUILTIN_RULES, ...SOURCE_RULES].map((r) => [r.id, r])),
+  Object.fromEntries([...BUILTIN_RULES, ...SOURCE_RULES, ...CALCULATION_RULES].map((r) => [r.id, r])),
 );
 
 /**

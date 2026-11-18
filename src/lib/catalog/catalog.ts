@@ -3,6 +3,10 @@ import { callsPerAttempt, producerSteps } from "@/lib/runtime/executors/generic"
 import { gatherModelCalls } from "@/lib/runtime/executors/research";
 import { SOURCE_RULE_IDS } from "@/lib/runtime/rules/sources";
 import { TOOLS } from "@/lib/runtime/tools/registry";
+import { z } from "zod";
+import { lookupCalculation } from "@/lib/runtime/calc/runner";
+import { calculationModelCalls } from "@/lib/runtime/executors/calculation";
+import { CALCULATION_RULE_IDS } from "@/lib/runtime/rules/calculation";
 import { InputRefSchema, WorkflowSchema, type SharedInputDef, type ToolDef, type Workflow } from "./schema";
 
 export interface CatalogError {
@@ -184,13 +188,78 @@ export function validateGenericDefinition(wf: Workflow): string[] {
     if (st.kind === "agent" && !st.mode && !reviewSteps.has(st.id)) {
       problems.push(`agent step "${st.id}" has no mode and no review uses it; give it "mode" or remove it`);
     }
-    if (st.kind === "check" && !checkStepsUsed.has(st.id)) problems.push(`check step "${st.id}" runs no rules; remove it or point a rule at it`);
+    if (st.kind === "check" && !st.calculate && !checkStepsUsed.has(st.id)) problems.push(`check step "${st.id}" runs no rules; remove it or point a rule at it`);
   }
 
-  const calls = callsPerAttempt(wf) + gatherModelCalls(wf);
+  problems.push(...calculationProblems(wf));
+
+  const calls = callsPerAttempt(wf) + gatherModelCalls(wf) + calculationModelCalls(wf);
   if (calls > wf.limits.maxModelCalls) {
     const why = gatherModelCalls(wf) ? ` (including ${gatherModelCalls(wf)} for web search)` : "";
     problems.push(`one attempt needs ${calls} model calls${why}, but limits.maxModelCalls is ${wf.limits.maxModelCalls}`);
+  }
+  return problems;
+}
+
+type JsonNode = { type?: string | string[]; properties?: Record<string, JsonNode>; required?: string[]; items?: JsonNode; anyOf?: JsonNode[] };
+
+/** The JSON Schema node at a dot path of a calculation's input, or null. */
+function calcField(root: JsonNode, path: string): JsonNode | null {
+  let node: JsonNode | undefined = root;
+  for (const part of path.split(".")) {
+    node = node?.properties?.[part];
+    if (!node) return null;
+  }
+  return node ?? null;
+}
+const typesOf = (n: JsonNode): string[] => [...(Array.isArray(n.type) ? n.type : n.type ? [n.type] : []), ...(n.anyOf ?? []).flatMap(typesOf)];
+
+/** Checks a workflow's calculate and extract steps against the calculation registry. */
+function calculationProblems(wf: Workflow): string[] {
+  const problems: string[] = [];
+  const calcSteps = wf.steps.filter((s) => s.calculate);
+  const extract = wf.steps.filter((s) => s.mode === "extract");
+  const usesNumbersRule = wf.evaluation.criteria.filter((c) => c.rule && CALCULATION_RULE_IDS.has(c.rule.id));
+  if (!calcSteps.length) {
+    if (extract.length) problems.push('an "extract" step needs a calculate step to feed');
+    for (const c of usesNumbersRule) problems.push(`criterion "${c.id}": rule "${c.rule!.id}" checks calculation results, so it needs a calculate step`);
+    return problems;
+  }
+  if (calcSteps.length > 1) problems.push("only one step can calculate");
+  if (extract.length > 1) problems.push('only one step can "extract"');
+  const step = calcSteps[0];
+  const ref = step.calculate!.calculation;
+  if (step.kind !== "check") problems.push(`step "${step.id}" calculates, so it must be a "check" step`);
+  if (wf.steps.some((s) => s.mode === "gather")) problems.push("a workflow can't both gather and calculate yet");
+  const generateAt = wf.steps.findIndex((s) => s.mode === "generate");
+  if (wf.steps.indexOf(step) > generateAt) problems.push(`calculate step "${step.id}" must come before the generate step`);
+  if (extract.length && wf.steps.indexOf(extract[0]) > wf.steps.indexOf(step)) problems.push(`extract step "${extract[0].id}" must come before the calculate step`);
+  if (extract.length && extract[0].kind !== "agent") problems.push(`extract step "${extract[0].id}" must be an agent step`);
+  if (!usesNumbersRule.some((c) => c.critical)) problems.push("calculation workflows need a critical numbers_from_calculation rule on the explanation");
+
+  const def = lookupCalculation(ref);
+  if (!def) {
+    problems.push(`calculation "${ref}" is not registered`);
+    return problems;
+  }
+  const schema = z.toJSONSchema(def.input, { io: "input", unrepresentable: "any" }) as JsonNode;
+  const mapped = Object.entries(step.calculate!.inputs ?? {});
+  for (const [field, map] of mapped) {
+    const node = calcField(schema, field);
+    const input = wf.inputs.find((i) => i.key === map.input);
+    if (!node) problems.push(`calculate step "${step.id}": "${field}" is not an input of ${ref}`);
+    if (!input) problems.push(`calculate step "${step.id}": input "${map.input}" is not declared`);
+    if (!node || !input) continue;
+    const types = typesOf(node);
+    const ok =
+      map.as === "number" ? (types.includes("number") || types.includes("integer")) && input.type === "number" :
+      map.as === "number_list" ? types.includes("array") && ["list", "long_text", "text"].includes(input.type) :
+      types.includes("string") && ["text", "select", "long_text"].includes(input.type);
+    if (!ok) problems.push(`calculate step "${step.id}": "${field}" can't be filled from ${input.type} input "${map.input}" as ${map.as}`);
+  }
+  if (!extract.length) {
+    const covered = new Set(mapped.map(([f]) => f.split(".")[0]));
+    for (const req of schema.required ?? []) if (!covered.has(req)) problems.push(`calculate step "${step.id}": required field "${req}" of ${ref} is not mapped, and there is no extract step`);
   }
   return problems;
 }

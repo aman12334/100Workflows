@@ -7,6 +7,8 @@ import { jsonFormatFromSpec, parseJson, type JsonOutputFormat } from "../model";
 import { runRule } from "../rules/registry";
 import { TOOLS } from "../tools/registry";
 import { renderSources, sourceText, sourcesForPrompt, storedSources } from "../tools/sources";
+import type { CalculationResult } from "../calc/types";
+import { calculateStep, calculationJson, prepareCalculation, renderCalculation } from "./calculation";
 import { gather, gatherStep, type Gathered } from "./research";
 import { modelReview } from "./shared";
 
@@ -54,6 +56,8 @@ export interface GenericState {
   format: JsonOutputFormat;
   /** Research workflows: what the gather step retrieved. */
   research?: Gathered;
+  /** Calculation workflows: the registered calculation's validated input and output. */
+  calc?: CalculationResult;
 }
 
 const GUARDRAILS = [
@@ -69,6 +73,13 @@ const RESEARCH_GUARDRAILS = [
   "When a field asks for a quote, copy the words exactly from the cited source.",
   'A source marked "search result, page not read" is known only from the passages shown; do not claim anything else about that page.',
   "Separate what sources say from your own interpretation. If sources disagree, say so. If something could not be verified, list it as unverified rather than guessing.",
+].join(" ");
+
+/** Added for workflows with a calculate step. The model explains numbers; it never produces them. */
+const CALCULATION_GUARDRAILS = [
+  "The numbers in <calculation_results> were computed by a deterministic, tested calculation. They are correct for the inputs given; do not recalculate, correct or estimate them.",
+  "Every number you write must be copied from <calculation_results> or the user's inputs, at the same or lower precision. If you need a figure that isn't there, describe it in words instead.",
+  "Explain what the results mean for the user's decision, name the inputs that drive them, and mention every warning in the results.",
 ].join(" ");
 
 /** Stops data from closing the tag it's wrapped in, so it can't pose as instructions. */
@@ -212,7 +223,8 @@ export function createGenericExecutor(workflow: Workflow): Executor<GenericState
   const maxTokens = execution.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS;
   const effort = execution.effort ?? "medium";
   const gatherDef = gatherStep(workflow);
-  const system = `${execution.system}\n\n${GUARDRAILS}${gatherDef ? `\n\n${RESEARCH_GUARDRAILS}` : ""}`;
+  const calcDef = calculateStep(workflow);
+  const system = `${execution.system}\n\n${GUARDRAILS}${gatherDef ? `\n\n${RESEARCH_GUARDRAILS}` : ""}${calcDef ? `\n\n${CALCULATION_GUARDRAILS}` : ""}`;
   const firstCheck = workflow.steps.find((s) => s.kind === "check")?.id;
 
   return {
@@ -238,12 +250,19 @@ export function createGenericExecutor(workflow: Workflow): Executor<GenericState
         research = await gather(ctx, gatherDef, context);
         context = `${context}\n\n${sourcesForPrompt(research.sources, research.unavailable)}`;
       }
+      let calc: CalculationResult | undefined;
+      if (calcDef) {
+        calc = await prepareCalculation(ctx, workflow, context);
+        const payload = JSON.stringify({ output: calc.output, units: calc.units }, null, 1);
+        context = `${context}\n\n<calculation_results calculation="${calc.calculation}@${calc.version}">\n${fence(payload, "calculation_results")}\n</calculation_results>`;
+      }
       return {
         context,
         spec: outputSchema,
         validate: toZod(outputSchema),
         format: jsonFormatFromSpec(outputSchema),
         research,
+        calc,
       };
     },
 
@@ -280,7 +299,8 @@ export function createGenericExecutor(workflow: Workflow): Executor<GenericState
         if (!here.length) continue;
         const stepResults = await ctx.step(step.id, async () => {
           const sources = state.research?.sources.map((s) => ({ id: s.id, via: s.via, text: sourceText(s) }));
-          const value = here.map((c) => ({ id: c.id, ...runRule(c.rule!, { output, inputs: ctx.inputs, upstream: ctx.upstream, sources }) }));
+          const calculation = state.calc ? { input: state.calc.input, output: state.calc.output } : undefined;
+          const value = here.map((c) => ({ id: c.id, ...runRule(c.rule!, { output, inputs: ctx.inputs, upstream: ctx.upstream, sources, calculation }) }));
           return { value, detail: value.map((r) => `${r.id}: ${r.passed ? "pass" : "fail"}`).join(", ") };
         });
         results.push(...stepResults);
@@ -299,6 +319,15 @@ export function createGenericExecutor(workflow: Workflow): Executor<GenericState
       return results;
     },
 
+    salvage: (state, reason) =>
+      state.calc
+        ? {
+            json: calculationJson(state.calc, null, reason),
+            markdown: `${renderCalculation(state.calc)}\n\n## Explanation\n\n_No explanation: ${escapeMarkdown(reason)} The numbers above are the calculation's own output._`,
+            note: "The calculated results are kept, without the model's explanation.",
+          }
+        : null,
+
     confidence: (state, _output, evaluation) => {
       const base = genericConfidence(evaluation);
       if (!state.research) return base;
@@ -313,6 +342,7 @@ export function createGenericExecutor(workflow: Workflow): Executor<GenericState
 
     render: (state, output) => {
       const markdown = renderGeneric(state.spec, output);
+      if (state.calc) return { json: calculationJson(state.calc, output), markdown: `${renderCalculation(state.calc)}\n\n${markdown}` };
       if (!state.research) return { json: output, markdown };
       const { sources, unavailable } = state.research;
       return {

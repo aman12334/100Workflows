@@ -72,6 +72,12 @@ export interface Executor<State = unknown, Output = unknown> {
   check(ctx: ExecContext, state: State, output: Output): Promise<CriterionResult[]>;
   confidence(state: State, output: Output, evaluation: Evaluation): Confidence;
   render(state: State, output: Output): { json: unknown; markdown: string };
+  /**
+   * Optional: when no attempt produced an acceptable output (or a model call failed),
+   * return a result built only from deterministic work done in prepare, e.g. the
+   * calculated numbers without the model's explanation. The run ends as needs_review.
+   */
+  salvage?(state: State, reason: string): { json: unknown; markdown: string; note: string } | null;
 }
 
 export type WorkflowStatus = "succeeded" | "needs_review" | "failed" | "cancelled";
@@ -183,6 +189,14 @@ export async function executeWorkflow(opts: ExecuteOptions): Promise<WorkflowOut
     };
   };
 
+  /** Deterministic results, kept when the model part couldn't produce an acceptable output. */
+  const salvaged = (reason: string): WorkflowOutcome | null => {
+    if (best || state === undefined || !executor.salvage) return null;
+    const result = executor.salvage(state, reason);
+    if (!result) return null;
+    return { status: "needs_review", reason: `${reason} ${result.note}`, attempts: attemptsMade, qualityScore: null, decision: null, confidence: null, result: { json: result.json, markdown: result.markdown }, usage: { ...budget.usage } };
+  };
+
   try {
     state = await executor.prepare(ctx());
     let feedback: string | null = null;
@@ -222,7 +236,8 @@ export async function executeWorkflow(opts: ExecuteOptions): Promise<WorkflowOut
           ? `Critical checks failed: ${evaluation.criticalFailures.join(", ")}.`
           : `Quality score ${evaluation.score?.toFixed(2) ?? "n/a"} is below the ${evaluation.threshold} threshold.`;
         const limit = attempt < maxRetries ? " Not enough budget left for another attempt." : ` Retried ${maxRetries} time(s).`;
-        return best ? finish("needs_review", `${why}${limit} Review the best attempt before relying on it.`) : finish("failed", `${why}${limit} No usable output was produced.`);
+        if (best) return finish("needs_review", `${why}${limit} Review the best attempt before relying on it.`);
+        return salvaged(`${why}${limit}`) ?? finish("failed", `${why}${limit} No usable output was produced.`);
       }
       feedback = feedbackFor(evaluation);
     }
@@ -230,10 +245,11 @@ export async function executeWorkflow(opts: ExecuteOptions): Promise<WorkflowOut
   } catch (err) {
     if (err instanceof LimitError) {
       if (err.kind === "cancelled") return finish("cancelled", err.message);
-      return best ? finish("needs_review", `${err.message} Showing the best attempt so far.`) : finish("failed", err.message);
+      return best ? finish("needs_review", `${err.message} Showing the best attempt so far.`) : (salvaged(err.message) ?? finish("failed", err.message));
     }
     if (opts.signal?.aborted) return finish("cancelled", "The run was cancelled.");
     if (err instanceof WorkflowFailure) return finish("failed", err.message);
-    return finish("failed", opts.describeError ? opts.describeError(err) : err instanceof Error ? err.message : "Unexpected error.");
+    const message = opts.describeError ? opts.describeError(err) : err instanceof Error ? err.message : "Unexpected error.";
+    return salvaged(message) ?? finish("failed", message);
   }
 }

@@ -1,5 +1,6 @@
 import type { Catalog } from "../catalog";
 import { CATEGORIES, CATEGORY_LABELS, type Workflow } from "../schema";
+import { CALCULATIONS } from "@/lib/runtime/calc/registry";
 
 const cell = (s: string) => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
 
@@ -29,6 +30,9 @@ function workflowDetails(w: Workflow): string[] {
     `**Inputs:** ${w.inputs.map((i) => `${i.label}${i.required ? "" : " (optional)"}`).join(", ")}`,
     "",
     `**Output:** ${outputs.join(", ")}`,
+    ...(w.steps.find((s) => s.calculate)
+      ? ["", `**Calculation:** \`${w.steps.find((s) => s.calculate)!.calculate!.calculation}\`. Every number in the result comes from this registered calculation; the model only explains it, and a critical check rejects any number in the explanation that the calculation did not produce. Formulas, units and rounding: see [Calculation reference](#calculation-reference).`]
+      : []),
     ...(w.tools.length
       ? [
           "",
@@ -78,6 +82,33 @@ export function renderCatalogDocs(catalog: Catalog): string {
     );
     for (const category of CATEGORIES) {
       for (const w of generic.filter((g) => g.category === category)) lines.push(...workflowDetails(w), "");
+    }
+  }
+  if (catalog.workflows.some((w) => w.steps.some((s) => s.calculate))) {
+    lines.push("## Calculation reference", "", "Registered deterministic calculations (`src/lib/runtime/calc`). Each version's behaviour is fixed once released.", "");
+    for (const id of Object.keys(CALCULATIONS).sort()) {
+      for (const def of Object.values(CALCULATIONS[id])) {
+        lines.push(
+          `### \`${def.id}@${def.version}\`: ${def.name}`,
+          "",
+          def.summary,
+          "",
+          "**Formulas:**",
+          "",
+          ...def.formulas.map((f) => `- ${f}`),
+          "",
+          "**Units:**",
+          "",
+          ...Object.entries(def.units).map(([k, u]) => `- \`${k}\`: ${u}`),
+          "",
+          `**Rounding:** ${def.rounding}`,
+          "",
+          "**Assumptions:**",
+          "",
+          ...def.assumptions.map((a) => `- ${a}`),
+          "",
+        );
+      }
     }
   }
   const shared = catalog.registry?.sharedInputs ?? [];

@@ -56,6 +56,11 @@ export function jsonFormat(schema: z.ZodType): JsonOutputFormat {
   return { type: "json_schema", schema: strip(z.toJSONSchema(schema, { target: "draft-7", io: "output" })) as Record<string, unknown> };
 }
 
+/** Like jsonFormat, but for a schema's input side: fields with defaults are optional (used to extract calculation inputs). */
+export function jsonFormatInput(schema: z.ZodType): JsonOutputFormat {
+  return { type: "json_schema", schema: strip(z.toJSONSchema(schema, { target: "draft-7", io: "input", unrepresentable: "any" })) as Record<string, unknown> };
+}
+
 /**
  * Builds an `output_config.format` from a definition's output schema (schema v2).
  * Anthropic receives it as-is; the OpenAI translator maps it to `text.format`.

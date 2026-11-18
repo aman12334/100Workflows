@@ -62,8 +62,8 @@ describe("select", () => {
 });
 
 describe("registry", () => {
-  it("registers the six Phase 0 rules and the two Phase 2 citation rules with permanent ids", () => {
-    expect(Object.keys(RULES).sort()).toEqual(["cites_sources", "count", "distinct", "max_words", "quoted_from_sources", "references", "required_fields", "verbatim_in_inputs"]);
+  it("registers the six Phase 0 rules, two Phase 2 citation rules and the Phase 3 numbers rule with permanent ids", () => {
+    expect(Object.keys(RULES).sort()).toEqual(["cites_sources", "count", "distinct", "max_words", "numbers_from_calculation", "quoted_from_sources", "references", "required_fields", "verbatim_in_inputs"]);
     expect(Object.isFrozen(RULES)).toBe(true);
   });
 
@@ -274,7 +274,8 @@ describe("determinism and safety", () => {
         id === "verbatim_in_inputs" ? { path: "facts[].evidence", inputs: ["prospect"] } :
         id === "references" ? { from: "questions[].tests[]", to: "hypotheses[].id" } :
         id === "max_words" ? { path: "summary", max: 1 } :
-        id === "quoted_from_sources" ? { path: "facts[]", sourceField: "evidence", quoteField: "evidence" } : { path: "tags[]" };
+        id === "quoted_from_sources" ? { path: "facts[]", sourceField: "evidence", quoteField: "evidence" } :
+        id === "numbers_from_calculation" ? { path: "summary" } : { path: "tags[]" };
       for (const output of [{}, null, "junk", { questions: [], steps: [], facts: [], tags: [] }]) {
         const r = run(id, params, output);
         expect(r.score, `${id} ${JSON.stringify(output)}`).toBeGreaterThanOrEqual(0);

@@ -159,7 +159,7 @@ describe("validateGenericDefinition", () => {
   it("wires every rule criterion to a known, valid rule in a check step", async () => {
     const run = (extra: unknown[]) => problemsFor(surveyData, { evaluation: criteria([...surveyData.evaluation.criteria.slice(1), ...extra]) });
     expect(await run([{ id: "x", description: "No rule.", method: "rule" }])).toContain(
-      'criterion "x": method "rule" needs a "rule" (one of cites_sources, count, distinct, max_words, quoted_from_sources, references, required_fields, verbatim_in_inputs)',
+      'criterion "x": method "rule" needs a "rule" (one of cites_sources, count, distinct, max_words, numbers_from_calculation, quoted_from_sources, references, required_fields, verbatim_in_inputs)',
     );
     expect((await run([{ id: "x", description: "Bad.", method: "rule", rule: { id: "vibes", params: {} } }]))[0]).toMatch(/criterion "x": unknown rule "vibes"/);
     expect(await run([{ id: "x", description: "Bad path.", method: "rule", rule: { id: "count", params: { path: "answers", max: 3 } } }])).toContain(
