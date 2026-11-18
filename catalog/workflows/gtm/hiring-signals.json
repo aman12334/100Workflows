@@ -1,0 +1,252 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "hiring-signals",
+  "version": "0.1.0",
+  "name": "Hiring Signals Analysis",
+  "category": "gtm",
+  "summary": "Reads companies' careers pages and job listings to see the roles they hire for and the plans that suggests.",
+  "description": "Fetches the careers pages or job boards you link for one or more companies (prospects or competitors) and lists the open roles with team, location and seniority, quoted from the listing. It then infers what the hiring pattern suggests (new markets, product bets, scaling a function), clearly labelled as inference with the roles it rests on. Who it's for: sales teams looking for buying signals, and product or strategy teams watching competitors. Limitations: it reads only the pages you link, as served; job boards that need JavaScript or block automated reading are reported as unavailable. Open roles are a signal, not a confirmed plan.",
+  "status": "available",
+  "problems": [
+    "I want to know which roles a company is hiring for",
+    "I want to spot buying signals from job postings",
+    "Are competitors expanding into new markets"
+  ],
+  "tags": [
+    "hiring-signals",
+    "job-postings",
+    "careers-page",
+    "buying-signals",
+    "competitive-intelligence"
+  ],
+  "inputs": [
+    {
+      "key": "careers_urls",
+      "label": "Careers pages",
+      "type": "list",
+      "required": true,
+      "description": "Careers page or job board URLs, one per line.",
+      "example": "https://www.example.com/careers"
+    },
+    {
+      "key": "purpose",
+      "label": "Why you are looking",
+      "type": "select",
+      "required": true,
+      "description": "What the analysis is for.",
+      "options": [
+        "sales prospecting",
+        "competitor watch",
+        "partnership"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "key": "hiring_signals",
+      "label": "Hiring signals",
+      "description": "Open roles quoted from listings, and labelled inferences.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a market intelligence analyst. Roles come from the listings read, quoted exactly; what the hiring suggests is your inference and must name the roles it rests on. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "roles",
+      "inferences",
+      "actions"
+    ],
+    "properties": {
+      "roles": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "company",
+            "role",
+            "team",
+            "location",
+            "source_id",
+            "quote"
+          ],
+          "properties": {
+            "company": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            },
+            "team": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string",
+              "description": "As listed, or \"not listed\"."
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "The listing text, copied exactly."
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 40,
+        "title": "Open roles"
+      },
+      "inferences": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "signal",
+            "confidence",
+            "based_on_sources"
+          ],
+          "properties": {
+            "signal": {
+              "type": "string"
+            },
+            "confidence": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "based_on_sources": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            }
+          }
+        },
+        "title": "What it suggests (inference)"
+      },
+      "actions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Suggested actions"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_pages",
+      "name": "Read pages",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Read the careers pages you supplied.",
+      "tools": [
+        "web-fetch"
+      ],
+      "gather": {
+        "fetch": {
+          "urlInputs": [
+            "careers_urls"
+          ],
+          "maxPages": 6
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "List open roles from each page with the listing text copied exactly into quote and its source id. Then infer what the hiring pattern suggests for the purpose given, labelling confidence and naming the sources it rests on.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the public pages you supply.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "roles_quoted",
+        "description": "Every role quotes the listing it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "roles[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true,
+            "minChars": 8
+          }
+        }
+      },
+      {
+        "id": "inferences_sourced",
+        "description": "Every inference names retrieved sources.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "cites_sources",
+          "params": {
+            "path": "inferences[].based_on_sources[]",
+            "min": 1
+          }
+        }
+      },
+      {
+        "id": "distinct_roles",
+        "description": "No listing appears twice.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "roles[].quote"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 2
+  }
+}

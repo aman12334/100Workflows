@@ -465,6 +465,12 @@
       "expect": [
         "source-synthesis"
       ]
+    },
+    {
+      "query": "what is this company hiring for, job posting signals",
+      "expect": [
+        "hiring-signals"
+      ]
     }
   ]
 }
