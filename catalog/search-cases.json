@@ -453,6 +453,12 @@
       "expect": [
         "api-docs-review"
       ]
+    },
+    {
+      "query": "what have competitors shipped recently, track their changelog",
+      "expect": [
+        "competitor-release-tracker"
+      ]
     }
   ]
 }

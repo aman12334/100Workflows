@@ -1,0 +1,209 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "competitor-release-tracker",
+  "version": "0.1.0",
+  "name": "Competitor Release Tracker",
+  "category": "product",
+  "summary": "Reads competitors' changelogs and release pages and summarises their releases, with dates and implications for you.",
+  "description": "Fetches the changelog, \"what's new\" or release-notes pages you link for one or more competitors and lists their recent releases with the date as published, what shipped (quoted), the product area, and what it may mean for your roadmap or positioning (labelled as inference). Pages that could not be read are reported. Who it's for: product managers and product marketers tracking competitor moves. Limitations: it reads only the pages you link, as served, without running JavaScript; it does not track changes over time or alert you. Positioning and pricing analysis belong to Competitor Teardown.",
+  "status": "available",
+  "problems": [
+    "I need to know which features competitors shipped recently",
+    "I want to track competitor releases",
+    "Did a competitor just launch a feature like ours"
+  ],
+  "tags": [
+    "changelog",
+    "competitor-tracking",
+    "release-notes",
+    "competitive-intelligence",
+    "roadmap"
+  ],
+  "inputs": [
+    {
+      "key": "release_urls",
+      "label": "Changelog pages",
+      "type": "list",
+      "required": true,
+      "description": "Competitor changelog or release-notes URLs, one per line.",
+      "example": "https://www.example.com/changelog"
+    },
+    {
+      "use": "product_description",
+      "required": false
+    }
+  ],
+  "outputs": [
+    {
+      "key": "releases",
+      "label": "Competitor releases",
+      "description": "Releases with dates, quoted changes and implications.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a competitive intelligence analyst. Releases and dates come from the pages read, quoted exactly; implications for the user are your inference and labelled as such. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "releases",
+      "patterns",
+      "not_read"
+    ],
+    "properties": {
+      "releases": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "competitor",
+            "date",
+            "shipped",
+            "source_id",
+            "quote",
+            "area",
+            "implication"
+          ],
+          "properties": {
+            "competitor": {
+              "type": "string"
+            },
+            "date": {
+              "type": "string",
+              "description": "As published, or \"undated\"."
+            },
+            "shipped": {
+              "type": "string"
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied exactly from the page."
+            },
+            "area": {
+              "type": "string"
+            },
+            "implication": {
+              "type": "string",
+              "description": "Inference for the user's product."
+            }
+          }
+        },
+        "minItems": 1,
+        "maxItems": 30,
+        "title": "Releases"
+      },
+      "patterns": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Patterns"
+      },
+      "not_read": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Pages not read"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_pages",
+      "name": "Read pages",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Read the changelog pages you supplied.",
+      "tools": [
+        "web-fetch"
+      ],
+      "gather": {
+        "fetch": {
+          "urlInputs": [
+            "release_urls"
+          ],
+          "maxPages": 6
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "List recent releases from each page, newest first, with the date as published, the source id and the release text copied exactly into quote. Add an implication for the user's product, labelled as inference. List pages that could not be read.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the public pages you supply.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "releases_quoted",
+        "description": "Every release quotes the changelog it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "releases[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "distinct_releases",
+        "description": "No release is listed twice.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "params": {
+            "path": "releases[].quote"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 2
+  }
+}
