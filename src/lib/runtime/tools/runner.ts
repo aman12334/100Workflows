@@ -88,6 +88,12 @@ export class ToolRunner {
 
   constructor(private readonly opts: ToolRunnerOptions) {}
 
+  /** Logs a call made outside run() through the same channel (registered calculations use this). */
+  record(call: ToolCallRecord) {
+    this.calls.push(call);
+    this.opts.record?.(call);
+  }
+
   /** How many more calls of this tool this execution may make. */
   remaining(toolId: string): number {
     const tool = TOOLS[toolId];
