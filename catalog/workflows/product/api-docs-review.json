@@ -1,0 +1,232 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "api-docs-review",
+  "version": "0.1.0",
+  "name": "Integration Feasibility Review",
+  "category": "product",
+  "summary": "Reads a third-party API's documentation and checks whether it supports the integration you want, quoting the docs.",
+  "description": "Fetches the developer documentation pages you link and checks them against what your integration needs: authentication method, the endpoints or events required, rate limits, webhooks, sandbox access and pricing or plan restrictions. Each requirement is marked supported, partly supported, not found or blocked, with the documentation quoted, so engineering can scope the work. Who it's for: product managers and engineers scoping an integration before committing to it. Limitations: it reads only the pages you link (no crawling) and does not call the API; undocumented behaviour, recent changes or private endpoints will be missed.",
+  "status": "available",
+  "problems": [
+    "Can we integrate with this API",
+    "I need to scope an integration before committing",
+    "I need to know if their API supports our use case"
+  ],
+  "tags": [
+    "api",
+    "integration",
+    "feasibility",
+    "developer-docs",
+    "scoping"
+  ],
+  "inputs": [
+    {
+      "key": "docs_urls",
+      "label": "Documentation pages",
+      "type": "list",
+      "required": true,
+      "description": "API documentation URLs, one per line.",
+      "example": "https://developer.example.com/docs/auth"
+    },
+    {
+      "key": "requirements",
+      "label": "What the integration needs",
+      "type": "long_text",
+      "required": true,
+      "description": "Data or actions you need, one per line.",
+      "example": "Read invoices\nWebhook when an invoice is paid\nOAuth for customer accounts"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "feasibility",
+      "label": "Feasibility review",
+      "description": "Each requirement with status and quoted documentation, plus risks.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a senior integration engineer. Mark a requirement supported only when the documentation says so, quoted exactly; otherwise \"not found\". Note limits and risks that affect scope. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "requirements",
+      "auth",
+      "limits_and_risks",
+      "verdict"
+    ],
+    "properties": {
+      "requirements": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "requirement",
+            "status",
+            "evidence",
+            "notes"
+          ],
+          "properties": {
+            "requirement": {
+              "type": "string",
+              "description": "As written by the user."
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "supported",
+                "partly_supported",
+                "not_found",
+                "blocked"
+              ]
+            },
+            "evidence": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "source_id",
+                  "quote"
+                ],
+                "properties": {
+                  "source_id": {
+                    "type": "string"
+                  },
+                  "quote": {
+                    "type": "string",
+                    "description": "Copied exactly from the docs."
+                  }
+                }
+              }
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "minItems": 1,
+        "title": "Requirements"
+      },
+      "auth": {
+        "type": "string",
+        "title": "Authentication"
+      },
+      "limits_and_risks": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Limits and risks"
+      },
+      "verdict": {
+        "type": "string",
+        "enum": [
+          "feasible",
+          "feasible_with_workarounds",
+          "not_feasible",
+          "unclear"
+        ]
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_pages",
+      "name": "Read pages",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Read the documentation pages you supplied.",
+      "tools": [
+        "web-fetch"
+      ],
+      "gather": {
+        "fetch": {
+          "urlInputs": [
+            "docs_urls"
+          ],
+          "maxPages": 6
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "Check each requirement against the docs. Copy the requirement as written, and copy supporting documentation exactly into evidence with source ids. Use not_found with no evidence if the docs do not cover it. Give an overall verdict.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the public pages you supply.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "docs_quoted",
+        "description": "All evidence quotes the documentation it cites.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "requirements[].evidence[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "requirements_from_user",
+        "description": "Every requirement is one you listed.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "params": {
+            "path": "requirements[].requirement",
+            "inputs": [
+              "requirements"
+            ],
+            "minChars": 6
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 2
+  }
+}

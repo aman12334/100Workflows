@@ -447,6 +447,12 @@
       "expect": [
         "privacy-policy-review"
       ]
+    },
+    {
+      "query": "can we integrate with this API, review their docs",
+      "expect": [
+        "api-docs-review"
+      ]
     }
   ]
 }
