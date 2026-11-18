@@ -459,6 +459,12 @@
       "expect": [
         "competitor-release-tracker"
       ]
+    },
+    {
+      "query": "synthesise these articles and studies, where do they agree",
+      "expect": [
+        "source-synthesis"
+      ]
     }
   ]
 }

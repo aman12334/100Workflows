@@ -1,0 +1,269 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "source-synthesis",
+  "version": "0.1.0",
+  "name": "Research Source Synthesis",
+  "category": "user-research",
+  "summary": "Reads the articles and reports you link and synthesises them: where they agree, where they conflict, and the open gaps.",
+  "description": "Fetches a set of articles, studies or reports you choose and synthesises them around your question: findings each backed by quotes, where sources agree, where they contradict each other, the strength of evidence, and what none of them answers. Every finding cites at least one source read in full; contradictions must cite at least two. Who it's for: researchers, product teams, analysts and students who have a reading list and need the synthesis. Limitations: it reads only the URLs you give (public, text pages; PDFs and paywalled articles are reported as unavailable) and judges evidence strength from what the text says about its own methods.",
+  "status": "available",
+  "problems": [
+    "I have a reading list and need a synthesis",
+    "Do these studies agree with each other",
+    "Summarise these articles for my question"
+  ],
+  "tags": [
+    "synthesis",
+    "literature-review",
+    "research-summary",
+    "reading-list",
+    "evidence"
+  ],
+  "inputs": [
+    {
+      "key": "source_urls",
+      "label": "Sources to read",
+      "type": "list",
+      "required": true,
+      "description": "Article or report URLs, one per line.",
+      "example": "https://www.example.org/study"
+    },
+    {
+      "key": "question",
+      "label": "Question",
+      "type": "long_text",
+      "required": true,
+      "description": "What the synthesis should answer.",
+      "example": "Does remote work reduce productivity for small teams?"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "synthesis",
+      "label": "Synthesis",
+      "description": "Findings, agreements, contradictions, evidence strength and gaps.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a research analyst writing an evidence synthesis. Distinguish what each source found from your interpretation. Contradictions are valuable; report them rather than averaging them away. Work only from the retrieved sources and the user's inputs. Every factual statement cites a source id, and quotes are copied exactly. Say what you could not verify.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "answer",
+      "findings",
+      "agreements",
+      "contradictions",
+      "gaps"
+    ],
+    "properties": {
+      "answer": {
+        "type": "string",
+        "description": "What the sources together suggest, with uncertainty.",
+        "title": "Short answer"
+      },
+      "findings": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "finding",
+            "source_id",
+            "quote",
+            "evidence_strength"
+          ],
+          "properties": {
+            "finding": {
+              "type": "string"
+            },
+            "source_id": {
+              "type": "string"
+            },
+            "quote": {
+              "type": "string",
+              "description": "Copied exactly from the source."
+            },
+            "evidence_strength": {
+              "type": "string",
+              "enum": [
+                "strong",
+                "moderate",
+                "weak"
+              ]
+            }
+          }
+        },
+        "minItems": 2,
+        "title": "Findings"
+      },
+      "agreements": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "point",
+            "source_ids"
+          ],
+          "properties": {
+            "point": {
+              "type": "string"
+            },
+            "source_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 2
+            }
+          }
+        },
+        "title": "Where sources agree"
+      },
+      "contradictions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "point",
+            "source_ids",
+            "possible_reason"
+          ],
+          "properties": {
+            "point": {
+              "type": "string"
+            },
+            "source_ids": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 2
+            },
+            "possible_reason": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Where sources conflict"
+      },
+      "gaps": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "What none of them answers"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_pages",
+      "name": "Read pages",
+      "kind": "agent",
+      "mode": "gather",
+      "responsibility": "Read the sources you supplied.",
+      "tools": [
+        "web-fetch"
+      ],
+      "gather": {
+        "fetch": {
+          "urlInputs": [
+            "source_urls"
+          ],
+          "maxPages": 8
+        }
+      }
+    },
+    {
+      "id": "write",
+      "name": "Write",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Write the output from the retrieved sources.",
+      "prompt": "Synthesise the sources around the question. Each finding cites one source with an exact quote. Agreements and contradictions cite at least two sources each. Rate evidence strength from what the source says about its method. End with gaps.",
+      "tools": []
+    },
+    {
+      "id": "check_sources",
+      "name": "Check sources",
+      "kind": "check",
+      "responsibility": "Citations point to retrieved sources and quotes match them.",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-fetch",
+      "purpose": "Reads the public pages you supply.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "findings_quoted",
+        "description": "Every finding quotes a source read in full.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "quoted_from_sources",
+          "params": {
+            "path": "findings[]",
+            "sourceField": "source_id",
+            "quoteField": "quote",
+            "requireRead": true
+          }
+        }
+      },
+      {
+        "id": "two_sources",
+        "description": "Findings draw on at least two sources.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "cites_sources",
+          "params": {
+            "path": "findings[].source_id",
+            "min": 2
+          }
+        }
+      },
+      {
+        "id": "contradictions_cited",
+        "description": "Contradictions cite retrieved sources.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "cites_sources",
+          "params": {
+            "path": "contradictions[].source_ids[]",
+            "min": 1
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 420,
+    "maxModelCalls": 2
+  }
+}

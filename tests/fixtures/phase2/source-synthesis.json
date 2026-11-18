@@ -1,0 +1,74 @@
+{
+  "inputs": {
+    "source_urls": [
+      "https://research.example.org/remote-work-productivity",
+      "https://journal.example.com/hybrid-teams-study"
+    ],
+    "question": "Does remote work reduce productivity?"
+  },
+  "pages": {
+    "https://research.example.org/remote-work-productivity": "<html><head><title>Remote work productivity</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Remote work productivity</h1><p>Fully remote teams completed 8% fewer tasks per week in our sample of 40 companies.</p><p>Teams with weekly in-person days showed no drop.</p></main></body></html>",
+    "https://journal.example.com/hybrid-teams-study": "<html><head><title>Hybrid teams study</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Hybrid teams study</h1><p>Hybrid teams were as productive as office teams over 12 months.</p><p>The randomised trial covered 1,600 employees.</p></main></body></html>"
+  },
+  "good": {
+    "answer": "Hybrid shows no loss; fully remote may.",
+    "findings": [
+      {
+        "finding": "Fully remote slightly less output",
+        "source_id": "S1",
+        "quote": "Fully remote teams completed 8% fewer tasks per week",
+        "evidence_strength": "moderate"
+      },
+      {
+        "finding": "Hybrid equal",
+        "source_id": "S2",
+        "quote": "Hybrid teams were as productive as office teams over 12 months.",
+        "evidence_strength": "strong"
+      }
+    ],
+    "agreements": [
+      {
+        "point": "Some in-person time removes the gap",
+        "source_ids": [
+          "S1",
+          "S2"
+        ]
+      }
+    ],
+    "contradictions": [],
+    "gaps": [
+      "Teams under 10 people"
+    ]
+  },
+  "bad_fails": "two_sources",
+  "bad": {
+    "answer": "Hybrid shows no loss; fully remote may.",
+    "findings": [
+      {
+        "finding": "x",
+        "source_id": "S1",
+        "quote": "Fully remote teams completed 8% fewer tasks per week",
+        "evidence_strength": "moderate"
+      },
+      {
+        "finding": "y",
+        "source_id": "S1",
+        "quote": "Teams with weekly in-person days showed no drop.",
+        "evidence_strength": "weak"
+      }
+    ],
+    "agreements": [
+      {
+        "point": "Some in-person time removes the gap",
+        "source_ids": [
+          "S1",
+          "S2"
+        ]
+      }
+    ],
+    "contradictions": [],
+    "gaps": [
+      "Teams under 10 people"
+    ]
+  }
+}
