@@ -236,7 +236,8 @@
             "enum": [
               "generate",
               "revise",
-              "gather"
+              "gather",
+              "extract"
             ]
           },
           "gather": {
@@ -284,6 +285,48 @@
                 "additionalProperties": false
               }
             },
+            "additionalProperties": false
+          },
+          "calculate": {
+            "type": "object",
+            "properties": {
+              "calculation": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*@\\d+$"
+              },
+              "inputs": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "input": {
+                      "type": "string",
+                      "pattern": "^[a-z][a-z0-9_]*$"
+                    },
+                    "as": {
+                      "type": "string",
+                      "enum": [
+                        "number",
+                        "text",
+                        "number_list"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "input",
+                    "as"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "calculation"
+            ],
             "additionalProperties": false
           }
         },

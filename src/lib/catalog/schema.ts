@@ -90,6 +90,23 @@ export const GatherSchema = z
   .strict()
   .refine((g) => g.search || g.fetch, "a gather step needs search, fetch or both");
 
+/**
+ * Schema v2, "check" steps only: run one registered calculation by id and
+ * version ("unit_economics@1"). `inputs` maps calculation fields (dot paths for
+ * nested fields) to workflow inputs; fields not mapped come from an "extract" step.
+ */
+export const CalculateSchema = z
+  .object({
+    calculation: z.string().regex(/^[a-z][a-z0-9_]*@\d+$/, "must be a calculation reference such as unit_economics@1"),
+    inputs: z
+      .record(
+        z.string().regex(/^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$/, "must be a calculation field, e.g. control.visitors"),
+        z.object({ input: key, as: z.enum(["number", "text", "number_list"]) }).strict(),
+      )
+      .optional(),
+  })
+  .strict();
+
 export const StepSchema = z
   .object({
     id: key,
@@ -105,9 +122,11 @@ export const StepSchema = z
      * "revise" rewrites the previous step's output in the same schema. Agent steps
      * without a mode are review steps used by model-graded criteria.
      */
-    mode: z.enum(["generate", "revise", "gather"]).optional(),
+    mode: z.enum(["generate", "revise", "gather", "extract"]).optional(),
     /** Schema v2, "gather" steps only: what to retrieve with tools. */
     gather: GatherSchema.optional(),
+    /** Schema v2, "check" steps only: the registered calculation this step runs. */
+    calculate: CalculateSchema.optional(),
   })
   .strict();
 
@@ -258,6 +277,7 @@ export const WorkflowSchema = z
         if (st.prompt !== undefined) v2only(["steps", i, "prompt"], "prompt");
         if (st.mode !== undefined) v2only(["steps", i, "mode"], "mode");
         if (st.gather !== undefined) v2only(["steps", i, "gather"], "gather");
+        if (st.calculate !== undefined) v2only(["steps", i, "calculate"], "calculate");
       });
       wf.evaluation.criteria.forEach((c, i) => {
         if (c.rule) v2only(["evaluation", "criteria", i, "rule"], "rule");
