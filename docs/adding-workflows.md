@@ -143,6 +143,33 @@ Property names are snake_case. `required` may only name declared properties, and
 - **Search is keyword-based.** Generic words in a name, tags or problems ("customer", "team", "first") can push other workflows out of their search cases. Use the words your users would type for *this* job.
 - **Test with fixtures.** Add `tests/fixtures/phase1/<id>.json` with `inputs`, a `good` output, a schema-valid `bad` output and the critical criterion it breaks (`bad_fails`); [`tests/phase1-workflows.test.ts`](../tests/phase1-workflows.test.ts) then runs the success, invalid-output retry, needs-review, budget and run-service checks for it.
 
+### Research workflows (tools)
+
+A research workflow adds a `gather` step before `generate`. It names registered tools only; the runtime does the fetching ([tools.md](tools.md)).
+
+```jsonc
+"tools": [
+  { "id": "web-search", "purpose": "Finds current sources.", "required": true },
+  { "id": "web-fetch", "purpose": "Reads the top results in full.", "required": true }
+],
+"steps": [
+  { "id": "research", "name": "Research", "kind": "agent", "mode": "gather",
+    "responsibility": "Search and read the most relevant pages.",
+    "prompt": "What to search for, in plain words.",      // the search request
+    "tools": ["web-search", "web-fetch"],
+    "gather": { "search": { "maxSearches": 4 }, "fetch": { "fromSearch": 3, "maxPages": 4 } } },
+  { "id": "write", "kind": "agent", "mode": "generate", ... },
+  { "id": "check_sources", "kind": "check", ... }
+]
+```
+
+- **Reading pages you link:** `"fetch": { "urlInputs": ["page_url"], "maxPages": 3 }`, with `page_url` declared as a `url` or `list` input. No search needed; works with either provider.
+- **Every research workflow needs a critical citation rule.** Use `quoted_from_sources` on objects with a source id and a quote (`{ "path": "findings[]", "sourceField": "source_id", "quoteField": "quote" }`), and `cites_sources` on lists of source ids. Add a non-critical `quoted_from_sources` with `"requireRead": true` to prefer pages read in full over search snippets.
+- **Leave `retrieved_sources` and `unavailable_sources` out of `outputSchema`;** the runtime adds them to every accepted result.
+- **Budget:** search runs inside up to 2 model calls, so `maxModelCalls` must cover those plus `(producers + reviews) × (maxRetries + 1)`.
+- **Ask for structure that can be checked:** quotes next to statements, "unverified" lists for gaps, and conflicts that cite two or more sources.
+- **Test with canned pages:** add `tests/fixtures/phase2/<id>.json` with `inputs`, `search` (results and cited passages), `pages` (HTML by URL), a `good` output and a `bad` one; [`tests/phase2-workflows.test.ts`](../tests/phase2-workflows.test.ts) runs tool use, citation checks, retries, needs-review, no-sources failure, prompt-injection fencing and the run service for it.
+
 ## 7. Workflows that need code (hand-written executors)
 
 Use a hand-written executor when a workflow needs tools or checks the generic executor doesn't offer (Market Research and ICP Builder are hand-written). `npm run new:workflow -- ... --executable` creates a v1 definition plus stubs for steps 1 and 4:

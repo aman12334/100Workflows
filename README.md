@@ -4,7 +4,7 @@
 
 100 Workflows is an open-source, local-first app. You run it on your own computer, connect your own Anthropic or OpenAI API key, and talk to an assistant that searches a catalog of workflow definitions across go-to-market, marketing, sales, finance, product, user research and operations. It explains which workflows fit your goal and what each one needs.
 
-> **Status: Phase 1 is done.** Chat, grounded recommendations, persistent packages, setup forms, and real execution of **50 workflows** with evaluation, bounded retries, saved results, and per-run usage with cost estimates where a price is verified. Two are hand-written (**Market Research Agent**, **Ideal Customer Profile Builder**); the other 48 run on the schema-v2 generic executor straight from their JSON definitions, across product, user research, marketing, go-to-market, sales and customer success, finance, and operations (including HR and strategy). The catalog has 57 workflows; the other 7 are *definition only*, and the app says so wherever they appear.
+> **Status: Phase 2 is done.** Chat, grounded recommendations, persistent packages, setup forms, and real execution of **70 workflows** with evaluation, bounded retries, saved results, and per-run usage with cost estimates where a price is verified. Two are hand-written (**Market Research Agent**, **Ideal Customer Profile Builder**); the other 68 run on the schema-v2 generic executor straight from their JSON definitions. 48 work from what you type in; **20 research workflows** search the web and read pages with read-only tools, and keep every source with the result. The catalog has 77 workflows; the other 7 are *definition only*, and the app says so wherever they appear.
 
 ---
 
@@ -31,7 +31,7 @@ Bring a key from **Anthropic** or **OpenAI**. Model usage is billed to that acco
 | Provider | Key variable | Default model | Notes |
 | --- | --- | --- | --- |
 | Anthropic | `ANTHROPIC_API_KEY` | `claude-opus-5-5` | Everything works, including web search for Market Research |
-| OpenAI | `OPENAI_API_KEY` | `gpt-6.1-sol` | Chat, recommendations and ICP Builder work; Market Research is skipped (web search is Anthropic-only for now) |
+| OpenAI | `OPENAI_API_KEY` | `gpt-6.1-sol` | Everything except web search: Market Research and the research workflows that search are skipped (web search is Anthropic-only for now); workflows that read pages you link work |
 
 The app uses whichever key is set. With both set, Anthropic wins, unless you add `WORKFLOWS_PROVIDER=openai` (or `anthropic`).
 
@@ -89,6 +89,16 @@ The app uses whichever key is set. With both set, Anthropic wins, unless you add
 The last three are schema-v2 definitions that run on the generic executor: their prompts, output schema and checks are data in the JSON file, with no workflow-specific code. All of them run on either provider except Market Research, which needs Anthropic's web search.
 
 **45 more model-only workflows** (Phase 1) run the same way, from PRDs, launch plans and battlecards to postmortems, OKRs and vendor scorecards. [docs/catalog.md](docs/catalog.md#workflow-details) lists each one with who it is for, its inputs, output, checks and limitations. They work only from what you type in and from the model's general knowledge: none of them searches the web, reads files or contacts another system, and outputs label what you supplied apart from what the model assumed.
+
+**20 research workflows** (Phase 2) retrieve evidence before writing: company research, news digests, due diligence, regulation research, vendor shortlists, fact-checking, review mining, SEO page audits, privacy-policy reviews, API feasibility reviews and more. Fourteen search the web (Anthropic only) and read the top results; six read only the pages you link and work with either provider. Every claim cites a retrieved source, quotes are checked word for word against the page text, and the result lists every source with how it was retrieved, plus pages that could not be accessed. They need research tools turned on:
+
+```bash
+# .env.local
+WORKFLOWS_WEB_SEARCH=on   # web search through Anthropic (billed per search by Anthropic)
+WORKFLOWS_WEB_FETCH=on    # read public web pages from this computer (GET only, public addresses only)
+```
+
+How the tools work, their limits and the security model: [docs/tools.md](docs/tools.md).
 
 **Web search is opt-in.** Market Research uses Anthropic's server-side web search tool with the same API key, so you don't need another account. Anthropic bills searches separately from tokens, so the tool is off until you add `WORKFLOWS_WEB_SEARCH=on` to `.env.local` and restart. While it is off, Market Research is skipped with that explanation, and it never produces a report without sources. Your Anthropic organization must also allow web search (an admin enables it in the Anthropic Console). If it doesn't, the run fails and shows Anthropic's own error message.
 
@@ -183,11 +193,12 @@ docs/                   Architecture, contributor guide, generated catalog index
 | 4 | Shared input collection, dependency ordering, a second connected workflow | ✅ done |
 | 5 | Contributor tooling and catalog structure for 100+ workflows | ✅ done |
 | 6–10 | Schema v2 and the generic executor, three migrated workflows, run usage and cost estimates | ✅ done |
-| Phase 1 | 45 new model-only workflows on the generic executor (57 in the catalog, 50 executable) | ✅ this release |
+| Phase 1 | 45 new model-only workflows on the generic executor (57 in the catalog, 50 executable) | ✅ done |
+| Phase 2 | Shared read-only tool layer (web search, page reading), 20 research workflows with checked citations (77 in the catalog, 70 executable) | ✅ this release |
 
 ## Known limitations
 
-- 50 workflows can execute. The other 7 are definitions. The 45 Phase 1 workflows are model-only: they cannot search the web, read files or spreadsheets, or do calculations beyond what you supply, and they have been tested with scripted model responses, not yet against a live model.
+- 70 workflows can execute. The other 7 are definitions. The 45 Phase 1 workflows are model-only. The 20 research workflows read public web pages only: no PDFs, no pages that need JavaScript or a login, no paywalled content, and many review sites block automated reading. Search coverage depends on what Anthropic's web search returns that day. Web search cost is not estimated (no verified price), and page reads run on your computer. All Phase 1 and Phase 2 workflows have been tested with scripted model responses and canned pages, not yet against a live model or the live web.
 - There are no separate categories for customer success, HR or strategy yet: those workflows live under Sales and Operations.
 - Catalog search is keyword-based with light stemming. It is tested by `catalog/search-cases.json` and should hold up to a few hundred workflows. Beyond that, an embedding index may be worth adding.
 - Runs execute inside the dev or production server process. Closing the server interrupts a run, and it can't resume.
