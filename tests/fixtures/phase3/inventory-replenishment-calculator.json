@@ -1,0 +1,46 @@
+{
+  "inputs": {
+    "average_demand": 20,
+    "demand_std_dev": 5,
+    "demand_period": "day",
+    "lead_time": 2,
+    "lead_time_unit": "week",
+    "service_level_pct": "95",
+    "current_stock": 300
+  },
+  "expected": {
+    "results.lead_time_days": 14,
+    "results.demand_during_lead_time": 280,
+    "results.safety_stock": 31,
+    "results.reorder_point": 311,
+    "results.days_of_cover": 15,
+    "results.reorder_now": true
+  },
+  "good": {
+    "summary": "Reorder when stock falls to 311 units, which includes 31 units of safety stock for a 95% service level. Demand over the 14-day lead time is 280 units.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "Current stock of 300 covers 15 days."
+      },
+      {
+        "kind": "action",
+        "text": "Stock is below the reorder point, so order now."
+      }
+    ]
+  },
+  "bad": {
+    "summary": "Reorder at 350 units.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "x"
+      },
+      {
+        "kind": "action",
+        "text": "y"
+      }
+    ]
+  },
+  "bad_fails": "summary_numbers"
+}

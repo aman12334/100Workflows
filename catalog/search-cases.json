@@ -525,6 +525,12 @@
       "expect": [
         "experiment-results-analyzer"
       ]
+    },
+    {
+      "query": "calculate reorder point and safety stock",
+      "expect": [
+        "inventory-replenishment-calculator"
+      ]
     }
   ]
 }
