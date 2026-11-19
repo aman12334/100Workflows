@@ -537,6 +537,12 @@
       "expect": [
         "demand-forecast-calculator"
       ]
+    },
+    {
+      "query": "rank suppliers with a weighted performance scorecard",
+      "expect": [
+        "supplier-performance-scorecard"
+      ]
     }
   ]
 }

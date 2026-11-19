@@ -1,0 +1,119 @@
+{
+  "inputs": {
+    "metrics": "On-time delivery % (higher is better), weight 50\nDefect rate % (lower is better), weight 30\nCost index (lower is better), weight 20",
+    "supplier_data": "Alpha: on-time 98, defects 1.0, cost index 100\nBeta: on-time 90, defects 0.5, cost index 90\nGamma: on-time 94, defects 2.0, cost index not known"
+  },
+  "extracted": {
+    "metrics": [
+      {
+        "id": "on_time_pct",
+        "name": "On-time delivery",
+        "weight": 50,
+        "direction": "higher_is_better",
+        "unit": "%"
+      },
+      {
+        "id": "defect_pct",
+        "name": "Defect rate",
+        "weight": 30,
+        "direction": "lower_is_better",
+        "unit": "%"
+      },
+      {
+        "id": "cost_index",
+        "name": "Cost index",
+        "weight": 20,
+        "direction": "lower_is_better",
+        "unit": "index"
+      }
+    ],
+    "suppliers": [
+      {
+        "name": "Alpha",
+        "values": [
+          {
+            "metric_id": "on_time_pct",
+            "value": 98
+          },
+          {
+            "metric_id": "defect_pct",
+            "value": 1.0
+          },
+          {
+            "metric_id": "cost_index",
+            "value": 100
+          }
+        ]
+      },
+      {
+        "name": "Beta",
+        "values": [
+          {
+            "metric_id": "on_time_pct",
+            "value": 90
+          },
+          {
+            "metric_id": "defect_pct",
+            "value": 0.5
+          },
+          {
+            "metric_id": "cost_index",
+            "value": 90
+          }
+        ]
+      },
+      {
+        "name": "Gamma",
+        "values": [
+          {
+            "metric_id": "on_time_pct",
+            "value": 94
+          },
+          {
+            "metric_id": "defect_pct",
+            "value": 2.0
+          },
+          {
+            "metric_id": "cost_index",
+            "value": null
+          }
+        ]
+      }
+    ]
+  },
+  "expected": {
+    "suppliers.0.score": 70,
+    "suppliers.0.rank": 1,
+    "suppliers.1.score": 50,
+    "suppliers.2.score": 31.25,
+    "suppliers.2.coverage_pct": 80,
+    "weights.0.weight_pct": 50
+  },
+  "good": {
+    "summary": "Alpha ranks first with 70 points, ahead of Beta at 50. Gamma scores 31.25 but was judged on only 80% of the weight because its cost index is missing.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "Alpha leads on on-time delivery, which carries 50% of the weight."
+      },
+      {
+        "kind": "caveat",
+        "text": "Scores are relative to these three suppliers."
+      }
+    ]
+  },
+  "bad": {
+    "summary": "Alpha scores 85 points.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "x"
+      },
+      {
+        "kind": "caveat",
+        "text": "y"
+      }
+    ]
+  },
+  "bad_fails": "summary_numbers"
+}

@@ -1,0 +1,213 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "supplier-performance-scorecard",
+  "version": "0.1.0",
+  "name": "Supplier Performance Scorecard",
+  "category": "operations",
+  "summary": "Scores and ranks suppliers on weighted metrics (on-time delivery, defects, lead time, cost) with explicit weights and direction.",
+  "description": "Reads your supplier metrics with their weights and whether higher or lower is better, and each supplier's values, then normalises every metric across suppliers, applies the normalised weights and ranks suppliers on a 0-100 score. Missing values are excluded rather than scored as worst, and each supplier shows how much of the weight it was judged on. Vendor Evaluation Scorecard compares vendors qualitatively from notes; this one calculates from measured data. Who it's for: procurement, operations and supply chain managers running supplier reviews. Limitations: scores are relative to the suppliers compared, so adding a supplier changes everyone's score; it uses the figures you provide and does not adjust for volume or risk.",
+  "status": "available",
+  "problems": [
+    "Rank our suppliers on delivery, quality and cost",
+    "I need a weighted supplier scorecard",
+    "Which supplier performs best on our metrics"
+  ],
+  "tags": [
+    "supplier-scorecard",
+    "supplier-performance",
+    "weighted-score",
+    "procurement",
+    "on-time-delivery"
+  ],
+  "inputs": [
+    {
+      "key": "metrics",
+      "label": "Metrics and weights",
+      "type": "long_text",
+      "required": true,
+      "description": "Each metric: name, weight, and whether higher or lower is better.",
+      "example": "On-time delivery % (higher is better), weight 50\nDefect rate % (lower is better), weight 30"
+    },
+    {
+      "key": "supplier_data",
+      "label": "Supplier data",
+      "type": "long_text",
+      "required": true,
+      "description": "Each supplier with its value for every metric; leave out values you don't have.",
+      "example": "Alpha: on-time 98, defects 1.0\nBeta: on-time 90, defects 0.5"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "results",
+      "label": "Calculated results",
+      "description": "Results with units, formulas, assumptions and warnings, from the registered calculation.",
+      "format": "markdown"
+    },
+    {
+      "key": "explanation",
+      "label": "Explanation",
+      "description": "What the results mean, with numbers taken only from the calculation.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are an analyst explaining calculated results to a business decision-maker. Be concrete and brief.",
+    "effort": "low",
+    "maxOutputTokens": 2000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "summary",
+      "points"
+    ],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "description": "Two or three sentences on what the results mean for the decision, using only calculated numbers.",
+        "title": "Summary"
+      },
+      "points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "insight",
+                "action",
+                "caveat"
+              ]
+            },
+            "text": {
+              "type": "string",
+              "description": "One point. Numbers only from the calculated results."
+            }
+          }
+        },
+        "title": "Key points"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_data",
+      "name": "Read your data",
+      "kind": "agent",
+      "mode": "extract",
+      "responsibility": "Copy your figures into the calculation's input exactly as written.",
+      "prompt": "Read each metric with a snake_case id, its name, weight, direction (higher_is_better or lower_is_better) and unit, then each supplier with its value for each metric id (null if not given). Copy numbers exactly.",
+      "tools": []
+    },
+    {
+      "id": "calculate",
+      "name": "Calculate",
+      "kind": "check",
+      "responsibility": "Runs the registered supplier_scorecard@1 calculation. All numbers in the result come from here.",
+      "tools": [],
+      "calculate": {
+        "calculation": "supplier_scorecard@1"
+      }
+    },
+    {
+      "id": "explain",
+      "name": "Explain",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Explains the calculated results; adds no numbers of its own.",
+      "prompt": "Explain the ranking, what drives each supplier's score, and where missing data limits the comparison. Mention every warning.",
+      "tools": []
+    },
+    {
+      "id": "check_explanation",
+      "name": "Check explanation",
+      "kind": "check",
+      "responsibility": "Every number in the explanation matches the calculated results or your inputs.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "summary_numbers",
+        "description": "Every number in the summary comes from the calculation or your inputs.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "numbers_from_calculation",
+          "step": "check_explanation",
+          "params": {
+            "path": "summary"
+          }
+        }
+      },
+      {
+        "id": "point_numbers",
+        "description": "Every number in the key points comes from the calculation or your inputs.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "numbers_from_calculation",
+          "step": "check_explanation",
+          "params": {
+            "path": "points[].text"
+          }
+        }
+      },
+      {
+        "id": "enough_points",
+        "description": "Gives 2 to 8 key points.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "count",
+          "step": "check_explanation",
+          "params": {
+            "path": "points",
+            "min": 2,
+            "max": 8
+          }
+        }
+      },
+      {
+        "id": "short_summary",
+        "description": "The summary is 90 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "step": "check_explanation",
+          "params": {
+            "path": "summary",
+            "max": 90
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 4
+  }
+}
