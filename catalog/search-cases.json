@@ -489,6 +489,12 @@
       "expect": [
         "revenue-forecast-model"
       ]
+    },
+    {
+      "query": "calculate budget vs actual variance by line",
+      "expect": [
+        "budget-variance-analyzer"
+      ]
     }
   ]
 }

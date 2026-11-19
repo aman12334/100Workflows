@@ -1,0 +1,65 @@
+{
+  "inputs": {
+    "lines": "Subscriptions (revenue): budget 50,000, actual 55,000\nSoftware (expense): budget 8,000, actual 11,200\nContractors (expense): budget 20,000, actual 14,500"
+  },
+  "extracted": {
+    "lines": [
+      {
+        "name": "Subscriptions",
+        "type": "revenue",
+        "budget": 50000,
+        "actual": 55000
+      },
+      {
+        "name": "Software",
+        "type": "expense",
+        "budget": 8000,
+        "actual": 11200
+      },
+      {
+        "name": "Contractors",
+        "type": "expense",
+        "budget": 20000,
+        "actual": 14500
+      }
+    ]
+  },
+  "expected": {
+    "lines.1.variance": 3200,
+    "lines.1.variance_pct": 40,
+    "lines.1.assessment": "unfavorable",
+    "lines.2.assessment": "favorable",
+    "totals.1.variance": -2300,
+    "totals.1.variance_pct": -8.21,
+    "totals.2.variance": 7300,
+    "totals.2.variance_pct": 33.18,
+    "largest_unfavorable": "Software"
+  },
+  "good": {
+    "summary": "Net is 7,300 better than budget (33.18%). Expenses came in 2,300 under budget, but Software is 3,200 over (40%).",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "Contractors were 5,500 under budget."
+      },
+      {
+        "kind": "action",
+        "text": "Ask the Software owner what drove the 40% overrun."
+      }
+    ]
+  },
+  "bad": {
+    "summary": "Net is 9,000 better than budget.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "x"
+      },
+      {
+        "kind": "action",
+        "text": "y"
+      }
+    ]
+  },
+  "bad_fails": "summary_numbers"
+}
