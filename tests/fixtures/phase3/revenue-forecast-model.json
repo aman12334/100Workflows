@@ -1,0 +1,56 @@
+{
+  "inputs": {
+    "starting_mrr": 10000,
+    "months": 3,
+    "scenarios": "Base: 5% growth, 2% churn\nDownside: 1% growth, 3% churn"
+  },
+  "extracted": {
+    "scenarios": [
+      {
+        "name": "Base",
+        "monthly_growth_pct": 5,
+        "monthly_churn_pct": 2
+      },
+      {
+        "name": "Downside",
+        "monthly_growth_pct": 1,
+        "monthly_churn_pct": 3
+      }
+    ]
+  },
+  "expected": {
+    "scenarios.0.ending_mrr": 10927.27,
+    "scenarios.0.total_revenue": 31836.27,
+    "scenarios.0.ending_arr": 131127.24,
+    "scenarios.1.monthly.2.mrr": 9411.92,
+    "scenarios.1.ending_mrr": 9411.92,
+    "scenarios.1.total_revenue": 28815.92
+  },
+  "good": {
+    "summary": "After 3 months Base reaches 10,927.27 MRR while Downside falls to 9,411.92.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "Base adds 31,836.27 of revenue over the period against 28,815.92 in Downside."
+      },
+      {
+        "kind": "caveat",
+        "text": "Churn of 3% outweighs 1% growth in Downside."
+      }
+    ]
+  },
+  "bad": {
+    "summary": "Base reaches 12,000 MRR.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "x"
+      },
+      {
+        "kind": "caveat",
+        "text": "y"
+      }
+    ]
+  },
+  "bad_fails": "summary_numbers"
+}

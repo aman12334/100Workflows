@@ -483,6 +483,12 @@
       "expect": [
         "break-even-analysis"
       ]
+    },
+    {
+      "query": "forecast our MRR with base and downside scenarios",
+      "expect": [
+        "revenue-forecast-model"
+      ]
     }
   ]
 }
