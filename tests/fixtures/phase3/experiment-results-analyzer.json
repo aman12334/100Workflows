@@ -1,0 +1,47 @@
+{
+  "inputs": {
+    "control_visitors": 10000,
+    "control_conversions": 500,
+    "treatment_visitors": 10000,
+    "treatment_conversions": 600,
+    "confidence_level": "95"
+  },
+  "expected": {
+    "results.control_rate_pct": 5,
+    "results.treatment_rate_pct": 6,
+    "results.absolute_lift_pp": 1,
+    "results.relative_lift_pct": 20,
+    "results.ci_low_pp": 0.37,
+    "results.ci_high_pp": 1.63,
+    "results.z_score": 3.102,
+    "results.p_value": 0.0019,
+    "results.significance": "significant"
+  },
+  "good": {
+    "summary": "The variant converted at 6% against 5%, a lift of 1 percentage point (20% relative). The 95% interval runs from 0.37 to 1.63 points and p = 0.0019, so the lift is statistically significant.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "The whole interval is above zero."
+      },
+      {
+        "kind": "caveat",
+        "text": "This assumes one analysis at the planned end."
+      }
+    ]
+  },
+  "bad": {
+    "summary": "The lift is 1.5 percentage points and significant.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "x"
+      },
+      {
+        "kind": "caveat",
+        "text": "y"
+      }
+    ]
+  },
+  "bad_fails": "summary_numbers"
+}

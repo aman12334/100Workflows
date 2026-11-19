@@ -519,6 +519,12 @@
       "expect": [
         "acquisition-efficiency"
       ]
+    },
+    {
+      "query": "is our A/B test result statistically significant",
+      "expect": [
+        "experiment-results-analyzer"
+      ]
     }
   ]
 }
