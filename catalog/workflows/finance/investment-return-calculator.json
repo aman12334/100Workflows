@@ -1,0 +1,286 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "investment-return-calculator",
+  "version": "0.1.0",
+  "name": "Investment Return Calculator",
+  "category": "finance",
+  "summary": "Calculates total gain, ROI, annualised return over a stated holding period, and cash-on-cash return for an investment.",
+  "description": "Calculates the total gain and ROI on an investment from what you put in, what it is worth now and cash received along the way; the annualised return over the holding period you state; and the cash-on-cash return from annual pre-tax cash flow. The period and assumptions are shown with the results. Who it's for: founders, finance leads and investors comparing an investment, project or property against alternatives. Limitations: annualised return assumes all cash arrives at the end (it is not an IRR) and is only calculated when you give a holding period; no taxes, fees or inflation unless already in your figures.",
+  "status": "available",
+  "problems": [
+    "What return did this investment make",
+    "I need the ROI and annualized return on a project",
+    "Compare cash-on-cash returns on a property"
+  ],
+  "tags": [
+    "roi",
+    "investment-return",
+    "annualized-return",
+    "cash-on-cash",
+    "returns"
+  ],
+  "inputs": [
+    {
+      "key": "initial_investment",
+      "label": "Initial investment",
+      "type": "number",
+      "required": true,
+      "description": "Amount invested at the start.",
+      "example": "100000"
+    },
+    {
+      "key": "ending_value",
+      "label": "Ending value",
+      "type": "number",
+      "required": true,
+      "description": "What the investment is worth now or at exit.",
+      "example": "150000"
+    },
+    {
+      "key": "cash_received",
+      "label": "Cash received",
+      "type": "number",
+      "required": false,
+      "description": "Dividends, distributions or rent received during the holding period.",
+      "example": "10000"
+    },
+    {
+      "key": "holding_period_years",
+      "label": "Holding period (years)",
+      "type": "number",
+      "required": false,
+      "description": "How long the investment was held.",
+      "example": "5"
+    },
+    {
+      "key": "annual_pre_tax_cash_flow",
+      "label": "Annual pre-tax cash flow",
+      "type": "number",
+      "required": false,
+      "description": "For cash-on-cash return.",
+      "example": "8000"
+    },
+    {
+      "key": "cash_invested",
+      "label": "Cash invested (equity)",
+      "type": "number",
+      "required": false,
+      "description": "If different from the initial investment, e.g. with a loan.",
+      "example": ""
+    },
+    {
+      "key": "currency",
+      "label": "Currency",
+      "type": "select",
+      "required": false,
+      "description": "Currency of the amounts.",
+      "options": [
+        "USD",
+        "EUR",
+        "GBP",
+        "CAD",
+        "AUD",
+        "INR",
+        "JPY",
+        "CHF",
+        "SEK",
+        "NZD",
+        "SGD"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "key": "results",
+      "label": "Calculated results",
+      "description": "Results with units, formulas, assumptions and warnings, from the registered calculation.",
+      "format": "markdown"
+    },
+    {
+      "key": "explanation",
+      "label": "Explanation",
+      "description": "What the results mean, with numbers taken only from the calculation.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are an analyst explaining calculated results to a business decision-maker. Be concrete and brief.",
+    "effort": "low",
+    "maxOutputTokens": 2000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "summary",
+      "points"
+    ],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "description": "Two or three sentences on what the results mean for the decision, using only calculated numbers.",
+        "title": "Summary"
+      },
+      "points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "insight",
+                "action",
+                "caveat"
+              ]
+            },
+            "text": {
+              "type": "string",
+              "description": "One point. Numbers only from the calculated results."
+            }
+          }
+        },
+        "title": "Key points"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "calculate",
+      "name": "Calculate",
+      "kind": "check",
+      "responsibility": "Runs the registered investment_return@1 calculation. All numbers in the result come from here.",
+      "tools": [],
+      "calculate": {
+        "calculation": "investment_return@1",
+        "inputs": {
+          "initial_investment": {
+            "input": "initial_investment",
+            "as": "number"
+          },
+          "ending_value": {
+            "input": "ending_value",
+            "as": "number"
+          },
+          "cash_received": {
+            "input": "cash_received",
+            "as": "number"
+          },
+          "holding_period_years": {
+            "input": "holding_period_years",
+            "as": "number"
+          },
+          "annual_pre_tax_cash_flow": {
+            "input": "annual_pre_tax_cash_flow",
+            "as": "number"
+          },
+          "cash_invested": {
+            "input": "cash_invested",
+            "as": "number"
+          },
+          "currency": {
+            "input": "currency",
+            "as": "text"
+          }
+        }
+      }
+    },
+    {
+      "id": "explain",
+      "name": "Explain",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Explains the calculated results; adds no numbers of its own.",
+      "prompt": "Explain the return in plain terms, how the annualised figure differs from total ROI, and what it leaves out. Mention every warning.",
+      "tools": []
+    },
+    {
+      "id": "check_explanation",
+      "name": "Check explanation",
+      "kind": "check",
+      "responsibility": "Every number in the explanation matches the calculated results or your inputs.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "summary_numbers",
+        "description": "Every number in the summary comes from the calculation or your inputs.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "numbers_from_calculation",
+          "step": "check_explanation",
+          "params": {
+            "path": "summary"
+          }
+        }
+      },
+      {
+        "id": "point_numbers",
+        "description": "Every number in the key points comes from the calculation or your inputs.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "numbers_from_calculation",
+          "step": "check_explanation",
+          "params": {
+            "path": "points[].text"
+          }
+        }
+      },
+      {
+        "id": "enough_points",
+        "description": "Gives 2 to 8 key points.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "count",
+          "step": "check_explanation",
+          "params": {
+            "path": "points",
+            "min": 2,
+            "max": 8
+          }
+        }
+      },
+      {
+        "id": "short_summary",
+        "description": "The summary is 90 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "step": "check_explanation",
+          "params": {
+            "path": "summary",
+            "max": 90
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

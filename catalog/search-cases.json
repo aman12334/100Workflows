@@ -495,6 +495,12 @@
       "expect": [
         "budget-variance-analyzer"
       ]
+    },
+    {
+      "query": "calculate ROI and annualized return on an investment",
+      "expect": [
+        "investment-return-calculator"
+      ]
     }
   ]
 }
