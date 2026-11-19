@@ -1,0 +1,55 @@
+{
+  "inputs": {
+    "history": [
+      "10",
+      "12",
+      "14",
+      "16",
+      "18",
+      "20",
+      "22",
+      "24"
+    ],
+    "period_unit": "week",
+    "horizon": 2,
+    "method": "moving_average",
+    "window": 3
+  },
+  "expected": {
+    "forecast.0.value": 22,
+    "forecast.1.value": 22,
+    "accuracy.assessed": true,
+    "accuracy.mae": 5,
+    "accuracy.rmse": 5.1,
+    "accuracy.mape_pct": 21.59,
+    "accuracy.naive_mae": 3,
+    "accuracy.beats_naive": false
+  },
+  "good": {
+    "summary": "A 3-week moving average forecasts 22 units a week for the next 2 weeks. On the holdout it was off by 5 on average, worse than the naive method at 3, so treat it as a rough baseline.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "Demand is rising steadily, which a flat average lags behind."
+      },
+      {
+        "kind": "caveat",
+        "text": "MAPE on the holdout was 21.59%."
+      }
+    ]
+  },
+  "bad": {
+    "summary": "The forecast is 25 units a week.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "x"
+      },
+      {
+        "kind": "caveat",
+        "text": "y"
+      }
+    ]
+  },
+  "bad_fails": "summary_numbers"
+}

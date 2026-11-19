@@ -1,0 +1,270 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "demand-forecast-calculator",
+  "version": "0.1.0",
+  "name": "Demand Forecast Calculator",
+  "category": "operations",
+  "summary": "Forecasts demand from your history with a named method (moving average, exponential smoothing or naive) and tests its accuracy.",
+  "description": "Produces a baseline demand forecast from your historical numbers using the method and parameters you choose: a moving average, simple exponential smoothing or the naive last-value method. When there are at least 8 historical periods it holds back the most recent ones, measures MAE, RMSE and MAPE, and compares the method with the naive baseline; with less history it says no accuracy can be claimed. Who it's for: operations, supply chain and finance teams who need a transparent baseline forecast. Limitations: all three methods produce a flat forecast with no trend, seasonality or external drivers; the forecast is a calculation from your history, not a prediction by the model.",
+  "status": "available",
+  "problems": [
+    "Forecast next month's demand from our sales history",
+    "I need a simple baseline demand forecast",
+    "How accurate is a moving average forecast for our data"
+  ],
+  "tags": [
+    "demand-forecast",
+    "moving-average",
+    "exponential-smoothing",
+    "forecasting",
+    "baseline"
+  ],
+  "inputs": [
+    {
+      "key": "history",
+      "label": "Historical demand",
+      "type": "list",
+      "required": true,
+      "description": "One value per period, oldest first.",
+      "example": "10\n12\n14"
+    },
+    {
+      "key": "period_unit",
+      "label": "Period",
+      "type": "select",
+      "required": true,
+      "description": "Length of each period.",
+      "options": [
+        "day",
+        "week",
+        "month"
+      ]
+    },
+    {
+      "key": "horizon",
+      "label": "Periods to forecast",
+      "type": "number",
+      "required": true,
+      "description": "Between 1 and 24.",
+      "example": "2"
+    },
+    {
+      "key": "method",
+      "label": "Method",
+      "type": "select",
+      "required": true,
+      "description": "Forecast method.",
+      "options": [
+        "moving_average",
+        "exponential_smoothing",
+        "naive"
+      ]
+    },
+    {
+      "key": "window",
+      "label": "Moving average window",
+      "type": "number",
+      "required": false,
+      "description": "Periods to average (moving average only).",
+      "example": "3"
+    },
+    {
+      "key": "alpha",
+      "label": "Smoothing factor (alpha)",
+      "type": "number",
+      "required": false,
+      "description": "Between 0 and 1 (exponential smoothing only).",
+      "example": "0.3"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "results",
+      "label": "Calculated results",
+      "description": "Results with units, formulas, assumptions and warnings, from the registered calculation.",
+      "format": "markdown"
+    },
+    {
+      "key": "explanation",
+      "label": "Explanation",
+      "description": "What the results mean, with numbers taken only from the calculation.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are an analyst explaining calculated results to a business decision-maker. Be concrete and brief.",
+    "effort": "low",
+    "maxOutputTokens": 2000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "summary",
+      "points"
+    ],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "description": "Two or three sentences on what the results mean for the decision, using only calculated numbers.",
+        "title": "Summary"
+      },
+      "points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "insight",
+                "action",
+                "caveat"
+              ]
+            },
+            "text": {
+              "type": "string",
+              "description": "One point. Numbers only from the calculated results."
+            }
+          }
+        },
+        "title": "Key points"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "calculate",
+      "name": "Calculate",
+      "kind": "check",
+      "responsibility": "Runs the registered demand_forecast@1 calculation. All numbers in the result come from here.",
+      "tools": [],
+      "calculate": {
+        "calculation": "demand_forecast@1",
+        "inputs": {
+          "history": {
+            "input": "history",
+            "as": "number_list"
+          },
+          "period_unit": {
+            "input": "period_unit",
+            "as": "text"
+          },
+          "horizon": {
+            "input": "horizon",
+            "as": "number"
+          },
+          "method": {
+            "input": "method",
+            "as": "text"
+          },
+          "window": {
+            "input": "window",
+            "as": "number"
+          },
+          "alpha": {
+            "input": "alpha",
+            "as": "number"
+          }
+        }
+      }
+    },
+    {
+      "id": "explain",
+      "name": "Explain",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Explains the calculated results; adds no numbers of its own.",
+      "prompt": "Explain the forecast, the method and its parameters, and what the accuracy check says (or that accuracy could not be tested). Do not claim the forecast will be accurate beyond what the holdout shows. Mention every warning.",
+      "tools": []
+    },
+    {
+      "id": "check_explanation",
+      "name": "Check explanation",
+      "kind": "check",
+      "responsibility": "Every number in the explanation matches the calculated results or your inputs.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "summary_numbers",
+        "description": "Every number in the summary comes from the calculation or your inputs.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "numbers_from_calculation",
+          "step": "check_explanation",
+          "params": {
+            "path": "summary"
+          }
+        }
+      },
+      {
+        "id": "point_numbers",
+        "description": "Every number in the key points comes from the calculation or your inputs.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "numbers_from_calculation",
+          "step": "check_explanation",
+          "params": {
+            "path": "points[].text"
+          }
+        }
+      },
+      {
+        "id": "enough_points",
+        "description": "Gives 2 to 8 key points.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "count",
+          "step": "check_explanation",
+          "params": {
+            "path": "points",
+            "min": 2,
+            "max": 8
+          }
+        }
+      },
+      {
+        "id": "short_summary",
+        "description": "The summary is 90 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "step": "check_explanation",
+          "params": {
+            "path": "summary",
+            "max": 90
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

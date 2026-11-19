@@ -531,6 +531,12 @@
       "expect": [
         "inventory-replenishment-calculator"
       ]
+    },
+    {
+      "query": "forecast demand from sales history with a moving average",
+      "expect": [
+        "demand-forecast-calculator"
+      ]
     }
   ]
 }
