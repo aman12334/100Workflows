@@ -1,0 +1,43 @@
+{
+  "inputs": {
+    "fixed_costs": 10000,
+    "price_per_unit": 50,
+    "variable_cost_per_unit": 30,
+    "target_profit": 5000
+  },
+  "expected": {
+    "results.contribution_per_unit": 20,
+    "results.contribution_margin_pct": 40,
+    "results.break_even_units": 500,
+    "results.break_even_revenue": 25000,
+    "results.units_for_target_profit": 750,
+    "results.revenue_for_target_profit": 37500
+  },
+  "good": {
+    "summary": "Each unit contributes 20 at a 40% margin, so you break even at 500 units or 25,000 in revenue. Reaching a 5,000 profit needs 750 units.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "Fixed costs of 10,000 set the break-even point."
+      },
+      {
+        "kind": "action",
+        "text": "Cutting variable cost below 30 lowers the volume needed."
+      }
+    ]
+  },
+  "bad": {
+    "summary": "You break even at 400 units.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "x"
+      },
+      {
+        "kind": "action",
+        "text": "y"
+      }
+    ]
+  },
+  "bad_fails": "summary_numbers"
+}

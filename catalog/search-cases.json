@@ -477,6 +477,12 @@
       "expect": [
         "unit-economics-calculator"
       ]
+    },
+    {
+      "query": "how many units to sell to break even",
+      "expect": [
+        "break-even-analysis"
+      ]
     }
   ]
 }
