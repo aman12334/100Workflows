@@ -513,6 +513,12 @@
       "expect": [
         "cohort-retention-calculator"
       ]
+    },
+    {
+      "query": "compare CAC and payback by marketing channel",
+      "expect": [
+        "acquisition-efficiency"
+      ]
     }
   ]
 }
