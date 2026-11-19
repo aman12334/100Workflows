@@ -507,6 +507,12 @@
       "expect": [
         "conversion-funnel-analyzer"
       ]
+    },
+    {
+      "query": "calculate cohort retention by month",
+      "expect": [
+        "cohort-retention-calculator"
+      ]
     }
   ]
 }
