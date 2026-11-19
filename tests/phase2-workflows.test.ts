@@ -93,13 +93,15 @@ async function run(wf: Workflow, f: Fixture, writes: unknown[], opts: { pages?: 
 }
 
 describe("Phase 2 catalog", () => {
-  it("adds exactly 20 research workflows: 77 in total, with the 12 original and 45 Phase 1 workflows still present", () => {
+  it("adds exactly 20 research workflows: 77 in total before later phases, with the 12 original and 45 Phase 1 workflows still present", () => {
     expect(IDS).toHaveLength(20);
-    expect(catalog).toHaveLength(77);
+    const later = readdirSync(path.join(process.cwd(), "tests", "fixtures", "phase3")).filter((f) => f.endsWith(".json"));
+    expect(catalog).toHaveLength(77 + later.length);
     const phase1 = readdirSync(path.join(process.cwd(), "tests", "fixtures", "phase1")).map((f) => f.slice(0, -5));
     expect(phase1).toHaveLength(45);
     for (const id of [...IDS, ...phase1]) expect(byId(id), id).toBeDefined();
-    expect(catalog.filter((w) => !IDS.includes(w.id) && !phase1.includes(w.id))).toHaveLength(12);
+    const phase3 = later.map((f) => f.slice(0, -5));
+    expect(catalog.filter((w) => !IDS.includes(w.id) && !phase1.includes(w.id) && !phase3.includes(w.id))).toHaveLength(12);
   });
 });
 

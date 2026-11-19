@@ -471,6 +471,12 @@
       "expect": [
         "hiring-signals"
       ]
+    },
+    {
+      "query": "calculate LTV to CAC ratio and payback period",
+      "expect": [
+        "unit-economics-calculator"
+      ]
     }
   ]
 }

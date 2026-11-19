@@ -1,0 +1,263 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "unit-economics-calculator",
+  "version": "0.1.0",
+  "name": "Unit Economics Calculator",
+  "category": "finance",
+  "summary": "Calculates contribution margin, LTV, LTV:CAC and CAC payback from your per-customer revenue, costs, CAC and churn.",
+  "description": "Takes monthly revenue and variable cost per customer, customer acquisition cost and monthly churn, and calculates contribution per customer, gross margin, expected customer lifetime, LTV, LTV:CAC, CAC payback and lifetime profit with a registered, tested calculation. Results show what you supplied separately from what was derived, with formulas and units; the model only explains them. Who it's for: founders, finance leads and investors checking whether acquiring a customer pays off. Limitations: assumes constant churn, revenue and cost per customer (no expansion revenue, discounting or cohorts); without a churn rate, LTV is not calculated rather than guessed.",
+  "status": "available",
+  "problems": [
+    "Is our LTV to CAC ratio healthy",
+    "How long does it take to earn back acquisition cost",
+    "I need our unit economics for a board deck"
+  ],
+  "tags": [
+    "unit-economics",
+    "ltv",
+    "cac",
+    "payback",
+    "contribution-margin",
+    "saas-metrics"
+  ],
+  "inputs": [
+    {
+      "key": "revenue_per_customer_month",
+      "label": "Revenue per customer per month",
+      "type": "number",
+      "required": true,
+      "description": "Average monthly revenue from one customer (ARPA).",
+      "example": "100"
+    },
+    {
+      "key": "variable_cost_per_customer_month",
+      "label": "Variable cost per customer per month",
+      "type": "number",
+      "required": true,
+      "description": "Costs that scale with each customer: hosting, support, payment fees.",
+      "example": "30"
+    },
+    {
+      "key": "cac",
+      "label": "Customer acquisition cost",
+      "type": "number",
+      "required": true,
+      "description": "Sales and marketing cost to win one customer.",
+      "example": "420"
+    },
+    {
+      "key": "monthly_churn_pct",
+      "label": "Monthly churn %",
+      "type": "number",
+      "required": false,
+      "description": "Share of customers lost each month, in percent.",
+      "example": "2.5"
+    },
+    {
+      "key": "currency",
+      "label": "Currency",
+      "type": "select",
+      "required": false,
+      "description": "Currency of the amounts.",
+      "options": [
+        "USD",
+        "EUR",
+        "GBP",
+        "CAD",
+        "AUD",
+        "INR",
+        "JPY",
+        "CHF",
+        "SEK",
+        "NZD",
+        "SGD"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "key": "results",
+      "label": "Calculated results",
+      "description": "Results with units, formulas, assumptions and warnings, from the registered calculation.",
+      "format": "markdown"
+    },
+    {
+      "key": "explanation",
+      "label": "Explanation",
+      "description": "What the results mean, with numbers taken only from the calculation.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are an analyst explaining calculated results to a business decision-maker. Be concrete and brief.",
+    "effort": "low",
+    "maxOutputTokens": 2000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "summary",
+      "points"
+    ],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "description": "Two or three sentences on what the results mean for the decision, using only calculated numbers.",
+        "title": "Summary"
+      },
+      "points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "insight",
+                "action",
+                "caveat"
+              ]
+            },
+            "text": {
+              "type": "string",
+              "description": "One point. Numbers only from the calculated results."
+            }
+          }
+        },
+        "title": "Key points"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "calculate",
+      "name": "Calculate",
+      "kind": "check",
+      "responsibility": "Runs the registered unit_economics@1 calculation. All numbers in the result come from here.",
+      "tools": [],
+      "calculate": {
+        "calculation": "unit_economics@1",
+        "inputs": {
+          "revenue_per_customer_month": {
+            "input": "revenue_per_customer_month",
+            "as": "number"
+          },
+          "variable_cost_per_customer_month": {
+            "input": "variable_cost_per_customer_month",
+            "as": "number"
+          },
+          "cac": {
+            "input": "cac",
+            "as": "number"
+          },
+          "monthly_churn_pct": {
+            "input": "monthly_churn_pct",
+            "as": "number"
+          },
+          "currency": {
+            "input": "currency",
+            "as": "text"
+          }
+        }
+      }
+    },
+    {
+      "id": "explain",
+      "name": "Explain",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Explains the calculated results; adds no numbers of its own.",
+      "prompt": "Explain whether these unit economics support spending more on acquisition: comment on LTV:CAC, payback and margin, and say which input moves the result most. Mention every warning.",
+      "tools": []
+    },
+    {
+      "id": "check_explanation",
+      "name": "Check explanation",
+      "kind": "check",
+      "responsibility": "Every number in the explanation matches the calculated results or your inputs.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "summary_numbers",
+        "description": "Every number in the summary comes from the calculation or your inputs.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "numbers_from_calculation",
+          "step": "check_explanation",
+          "params": {
+            "path": "summary"
+          }
+        }
+      },
+      {
+        "id": "point_numbers",
+        "description": "Every number in the key points comes from the calculation or your inputs.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "numbers_from_calculation",
+          "step": "check_explanation",
+          "params": {
+            "path": "points[].text"
+          }
+        }
+      },
+      {
+        "id": "enough_points",
+        "description": "Gives 2 to 8 key points.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "count",
+          "step": "check_explanation",
+          "params": {
+            "path": "points",
+            "min": 2,
+            "max": 8
+          }
+        }
+      },
+      {
+        "id": "short_summary",
+        "description": "The summary is 90 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "step": "check_explanation",
+          "params": {
+            "path": "summary",
+            "max": 90
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 2
+  }
+}

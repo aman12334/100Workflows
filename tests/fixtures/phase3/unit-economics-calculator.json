@@ -1,0 +1,49 @@
+{
+  "inputs": {
+    "revenue_per_customer_month": 100,
+    "variable_cost_per_customer_month": 30,
+    "cac": 420,
+    "monthly_churn_pct": 2.5,
+    "currency": "USD"
+  },
+  "expected": {
+    "results.contribution_per_customer_month": 70,
+    "results.gross_margin_pct": 70,
+    "results.customer_lifetime_months": 40,
+    "results.ltv": 2800,
+    "results.ltv_to_cac": 6.67,
+    "results.cac_payback_months": 6,
+    "results.lifetime_profit_per_customer": 2380
+  },
+  "good": {
+    "summary": "Each customer contributes 70 USD a month at a 70% margin. At 2.5% churn LTV is 2,800, which is 6.67x CAC, and CAC pays back in 6 months.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "A lifetime of 40 months drives most of the LTV."
+      },
+      {
+        "kind": "action",
+        "text": "Acquisition spend can grow while payback stays near 6 months."
+      },
+      {
+        "kind": "caveat",
+        "text": "Churn is assumed constant."
+      }
+    ]
+  },
+  "bad": {
+    "summary": "LTV is 3,500 and LTV:CAC is 8.3x.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "Strong economics."
+      },
+      {
+        "kind": "action",
+        "text": "Spend more."
+      }
+    ]
+  },
+  "bad_fails": "summary_numbers"
+}
