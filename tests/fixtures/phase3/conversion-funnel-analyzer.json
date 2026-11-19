@@ -1,0 +1,60 @@
+{
+  "inputs": {
+    "stages": "Visit 10,000\nSignup 4,000\nTrial 1,000\nPaid 300"
+  },
+  "extracted": {
+    "stages": [
+      {
+        "name": "Visit",
+        "count": 10000
+      },
+      {
+        "name": "Signup",
+        "count": 4000
+      },
+      {
+        "name": "Trial",
+        "count": 1000
+      },
+      {
+        "name": "Paid",
+        "count": 300
+      }
+    ]
+  },
+  "expected": {
+    "transitions.0.conversion_pct": 40,
+    "transitions.1.drop_off_pct": 75,
+    "transitions.2.conversion_pct": 30,
+    "overall_conversion_pct": 3,
+    "largest_absolute_drop.drop_off": 6000,
+    "largest_relative_drop.from": "Signup"
+  },
+  "good": {
+    "summary": "Overall 3% of visitors pay. The biggest loss in people is Visit to Signup (6,000), but the steepest is Signup to Trial, where 75% drop off.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "Only 25% of signups start a trial."
+      },
+      {
+        "kind": "action",
+        "text": "Work on the Signup to Trial step first."
+      }
+    ]
+  },
+  "bad": {
+    "summary": "Overall 4.5% of visitors pay.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "x"
+      },
+      {
+        "kind": "action",
+        "text": "y"
+      }
+    ]
+  },
+  "bad_fails": "summary_numbers"
+}

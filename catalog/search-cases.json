@@ -501,6 +501,12 @@
       "expect": [
         "investment-return-calculator"
       ]
+    },
+    {
+      "query": "where do users drop off in our conversion funnel",
+      "expect": [
+        "conversion-funnel-analyzer"
+      ]
     }
   ]
 }
