@@ -170,6 +170,10 @@ A research workflow adds a `gather` step before `generate`. It names registered 
 - **Ask for structure that can be checked:** quotes next to statements, "unverified" lists for gaps, and conflicts that cite two or more sources.
 - **Test with canned pages:** add `tests/fixtures/phase2/<id>.json` with `inputs`, `search` (results and cited passages), `pages` (HTML by URL), a `good` output and a `bad` one; [`tests/phase2-workflows.test.ts`](../tests/phase2-workflows.test.ts) runs tool use, citation checks, retries, needs-review, no-sources failure, prompt-injection fencing and the run service for it.
 
+### Calculation workflows
+
+When a workflow's output is numbers, the numbers must come from a registered calculation: add a `calculate` check step naming it (`"calculation": "unit_economics@1"`), map typed inputs to its fields, add an `extract` step only if users paste tables as text, and make `numbers_from_calculation` a critical rule on the explanation. The full guide, the numerical policy and how to add a new calculation are in [calculations.md](calculations.md).
+
 ## 7. Workflows that need code (hand-written executors)
 
 Use a hand-written executor when a workflow needs tools or checks the generic executor doesn't offer (Market Research and ICP Builder are hand-written). `npm run new:workflow -- ... --executable` creates a v1 definition plus stubs for steps 1 and 4:

@@ -4,7 +4,7 @@
 
 100 Workflows is an open-source, local-first app. You run it on your own computer, connect your own Anthropic or OpenAI API key, and talk to an assistant that searches a catalog of workflow definitions across go-to-market, marketing, sales, finance, product, user research and operations. It explains which workflows fit your goal and what each one needs.
 
-> **Status: Phase 2 is done.** Chat, grounded recommendations, persistent packages, setup forms, and real execution of **70 workflows** with evaluation, bounded retries, saved results, and per-run usage with cost estimates where a price is verified. Two are hand-written (**Market Research Agent**, **Ideal Customer Profile Builder**); the other 68 run on the schema-v2 generic executor straight from their JSON definitions. 48 work from what you type in; **20 research workflows** search the web and read pages with read-only tools, and keep every source with the result. The catalog has 77 workflows; the other 7 are *definition only*, and the app says so wherever they appear.
+> **Status: Phase 3 is done.** Chat, grounded recommendations, persistent packages, setup forms, and real execution of **83 workflows** with evaluation, bounded retries, saved results, and per-run usage with cost estimates where a price is verified. Two are hand-written (**Market Research Agent**, **Ideal Customer Profile Builder**); the other 81 run on the schema-v2 generic executor straight from their JSON definitions. 48 work from what you type in; **20 research workflows** search the web and read pages with read-only tools, and keep every source with the result; **13 calculation workflows** compute their numbers with registered, tested calculations and use the model only to explain them. The catalog has 90 workflows; the other 7 are *definition only*, and the app says so wherever they appear.
 
 ---
 
@@ -100,6 +100,8 @@ WORKFLOWS_WEB_FETCH=on    # read public web pages from this computer (GET only, 
 
 How the tools work, their limits and the security model: [docs/tools.md](docs/tools.md).
 
+**13 calculation workflows** (Phase 3) do the maths in code, not in the model: unit economics, break-even, revenue forecast, budget variance, investment return, conversion funnel, cohort retention, acquisition efficiency, A/B test results, inventory reorder point, demand forecast, supplier scorecard and workforce capacity. Each runs a registered, versioned calculation with documented formulas, units and rounding. The model only explains the results, and a check rejects any number in its explanation that the calculation did not produce. If the explanation fails, you still get the calculated results. See [docs/calculations.md](docs/calculations.md).
+
 **Web search is opt-in.** Market Research uses Anthropic's server-side web search tool with the same API key, so you don't need another account. Anthropic bills searches separately from tokens, so the tool is off until you add `WORKFLOWS_WEB_SEARCH=on` to `.env.local` and restart. While it is off, Market Research is skipped with that explanation, and it never produces a report without sources. Your Anthropic organization must also allow web search (an admin enables it in the Anthropic Console). If it doesn't, the run fails and shows Anthropic's own error message.
 
 ### How results are judged
@@ -194,11 +196,12 @@ docs/                   Architecture, contributor guide, generated catalog index
 | 5 | Contributor tooling and catalog structure for 100+ workflows | ✅ done |
 | 6–10 | Schema v2 and the generic executor, three migrated workflows, run usage and cost estimates | ✅ done |
 | Phase 1 | 45 new model-only workflows on the generic executor (57 in the catalog, 50 executable) | ✅ done |
-| Phase 2 | Shared read-only tool layer (web search, page reading), 20 research workflows with checked citations (77 in the catalog, 70 executable) | ✅ this release |
+| Phase 2 | Shared read-only tool layer (web search, page reading), 20 research workflows with checked citations (77 in the catalog, 70 executable) | ✅ done |
+| Phase 3 | Registered deterministic calculation layer and 13 calculation workflows (90 in the catalog, 83 executable) | ✅ this release |
 
 ## Known limitations
 
-- 70 workflows can execute. The other 7 are definitions. The 45 Phase 1 workflows are model-only. The 20 research workflows read public web pages only: no PDFs, no pages that need JavaScript or a login, no paywalled content, and many review sites block automated reading. Search coverage depends on what Anthropic's web search returns that day. Web search cost is not estimated (no verified price), and page reads run on your computer. All Phase 1 and Phase 2 workflows have been tested with scripted model responses and canned pages, not yet against a live model or the live web.
+- 83 workflows can execute. The other 7 are definitions. Calculation workflows use simple, documented methods (flat baseline forecasts, a normal-approximation z-test, cycle-service-level safety stock) and cannot read spreadsheets directly: paste figures as text or use the typed inputs. The 45 Phase 1 workflows are model-only. The 20 research workflows read public web pages only: no PDFs, no pages that need JavaScript or a login, no paywalled content, and many review sites block automated reading. Search coverage depends on what Anthropic's web search returns that day. Web search cost is not estimated (no verified price), and page reads run on your computer. All Phase 1 and Phase 2 workflows have been tested with scripted model responses and canned pages, not yet against a live model or the live web.
 - There are no separate categories for customer success, HR or strategy yet: those workflows live under Sales and Operations.
 - Catalog search is keyword-based with light stemming. It is tested by `catalog/search-cases.json` and should hold up to a few hundred workflows. Beyond that, an embedding index may be worth adding.
 - Runs execute inside the dev or production server process. Closing the server interrupts a run, and it can't resume.
