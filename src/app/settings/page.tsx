@@ -3,6 +3,7 @@ import { webSearchEnabled } from "@/lib/runtime/executors/market-research";
 import { ConnectionCheck } from "@/components/connection-check";
 import { PROVIDERS } from "@/lib/providers";
 import { getModelConfig } from "@/lib/server/config";
+import { actionsLive, connectionStatus } from "@/lib/integrations/registry";
 
 export default function SettingsPage() {
   const config = getModelConfig();
@@ -72,6 +73,8 @@ export default function SettingsPage() {
           />
         </div>
       </section>
+
+      <IntegrationsSection />
 
       <section className="mt-8 grid gap-6 md:grid-cols-2">
         <div className="rounded-3xl border border-line bg-surface p-6">
@@ -186,5 +189,52 @@ function ToolRow({
         <code className="font-mono text-ink-800">{setting}</code> {settingLabel}
       </p>
     </div>
+  );
+}
+
+/** Provider connections. Shows which settings are missing by name; values are never read into the page. */
+function IntegrationsSection() {
+  const providers = connectionStatus(process.env);
+  const live = actionsLive(process.env);
+  return (
+    <section className="mt-8 rounded-3xl border border-line bg-surface p-6" id="integrations">
+      <h2 className="font-display text-lg font-bold text-ink-950">Integrations</h2>
+      <p className="mt-1 text-sm text-ink-700">
+        Workflows that act on other services read with your own credentials, set in <code className="font-mono">.env.local</code>, and only <em>propose</em> changes. Every
+        send, post or update waits for your approval of its exact payload.{" "}
+        {live ? (
+          <strong className="text-rose-700">Actions are live (WORKFLOWS_ACTIONS=live): approving performs the action.</strong>
+        ) : (
+          <strong>Actions are in dry-run mode: approvals are recorded but nothing is sent. Set WORKFLOWS_ACTIONS=live to allow real actions.</strong>
+        )}
+      </p>
+      <p className="mt-1 text-xs text-ink-500">&ldquo;Settings present&rdquo; means the values exist, not that the provider accepted them: the first real call proves the credentials.</p>
+      <ul className="mt-4 grid gap-3 md:grid-cols-2">
+        {providers.map((p) => (
+          <li key={p.id} className="rounded-2xl border border-line p-4">
+            <div className="flex items-center gap-2">
+              {p.configured ? <CheckCircle2 className="size-4 text-[#3b5200]" /> : <CircleDashed className="size-4 text-coral" />}
+              <span className="font-semibold text-ink-950">{p.name}</span>
+              <span className="text-xs text-ink-500">{p.configured ? "settings present" : "not connected"}</span>
+            </div>
+            {!p.configured && (
+              <p className="mt-1 text-xs text-ink-700">
+                Set <span className="font-mono">{p.missing.join(", ")}</span>
+              </p>
+            )}
+            <p className="mt-2 text-xs text-ink-700">{p.setup}</p>
+            {p.scopes.length > 0 && <p className="mt-1 text-xs text-ink-500">Permissions: {p.scopes.join(", ")}</p>}
+            <ul className="mt-2 space-y-0.5 text-xs text-ink-700">
+              {p.actions.map((a) => (
+                <li key={a.ref}>
+                  <span className="font-mono">{a.ref}</span> · {a.sideEffect.replace(/_/g, " ")}
+                  {a.approval ? " · needs approval" : ""}
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
