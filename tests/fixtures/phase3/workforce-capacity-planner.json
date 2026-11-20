@@ -1,0 +1,61 @@
+{
+  "inputs": {
+    "team_fte": 5,
+    "hours_per_week": 40,
+    "weeks": 4,
+    "productive_time_pct": 80,
+    "absence_pct": 10,
+    "target_utilization_pct": 85,
+    "tasks": "Tickets: 2000 at 6 minutes each\nCalls: 300 at 20 minutes each"
+  },
+  "extracted": {
+    "tasks": [
+      {
+        "name": "Tickets",
+        "volume": 2000,
+        "minutes_per_task": 6
+      },
+      {
+        "name": "Calls",
+        "volume": 300,
+        "minutes_per_task": 20
+      }
+    ]
+  },
+  "expected": {
+    "results.available_hours": 576,
+    "results.required_hours": 300,
+    "results.utilization_pct": 52.08,
+    "results.gap_hours": -189.6,
+    "results.required_fte": 3.06,
+    "results.required_headcount": 4,
+    "tasks.0.share_pct": 66.67
+  },
+  "good": {
+    "summary": "The team has 576 productive hours and the work needs 300, so utilisation is 52.08%. At an 85% target the work needs 3.06 FTE, fewer than the 5 you have.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "Tickets make up 66.67% of the workload."
+      },
+      {
+        "kind": "action",
+        "text": "There is room to take on more work."
+      }
+    ]
+  },
+  "bad": {
+    "summary": "The work needs 4.5 FTE.",
+    "points": [
+      {
+        "kind": "insight",
+        "text": "x"
+      },
+      {
+        "kind": "action",
+        "text": "y"
+      }
+    ]
+  },
+  "bad_fails": "summary_numbers"
+}

@@ -543,6 +543,12 @@
       "expect": [
         "supplier-performance-scorecard"
       ]
+    },
+    {
+      "query": "how many people do we need for this workload",
+      "expect": [
+        "workforce-capacity-planner"
+      ]
     }
   ]
 }

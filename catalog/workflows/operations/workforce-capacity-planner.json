@@ -1,0 +1,279 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "workforce-capacity-planner",
+  "version": "0.1.0",
+  "name": "Workforce Capacity Planner",
+  "category": "operations",
+  "summary": "Calculates available hours, workload, utilisation and the staff needed from team size, working time and task volumes.",
+  "description": "Calculates the productive hours your team has in a period (after absence and non-productive time), the hours your task volumes require, utilisation, the gap against a target utilisation, and the FTE and headcount needed. Each task's share of the workload is shown, so you can see what drives demand. Who it's for: operations, support and service managers planning staffing for a period. Limitations: assumes work spreads evenly across people and the period (no peaks, shifts or skill constraints) and that minutes per task include all handling time.",
+  "status": "available",
+  "problems": [
+    "How many people do we need to handle this workload",
+    "Is the support team over capacity",
+    "Calculate staffing needs from task volumes and handling time"
+  ],
+  "tags": [
+    "capacity-planning",
+    "staffing",
+    "utilization",
+    "headcount",
+    "workforce-planning"
+  ],
+  "inputs": [
+    {
+      "key": "team_fte",
+      "label": "Team size (FTE)",
+      "type": "number",
+      "required": true,
+      "description": "Full-time equivalents available.",
+      "example": "5"
+    },
+    {
+      "key": "hours_per_week",
+      "label": "Hours per week per person",
+      "type": "number",
+      "required": true,
+      "description": "Contracted hours per FTE.",
+      "example": "40"
+    },
+    {
+      "key": "weeks",
+      "label": "Weeks in the period",
+      "type": "number",
+      "required": true,
+      "description": "Length of the planning period in weeks.",
+      "example": "4"
+    },
+    {
+      "key": "productive_time_pct",
+      "label": "Productive time %",
+      "type": "number",
+      "required": true,
+      "description": "Share of working time spent on these tasks (after meetings, training...).",
+      "example": "80"
+    },
+    {
+      "key": "absence_pct",
+      "label": "Absence %",
+      "type": "number",
+      "required": false,
+      "description": "Holidays and sickness as a share of time.",
+      "example": "10"
+    },
+    {
+      "key": "target_utilization_pct",
+      "label": "Target utilisation %",
+      "type": "number",
+      "required": false,
+      "description": "How full you want the team to be (default 85).",
+      "example": "85"
+    },
+    {
+      "key": "tasks",
+      "label": "Tasks and volumes",
+      "type": "long_text",
+      "required": true,
+      "description": "Each task with its volume in the period and minutes per task.",
+      "example": "Tickets: 2000 at 6 minutes each\nCalls: 300 at 20 minutes each"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "results",
+      "label": "Calculated results",
+      "description": "Results with units, formulas, assumptions and warnings, from the registered calculation.",
+      "format": "markdown"
+    },
+    {
+      "key": "explanation",
+      "label": "Explanation",
+      "description": "What the results mean, with numbers taken only from the calculation.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are an analyst explaining calculated results to a business decision-maker. Be concrete and brief.",
+    "effort": "low",
+    "maxOutputTokens": 2000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "summary",
+      "points"
+    ],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "description": "Two or three sentences on what the results mean for the decision, using only calculated numbers.",
+        "title": "Summary"
+      },
+      "points": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "insight",
+                "action",
+                "caveat"
+              ]
+            },
+            "text": {
+              "type": "string",
+              "description": "One point. Numbers only from the calculated results."
+            }
+          }
+        },
+        "title": "Key points"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_data",
+      "name": "Read your data",
+      "kind": "agent",
+      "mode": "extract",
+      "responsibility": "Copy your figures into the calculation's input exactly as written.",
+      "prompt": "Read each task with its volume for the period and the minutes each one takes. Copy numbers exactly.",
+      "tools": []
+    },
+    {
+      "id": "calculate",
+      "name": "Calculate",
+      "kind": "check",
+      "responsibility": "Runs the registered workforce_capacity@1 calculation. All numbers in the result come from here.",
+      "tools": [],
+      "calculate": {
+        "calculation": "workforce_capacity@1",
+        "inputs": {
+          "team_fte": {
+            "input": "team_fte",
+            "as": "number"
+          },
+          "hours_per_week": {
+            "input": "hours_per_week",
+            "as": "number"
+          },
+          "weeks": {
+            "input": "weeks",
+            "as": "number"
+          },
+          "productive_time_pct": {
+            "input": "productive_time_pct",
+            "as": "number"
+          },
+          "absence_pct": {
+            "input": "absence_pct",
+            "as": "number"
+          },
+          "target_utilization_pct": {
+            "input": "target_utilization_pct",
+            "as": "number"
+          }
+        }
+      }
+    },
+    {
+      "id": "explain",
+      "name": "Explain",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Explains the calculated results; adds no numbers of its own.",
+      "prompt": "Explain whether the team has enough capacity, how utilisation compares with the target, which tasks drive the workload, and what staffing change follows. Mention every warning.",
+      "tools": []
+    },
+    {
+      "id": "check_explanation",
+      "name": "Check explanation",
+      "kind": "check",
+      "responsibility": "Every number in the explanation matches the calculated results or your inputs.",
+      "tools": []
+    }
+  ],
+  "tools": [],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "summary_numbers",
+        "description": "Every number in the summary comes from the calculation or your inputs.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "numbers_from_calculation",
+          "step": "check_explanation",
+          "params": {
+            "path": "summary"
+          }
+        }
+      },
+      {
+        "id": "point_numbers",
+        "description": "Every number in the key points comes from the calculation or your inputs.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "numbers_from_calculation",
+          "step": "check_explanation",
+          "params": {
+            "path": "points[].text"
+          }
+        }
+      },
+      {
+        "id": "enough_points",
+        "description": "Gives 2 to 8 key points.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "count",
+          "step": "check_explanation",
+          "params": {
+            "path": "points",
+            "min": 2,
+            "max": 8
+          }
+        }
+      },
+      {
+        "id": "short_summary",
+        "description": "The summary is 90 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "step": "check_explanation",
+          "params": {
+            "path": "summary",
+            "max": 90
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 180,
+    "maxModelCalls": 4
+  }
+}
