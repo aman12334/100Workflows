@@ -129,10 +129,10 @@ describe("validateGenericDefinition", () => {
     threshold: 0.7,
   });
 
-  it("allows tools only through a gather step, and no integrations", async () => {
-    expect(await problemsFor(surveyData, { integrations: [{ id: "crm", name: "CRM", purpose: "Sync", required: true }] })).toContain(
-      'generic workflows can\'t use integrations yet; remove "integrations"',
-    );
+  it("allows tools only through a gather step, and only registered integrations through reads or propose steps", async () => {
+    const crm = await problemsFor(surveyData, { integrations: [{ id: "crm", name: "CRM", purpose: "Sync", required: true }] });
+    expect(crm).toContain('integration "crm" is not provided by the runtime (available: google_calendar, hubspot, linear, mastodon, resend, slack, stripe)');
+    expect(crm).toContain('integrations are only used through a reads or propose step; add one or remove "integrations"');
     const withTool = await problemsFor(surveyData, {
       tools: [{ id: "web-search", purpose: "Search", required: true }],
       steps: surveyData.steps.map((s) => (s.id === "draft" ? { ...s, tools: ["web-search"] } : s)),
@@ -159,7 +159,7 @@ describe("validateGenericDefinition", () => {
   it("wires every rule criterion to a known, valid rule in a check step", async () => {
     const run = (extra: unknown[]) => problemsFor(surveyData, { evaluation: criteria([...surveyData.evaluation.criteria.slice(1), ...extra]) });
     expect(await run([{ id: "x", description: "No rule.", method: "rule" }])).toContain(
-      'criterion "x": method "rule" needs a "rule" (one of cites_sources, count, distinct, max_words, numbers_from_calculation, quoted_from_sources, references, required_fields, verbatim_in_inputs)',
+      'criterion "x": method "rule" needs a "rule" (one of cites_sources, count, distinct, max_words, numbers_from_calculation, quoted_from_sources, references, required_fields, valid_action_payloads, verbatim_in_inputs)',
     );
     expect((await run([{ id: "x", description: "Bad.", method: "rule", rule: { id: "vibes", params: {} } }]))[0]).toMatch(/criterion "x": unknown rule "vibes"/);
     expect(await run([{ id: "x", description: "Bad path.", method: "rule", rule: { id: "count", params: { path: "answers", max: 3 } } }])).toContain(

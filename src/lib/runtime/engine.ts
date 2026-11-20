@@ -3,6 +3,7 @@ import { Budget, LimitError, type Usage } from "./budget";
 import { evaluate, feedbackFor, type CriterionResult, type Evaluation } from "./evaluation";
 import { COMMON_PARAMS, OutputInvalidError, type CreateMessage, type CreateParams, type Message } from "./model";
 import { ToolRunner, toolLimitsFor, type ToolCallRecord, type ToolOverrides } from "./tools/runner";
+import type { HttpTransport } from "@/lib/integrations/core";
 
 /**
  * The workflow runtime: a small, explicit state machine.
@@ -54,6 +55,10 @@ export interface ExecContext {
   /** Registered, allowlisted tools for this execution; budgets span all attempts. */
   tools: ToolRunner;
   signal?: AbortSignal;
+  /** Environment for tools and integrations (credentials are read from it at call time, never copied into prompts). */
+  env: Record<string, string | undefined>;
+  /** Test seam for integration reads; production uses fetch. */
+  integrationTransport?: HttpTransport;
 }
 
 /** Honest, non-retryable failure (e.g. search found no sources). Never papered over with invented content. */
@@ -110,6 +115,8 @@ export interface ExecuteOptions {
   toolOverrides?: ToolOverrides;
   /** Per-tool limits from the definition, applied on top of each tool's own limit. */
   toolLimits?: Record<string, number>;
+  /** Test seam: replaces the HTTP transport for integration reads. */
+  integrationTransport?: HttpTransport;
 }
 
 const SCHEMA_CRITERION = "schema_valid";
@@ -151,6 +158,8 @@ export async function executeWorkflow(opts: ExecuteOptions): Promise<WorkflowOut
     budget,
     tools,
     signal: opts.signal,
+    env: opts.env ?? process.env,
+    integrationTransport: opts.integrationTransport,
     call,
     step: async (stepId, fn) => {
       const def = workflow.steps.find((s) => s.id === stepId);

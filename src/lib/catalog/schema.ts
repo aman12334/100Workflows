@@ -107,6 +107,17 @@ export const CalculateSchema = z
   })
   .strict();
 
+/** Schema v2: an integration action reference, "<provider>.<action>@<version>". */
+const actionRef = z.string().regex(/^[a-z_]+\.[a-z_]+@\d+$/, "must be an action reference such as slack.list_channels@1");
+const paramSource = z.union([
+  z.object({ input: key, as: z.enum(["number", "text", "text_list", "number_list", "email_list", "boolean"]) }).strict(),
+  z.object({ value: z.union([z.string().max(500), z.number(), z.boolean()]) }).strict(),
+]);
+/** Schema v2, "check" steps only: read-only integration actions run once before writing; their results are data for the model and the checks. */
+export const ReadSchema = z.object({ action: actionRef, params: z.record(z.string().regex(/^[a-z][a-z0-9_]*$/), paramSource).optional() }).strict();
+/** Schema v2, "check" steps only: output items that become proposed actions. Nothing runs until a person approves the exact payload. */
+export const ProposeSchema = z.object({ action: actionRef, from: z.string().min(1).max(100) }).strict();
+
 export const StepSchema = z
   .object({
     id: key,
@@ -127,6 +138,10 @@ export const StepSchema = z
     gather: GatherSchema.optional(),
     /** Schema v2, "check" steps only: the registered calculation this step runs. */
     calculate: CalculateSchema.optional(),
+    /** Schema v2, "check" steps only: read-only integration actions to run before writing. */
+    reads: z.array(ReadSchema).min(1).max(5).optional(),
+    /** Schema v2, "check" steps only: which output lists become proposed actions awaiting approval. */
+    propose: z.array(ProposeSchema).min(1).max(5).optional(),
   })
   .strict();
 
@@ -140,7 +155,8 @@ export const ToolRequirementSchema = z
 
 export const IntegrationSchema = z
   .object({
-    id,
+    /** A registered provider id (src/lib/integrations/providers.ts), e.g. hubspot or google_calendar. */
+    id: z.string().regex(/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/, "must be a provider id such as hubspot or google_calendar"),
     name: text(80),
     purpose: text(300),
     required: z.boolean(),
@@ -278,6 +294,8 @@ export const WorkflowSchema = z
         if (st.mode !== undefined) v2only(["steps", i, "mode"], "mode");
         if (st.gather !== undefined) v2only(["steps", i, "gather"], "gather");
         if (st.calculate !== undefined) v2only(["steps", i, "calculate"], "calculate");
+        if (st.reads !== undefined) v2only(["steps", i, "reads"], "reads");
+        if (st.propose !== undefined) v2only(["steps", i, "propose"], "propose");
       });
       wf.evaluation.criteria.forEach((c, i) => {
         if (c.rule) v2only(["evaluation", "criteria", i, "rule"], "rule");

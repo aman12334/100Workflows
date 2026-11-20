@@ -7,6 +7,7 @@ import { z } from "zod";
 import { lookupCalculation } from "@/lib/runtime/calc/runner";
 import { calculationModelCalls } from "@/lib/runtime/executors/calculation";
 import { CALCULATION_RULE_IDS } from "@/lib/runtime/rules/calculation";
+import { lookupAction, PROVIDERS } from "@/lib/integrations/registry";
 import { InputRefSchema, WorkflowSchema, type SharedInputDef, type ToolDef, type Workflow } from "./schema";
 
 export interface CatalogError {
@@ -87,7 +88,7 @@ export function validateGenericDefinition(wf: Workflow): string[] {
   const steps = new Map(wf.steps.map((s) => [s.id, s]));
 
   // Read-only tools only, through a gather step; no integrations or side effects.
-  if (wf.integrations.length) problems.push("generic workflows can't use integrations yet; remove \"integrations\"");
+  problems.push(...integrationProblems(wf));
   const gatherSteps = wf.steps.filter((s) => s.mode === "gather");
   const gatherStep = gatherSteps[0];
   if (wf.tools.length && !gatherStep) problems.push('generic workflows use tools only in a "gather" step; add one or remove "tools"');
@@ -188,7 +189,7 @@ export function validateGenericDefinition(wf: Workflow): string[] {
     if (st.kind === "agent" && !st.mode && !reviewSteps.has(st.id)) {
       problems.push(`agent step "${st.id}" has no mode and no review uses it; give it "mode" or remove it`);
     }
-    if (st.kind === "check" && !st.calculate && !checkStepsUsed.has(st.id)) problems.push(`check step "${st.id}" runs no rules; remove it or point a rule at it`);
+    if (st.kind === "check" && !st.calculate && !st.reads && !checkStepsUsed.has(st.id)) problems.push(`check step "${st.id}" runs no rules; remove it or point a rule at it`);
   }
 
   problems.push(...calculationProblems(wf));
@@ -198,6 +199,50 @@ export function validateGenericDefinition(wf: Workflow): string[] {
     const why = gatherModelCalls(wf) ? ` (including ${gatherModelCalls(wf)} for web search)` : "";
     problems.push(`one attempt needs ${calls} model calls${why}, but limits.maxModelCalls is ${wf.limits.maxModelCalls}`);
   }
+  return problems;
+}
+
+/** Checks reads, proposals and declared integrations against the integration registry. */
+function integrationProblems(wf: Workflow): string[] {
+  const problems: string[] = [];
+  const readSteps = wf.steps.filter((s) => s.reads);
+  const proposeSteps = wf.steps.filter((s) => s.propose);
+  const declared = new Map(wf.integrations.map((i) => [i.id, i]));
+  for (const i of wf.integrations) if (!Object.hasOwn(PROVIDERS, i.id)) problems.push(`integration "${i.id}" is not provided by the runtime (available: ${Object.keys(PROVIDERS).sort().join(", ")})`);
+  if (wf.integrations.length && !readSteps.length && !proposeSteps.length) problems.push("integrations are only used through a reads or propose step; add one or remove \"integrations\"");
+  if (readSteps.length > 1) problems.push("only one step can read from integrations");
+  if (proposeSteps.length > 1) problems.push("only one step can propose actions");
+  if ((readSteps.length || proposeSteps.length) && (wf.steps.some((s) => s.mode === "gather") || wf.steps.some((s) => s.calculate))) problems.push("a workflow can't combine integrations with research or calculation steps yet");
+  const used = new Set<string>();
+  for (const st of [...readSteps, ...proposeSteps]) if (st.kind !== "check") problems.push(`step "${st.id}" reads or proposes, so it must be a "check" step`);
+  const generateAt = wf.steps.findIndex((s) => s.mode === "generate");
+  for (const st of readSteps) {
+    if (wf.steps.indexOf(st) > generateAt) problems.push(`reads step "${st.id}" must come before the generate step`);
+    for (const r of st.reads!) {
+      const a = lookupAction(r.action);
+      if (!a) problems.push(`step "${st.id}": "${r.action}" is not a registered action`);
+      else {
+        used.add(a.provider);
+        if (a.sideEffect !== "read_only") problems.push(`step "${st.id}": "${r.action}" is not read-only, so it can't run during a workflow; propose it instead`);
+        for (const src of Object.values(r.params ?? {})) if ("input" in src && !wf.inputs.some((i) => i.key === src.input)) problems.push(`step "${st.id}": input "${src.input}" is not declared`);
+      }
+    }
+  }
+  for (const st of proposeSteps) {
+    if (wf.steps.indexOf(st) < generateAt) problems.push(`propose step "${st.id}" must come after the generate step`);
+    for (const p of st.propose!) {
+      const a = lookupAction(p.action);
+      if (!a) {
+        problems.push(`step "${st.id}": "${p.action}" is not a registered action`);
+        continue;
+      }
+      used.add(a.provider);
+      if (a.sideEffect === "read_only") problems.push(`step "${st.id}": "${p.action}" is read-only; read it in a reads step instead`);
+      const guarded = wf.evaluation.criteria.some((c) => c.critical && c.rule?.id === "valid_action_payloads" && (c.rule.params as { path?: string; action?: string }).path === p.from && (c.rule.params as { action?: string }).action === p.action);
+      if (!guarded) problems.push(`step "${st.id}": proposals from "${p.from}" need a critical valid_action_payloads rule for ${p.action}`);
+    }
+  }
+  for (const id of used) if (!declared.has(id)) problems.push(`the workflow uses ${id} but doesn't declare it in "integrations"`);
   return problems;
 }
 
