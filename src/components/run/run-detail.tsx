@@ -10,6 +10,7 @@ import { CATEGORY_STYLES } from "@/lib/catalog/category-style";
 import type { Category } from "@/lib/catalog/schema";
 import { formatUsd } from "@/lib/runtime/pricing";
 import type { EvaluationRecord, RunRecord, StepRecord, WorkflowRunRecord } from "@/lib/server/db/runs";
+import { ActionsPanel } from "./actions-panel";
 import { RunStatusPill } from "./status";
 
 interface Meta {
@@ -97,6 +98,8 @@ export function RunDetail({ initial, packageName, meta }: { initial: RunRecord; 
       </div>
 
       <UsageSummary run={run} />
+
+      <ActionsPanel runId={run.id} refreshKey={run.status} />
 
       <div className="mt-6 space-y-5">
         {run.workflows.map((wr) => (
