@@ -4,6 +4,9 @@ import { executeWorkflow, type Recorder, type UpstreamOutput } from "@/lib/runti
 import { resolveExecutor, runnability } from "@/lib/runtime/executors";
 import type { CreateMessage } from "@/lib/runtime/model";
 import type { ToolOverrides } from "@/lib/runtime/tools/runner";
+import type { HttpTransport } from "@/lib/integrations/core";
+import type { ProposedAction } from "@/lib/runtime/executors/integration";
+import { insertProposals } from "./db/actions";
 import { pricingFor } from "@/lib/runtime/pricing";
 import { createMessage as providerCreateMessage, mapModelError } from "./model-client";
 import { getModelConfig } from "./config";
@@ -105,7 +108,7 @@ export class RunError extends Error {
 export function startRun(
   db: DB,
   view: PackageView,
-  deps: { createMessage?: CreateMessage; env?: Record<string, string | undefined>; toolOverrides?: ToolOverrides } = {},
+  deps: { createMessage?: CreateMessage; env?: Record<string, string | undefined>; toolOverrides?: ToolOverrides; integrationTransport?: HttpTransport } = {},
 ): string {
   const env = deps.env ?? process.env;
   if (activeRunFor(db, view.pkg.id)) throw new RunError("This package is already running. Wait for it to finish or cancel it.", 409);
@@ -125,7 +128,7 @@ export function startRun(
   active.set(runId, controller);
   log.info("run.started", { runId, packageId: view.pkg.id, provider: config.provider, model: config.model, workflows: plan.map((p) => `${p.workflowId}:${p.status}`) });
 
-  void executeRun(db, view, runId, workflowRunIds, controller.signal, deps.createMessage ?? providerCreateMessage, config.model, { env, toolOverrides: deps.toolOverrides })
+  void executeRun(db, view, runId, workflowRunIds, controller.signal, deps.createMessage ?? providerCreateMessage, config.model, { env, toolOverrides: deps.toolOverrides, integrationTransport: deps.integrationTransport })
     .catch((err) => {
       log.error("run.crashed", { runId, error: err });
       finishRun(db, runId, "failed", "The run stopped because of an internal error. Check the terminal log.");
@@ -143,7 +146,7 @@ export async function executeRun(
   signal: AbortSignal,
   createMessage: CreateMessage,
   model: string,
-  tools: { env?: Record<string, string | undefined>; toolOverrides?: ToolOverrides } = {},
+  tools: { env?: Record<string, string | undefined>; toolOverrides?: ToolOverrides; integrationTransport?: HttpTransport } = {},
 ): Promise<void> {
   const outcomes = new Map<string, { status: WorkflowRunStatus; output: unknown; version: string }>();
   const run = getRun(db, runId)!;
@@ -201,8 +204,12 @@ export async function executeRun(
       describeError: (err) => mapModelError(err).message,
       env: tools.env,
       toolOverrides: tools.toolOverrides,
+      integrationTransport: tools.integrationTransport,
     });
     finishWorkflowRun(db, wrId, outcome);
+    // Proposed external actions from an accepted output wait for a person's approval; nothing is executed here.
+    const proposals = (outcome.result?.json as { proposed_actions?: ProposedAction[] } | undefined)?.proposed_actions;
+    if (outcome.status === "succeeded" && proposals?.length) insertProposals(db, wrId, proposals);
     outcomes.set(wf.id, { status: outcome.status, output: outcome.result?.json ?? null, version: wf.version });
     log.info("run.workflow_finished", {
       runId,
