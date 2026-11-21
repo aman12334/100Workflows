@@ -6,6 +6,7 @@ import { WorkflowCard } from "@/components/workflow-bits";
 import { CATEGORY_STYLES } from "@/lib/catalog/category-style";
 import { CATEGORY_LABELS, type Category, type Workflow } from "@/lib/catalog/schema";
 import { searchCatalog } from "@/lib/catalog/search";
+import { CAPABILITY_LABELS, capabilityOf, type Capability } from "@/lib/catalog/capability";
 
 export function LibraryBrowser({
   workflows,
@@ -19,6 +20,19 @@ export function LibraryBrowser({
   const [category, setCategory] = useState<Category | null>(initialCategory);
   const [query, setQuery] = useState(initialQuery);
   const [status, setStatus] = useState<"all" | Workflow["status"]>("all");
+  const [capability, setCapability] = useState<Capability | "all">("all");
+  const [tag, setTag] = useState<string>("");
+
+  const tags = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const w of workflows) for (const t of w.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+    return [...counts.entries()].filter(([, n]) => n > 1).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }, [workflows]);
+  const capCounts = useMemo(() => {
+    const c = new Map<Capability, number>();
+    for (const w of workflows) c.set(capabilityOf(w), (c.get(capabilityOf(w)) ?? 0) + 1);
+    return c;
+  }, [workflows]);
 
   const categories = useMemo(() => {
     const counts = new Map<Category, number>();
@@ -27,10 +41,10 @@ export function LibraryBrowser({
   }, [workflows]);
 
   const results = useMemo(() => {
-    const pool = status === "all" ? workflows : workflows.filter((w) => w.status === status);
+    const pool = workflows.filter((w) => (status === "all" || w.status === status) && (capability === "all" || capabilityOf(w) === capability) && (!tag || w.tags.includes(tag)));
     if (!query.trim()) return category ? pool.filter((w) => w.category === category) : pool;
     return searchCatalog(pool, query, { category, limit: pool.length }).map((h) => h.workflow);
-  }, [workflows, query, category, status]);
+  }, [workflows, query, category, status, capability, tag]);
   const executable = workflows.filter((w) => w.status === "available").length;
 
   return (
@@ -91,6 +105,34 @@ export function LibraryBrowser({
         })}
       </div>
 
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+        <label className="inline-flex items-center gap-2 font-semibold text-ink-700">
+          Needs
+          <select value={capability} onChange={(e) => setCapability(e.target.value as Capability | "all")} className="rounded-xl border border-line bg-surface px-2.5 py-1.5 font-normal">
+            <option value="all">anything</option>
+            {(Object.keys(CAPABILITY_LABELS) as Capability[]).map((c) => (
+              <option key={c} value={c}>
+                {CAPABILITY_LABELS[c]} ({capCounts.get(c) ?? 0})
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="inline-flex items-center gap-2 font-semibold text-ink-700">
+          Tag
+          <select value={tag} onChange={(e) => setTag(e.target.value)} className="max-w-56 rounded-xl border border-line bg-surface px-2.5 py-1.5 font-normal">
+            <option value="">any</option>
+            {tags.map(([t, n]) => (
+              <option key={t} value={t}>
+                {t} ({n})
+              </option>
+            ))}
+          </select>
+        </label>
+        <span className="text-ink-500">
+          {results.length} of {workflows.length}
+        </span>
+      </div>
+
       {results.length === 0 ? (
         <div className="mt-10 rounded-3xl border border-dashed border-line bg-surface/70 p-10 text-center">
           <div className="font-display text-lg font-bold text-ink-950">No workflows match</div>
@@ -102,6 +144,8 @@ export function LibraryBrowser({
                 setQuery("");
                 setCategory(null);
                 setStatus("all");
+                setCapability("all");
+                setTag("");
               }}
             >
               clear filters

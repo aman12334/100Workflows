@@ -87,7 +87,13 @@ export function WorkflowCard({ workflow }: { workflow: Workflow }) {
           <Stat icon={ListChecks}>{required} required inputs</Stat>
           {requiredDeps > 0 && <Stat icon={GitBranch}>needs {requiredDeps} workflow</Stat>}
           {tools.length > 0 && <Stat icon={Wrench}>{tools.map((t) => t.id).join(", ")}</Stat>}
+          {workflow.integrations.length > 0 && <Stat icon={Wrench}>{workflow.integrations.map((i) => i.name).join(" + ")} · approval required</Stat>}
         </div>
+        {required > 0 && (
+          <p className="mt-2 line-clamp-1 text-[11px] text-ink-500" title={workflow.inputs.filter((i) => i.required).map((i) => i.label).join(", ")}>
+            You provide: {workflow.inputs.filter((i) => i.required).map((i) => i.label.toLowerCase()).join(", ")}
+          </p>
+        )}
       </div>
       <div className="flex items-center justify-between bg-canvas/70 px-5 py-2.5">
         <CategoryBadge category={workflow.category} />
