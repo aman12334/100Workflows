@@ -591,6 +591,12 @@
       "expect": [
         "slack-communication-agent"
       ]
+    },
+    {
+      "query": "send reminders for overdue invoices from Stripe",
+      "expect": [
+        "invoice-payment-follow-up"
+      ]
     }
   ]
 }

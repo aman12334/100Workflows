@@ -1,0 +1,209 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "invoice-payment-follow-up",
+  "version": "0.1.0",
+  "name": "Invoice & Payment Follow-up Agent",
+  "category": "finance",
+  "summary": "Reads overdue invoices from Stripe, drafts a polite reminder for each, and emails one only after you approve it.",
+  "description": "Reads open invoices from Stripe with a read-only key, finds the overdue ones (days overdue calculated from each due date), and drafts a reminder per invoice in a tone that fits how late it is, with the amount and the invoice link exactly as Stripe reports them. Each reminder goes to the invoice's own billing email through Resend, only after you approve it, once. Who it's for: founders, finance and accounts receivable teams chasing late payments. Limitations: needs Stripe (read-only) and Resend; it never changes the invoice in Stripe, and skips invoices without a billing email.",
+  "status": "available",
+  "problems": [
+    "Chase overdue invoices with polite reminders",
+    "Which customers haven't paid and how late are they",
+    "Send payment reminders but let me check them first"
+  ],
+  "tags": [
+    "invoices",
+    "accounts-receivable",
+    "payment-reminders",
+    "stripe",
+    "collections"
+  ],
+  "inputs": [
+    {
+      "key": "tone",
+      "label": "Tone",
+      "type": "select",
+      "required": true,
+      "description": "How firm reminders should be.",
+      "options": [
+        "gentle",
+        "firm",
+        "final notice"
+      ]
+    },
+    {
+      "key": "sender_name",
+      "label": "Sign as",
+      "type": "text",
+      "required": true,
+      "description": "Name to sign the email with.",
+      "example": "Sam, Acme finance"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "drafts",
+      "label": "Drafts and proposed actions",
+      "description": "Drafted content and the exact actions proposed; nothing runs until you approve each one.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write courteous, clear payment reminders. Use amounts, invoice numbers and links exactly as given in the invoice data. Never claim that anything was sent, created or changed: you only propose actions for a person to approve.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "reminders",
+      "skipped"
+    ],
+    "properties": {
+      "reminders": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "key",
+            "to",
+            "subject",
+            "text"
+          ],
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "Short id such as email_1."
+            },
+            "to": {
+              "type": "string",
+              "description": "Recipient, exactly as given."
+            },
+            "subject": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string",
+              "description": "Plain-text body."
+            }
+          }
+        },
+        "title": "Reminders"
+      },
+      "skipped": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Skipped invoices"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_data",
+      "name": "Read data",
+      "kind": "check",
+      "responsibility": "Reads the records this workflow needs, read-only.",
+      "tools": [],
+      "reads": [
+        {
+          "action": "stripe.list_open_invoices@1",
+          "params": {
+            "overdue_only": {
+              "value": true
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "draft",
+      "name": "Draft",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Drafts the content and proposes actions. Nothing is sent or changed.",
+      "prompt": "Draft one reminder per overdue invoice that has a billing email, addressed to that email exactly, quoting the invoice number, the amount remaining and the hosted invoice link exactly as in the data. Key them reminder_1, ... List invoices without an email under skipped.",
+      "tools": []
+    },
+    {
+      "id": "check_actions",
+      "name": "Check proposed actions",
+      "kind": "check",
+      "responsibility": "Validates every proposed action against its registered schema and the data read in this run.",
+      "tools": [],
+      "propose": [
+        {
+          "action": "resend.send_email@1",
+          "from": "reminders[]"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "integrations": [
+    {
+      "id": "stripe",
+      "name": "Stripe",
+      "purpose": "Reads open invoices (read-only key).",
+      "required": true
+    },
+    {
+      "id": "resend",
+      "name": "Resend",
+      "purpose": "Sends approved reminders.",
+      "required": true
+    }
+  ],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "reminders_valid",
+        "description": "Every reminder goes to that invoice's billing email.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "reminders[]",
+            "action": "resend.send_email@1",
+            "field": "to",
+            "allowedFrom": "stripe.list_open_invoices:invoices[].customer_email"
+          }
+        }
+      },
+      {
+        "id": "one_per_invoice",
+        "description": "No one gets two reminders.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "step": "check_actions",
+          "params": {
+            "path": "reminders[].to"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 240,
+    "maxModelCalls": 2
+  }
+}

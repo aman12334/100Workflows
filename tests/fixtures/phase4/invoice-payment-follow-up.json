@@ -1,0 +1,60 @@
+{
+  "inputs": {
+    "tone": "gentle",
+    "sender_name": "Sam, Acme finance"
+  },
+  "http": {
+    "GET https://api.stripe.com/v1/invoices": {
+      "status": 200,
+      "body": {
+        "object": "list",
+        "data": [
+          {
+            "id": "in_1",
+            "number": "INV-0042",
+            "customer_name": "Brightline",
+            "customer_email": "ap@brightline.example",
+            "amount_remaining": 144000,
+            "currency": "usd",
+            "due_date": 1735689600,
+            "hosted_invoice_url": "https://invoice.stripe.com/i/x",
+            "status": "open"
+          }
+        ]
+      }
+    },
+    "POST https://api.resend.com/emails": {
+      "status": 200,
+      "body": {
+        "id": "em_rem"
+      }
+    }
+  },
+  "good": {
+    "reminders": [
+      {
+        "key": "reminder_1",
+        "to": "ap@brightline.example",
+        "subject": "Invoice INV-0042 is overdue",
+        "text": "Hi, invoice INV-0042 for $1,440.00 is overdue: https://invoice.stripe.com/i/x"
+      }
+    ],
+    "skipped": []
+  },
+  "bad": {
+    "reminders": [
+      {
+        "key": "reminder_1",
+        "to": "boss@brightline.example",
+        "subject": "Overdue",
+        "text": "Please pay."
+      }
+    ],
+    "skipped": []
+  },
+  "bad_fails": "reminders_valid",
+  "approve": {
+    "key": "reminder_1",
+    "expect_external_id": "em_rem"
+  }
+}
