@@ -1,0 +1,66 @@
+{
+  "inputs": {
+    "open_stage_ids": [
+      "1"
+    ],
+    "allowed_stage_ids": [
+      "2"
+    ],
+    "guidance": "Be warm."
+  },
+  "http": {
+    "POST https://api.hubapi.com/crm/objects/2026-09/tickets/search": {
+      "status": 200,
+      "body": {
+        "results": [
+          {
+            "id": "7001",
+            "properties": {
+              "subject": "Export broken",
+              "content": "CSV export fails",
+              "hs_pipeline_stage": "1",
+              "hs_ticket_priority": "HIGH"
+            }
+          }
+        ]
+      }
+    },
+    "PATCH https://api.hubapi.com/crm/objects/2026-09/tickets/7001": {
+      "status": 200,
+      "body": {
+        "id": "7001",
+        "properties": {}
+      }
+    }
+  },
+  "good": {
+    "triage": [
+      {
+        "ticket_id": "7001",
+        "category": "bug",
+        "urgency": "high",
+        "draft_reply": "Sorry about the export; we are on it."
+      }
+    ],
+    "stage_changes": [
+      {
+        "ticket_id": "7001",
+        "stage_id": "2"
+      }
+    ]
+  },
+  "bad": {
+    "triage": [],
+    "stage_changes": [
+      {
+        "ticket_id": "9999",
+        "stage_id": "2"
+      }
+    ]
+  },
+  "bad_fails": "changes_valid",
+  "approve": {
+    "key": "hubspot_update_ticket_stage_1",
+    "expect_external_id": "7001"
+  }
+}

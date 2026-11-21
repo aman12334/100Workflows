@@ -603,6 +603,12 @@
       "expect": [
         "social-media-publisher"
       ]
+    },
+    {
+      "query": "triage support tickets and draft replies",
+      "expect": [
+        "support-ticket-manager"
+      ]
     }
   ]
 }

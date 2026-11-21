@@ -1,0 +1,247 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "support-ticket-manager",
+  "version": "0.1.0",
+  "name": "Customer Support Ticket Manager",
+  "category": "sales",
+  "summary": "Reads open HubSpot tickets, classifies them, drafts replies, and moves tickets to a new stage only after you approve it.",
+  "description": "Reads open tickets from the HubSpot pipeline stages you name, classifies each by type and urgency, drafts a reply for you to send, and proposes stage changes (for example to \"waiting on customer\") using only the stages you allow. Each stage change needs your approval; tickets already in that stage are left alone. Who it's for: support leads triaging a HubSpot ticket queue. Limitations: HubSpot tickets only; replies are drafts (not sent), and assigning tickets to people is not supported yet because the owner property could not be verified in HubSpot's current documentation.",
+  "status": "available",
+  "problems": [
+    "Triage our open support tickets",
+    "Draft replies to support tickets",
+    "Move tickets to the right stage after I check"
+  ],
+  "tags": [
+    "support",
+    "tickets",
+    "hubspot",
+    "triage",
+    "helpdesk"
+  ],
+  "inputs": [
+    {
+      "key": "open_stage_ids",
+      "label": "Stages to read",
+      "type": "list",
+      "required": true,
+      "description": "HubSpot ticket stage ids to treat as open, one per line.",
+      "example": "1"
+    },
+    {
+      "key": "allowed_stage_ids",
+      "label": "Stages tickets may move to",
+      "type": "list",
+      "required": true,
+      "description": "Stage ids the workflow may propose, one per line.",
+      "example": "2"
+    },
+    {
+      "key": "guidance",
+      "label": "Reply guidance",
+      "type": "long_text",
+      "required": false,
+      "description": "Policies and tone for replies.",
+      "example": "Refunds within 30 days; be warm and brief."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "drafts",
+      "label": "Drafts and proposed actions",
+      "description": "Drafted content and the exact actions proposed; nothing runs until you approve each one.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a support lead. Classify accurately, draft replies that follow the guidance, and never promise anything the guidance does not allow. Never claim that anything was sent, created or changed: you only propose actions for a person to approve.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "triage",
+      "stage_changes"
+    ],
+    "properties": {
+      "triage": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ticket_id",
+            "category",
+            "urgency",
+            "draft_reply"
+          ],
+          "properties": {
+            "ticket_id": {
+              "type": "string"
+            },
+            "category": {
+              "type": "string",
+              "enum": [
+                "bug",
+                "billing",
+                "how_to",
+                "feature_request",
+                "account",
+                "other"
+              ]
+            },
+            "urgency": {
+              "type": "string",
+              "enum": [
+                "high",
+                "medium",
+                "low"
+              ]
+            },
+            "draft_reply": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Triage"
+      },
+      "stage_changes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ticket_id",
+            "stage_id"
+          ],
+          "properties": {
+            "ticket_id": {
+              "type": "string"
+            },
+            "stage_id": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Stage changes"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_data",
+      "name": "Read data",
+      "kind": "check",
+      "responsibility": "Reads the records this workflow needs, read-only.",
+      "tools": [],
+      "reads": [
+        {
+          "action": "hubspot.search_tickets@1",
+          "params": {
+            "stage_ids": {
+              "input": "open_stage_ids",
+              "as": "text_list"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "draft",
+      "name": "Draft",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Drafts the content and proposes actions. Nothing is sent or changed.",
+      "prompt": "Triage every ticket read, using its id exactly. Draft a reply for each. Propose a stage change only to one of the allowed stage ids.",
+      "tools": []
+    },
+    {
+      "id": "check_actions",
+      "name": "Check proposed actions",
+      "kind": "check",
+      "responsibility": "Validates every proposed action against its registered schema and the data read in this run.",
+      "tools": [],
+      "propose": [
+        {
+          "action": "hubspot.update_ticket_stage@1",
+          "from": "stage_changes[]"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "integrations": [
+    {
+      "id": "hubspot",
+      "name": "HubSpot",
+      "purpose": "Reads tickets and applies approved stage changes.",
+      "required": true
+    }
+  ],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "changes_valid",
+        "description": "Stage changes target tickets read in this run.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "stage_changes[]",
+            "action": "hubspot.update_ticket_stage@1"
+          }
+        }
+      },
+      {
+        "id": "allowed_stages",
+        "description": "Tickets only move to stages you allowed.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "step": "check_actions",
+          "params": {
+            "path": "stage_changes[].stage_id",
+            "inputs": [
+              "allowed_stage_ids"
+            ],
+            "minChars": 1
+          }
+        }
+      },
+      {
+        "id": "triage_known",
+        "description": "Every triaged ticket was read in this run.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "references",
+          "step": "check_actions",
+          "params": {
+            "from": "stage_changes[].ticket_id",
+            "to": "triage[].ticket_id"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 240,
+    "maxModelCalls": 2
+  }
+}
