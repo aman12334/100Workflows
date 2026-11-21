@@ -1,0 +1,48 @@
+{
+  "inputs": {
+    "campaign_brief": "Invite agency owners to our month-end webinar.",
+    "recipients": "Dana Lee <dana@brightline.example> - asked about Xero\nSam Ortiz <sam@northpeak.example> - new customer"
+  },
+  "http": {
+    "POST https://api.resend.com/emails": {
+      "status": 200,
+      "body": {
+        "id": "em_123"
+      }
+    }
+  },
+  "good": {
+    "campaign_summary": "Webinar invite.",
+    "emails": [
+      {
+        "key": "email_1",
+        "to": "dana@brightline.example",
+        "subject": "Month-end webinar",
+        "text": "Hi Dana, since you asked about Xero, join our webinar."
+      },
+      {
+        "key": "email_2",
+        "to": "sam@northpeak.example",
+        "subject": "Welcome, and a webinar",
+        "text": "Hi Sam, welcome aboard. Join our webinar."
+      }
+    ]
+  },
+  "bad": {
+    "campaign_summary": "x",
+    "emails": [
+      {
+        "key": "email_1",
+        "to": "ceo@unknown.example",
+        "subject": "Hi",
+        "text": "Hello there."
+      }
+    ]
+  },
+  "bad_fails": "recipients_listed",
+  "approve": {
+    "key": "email_1",
+    "expect_external_id": "em_123",
+    "expect_header": "idempotency-key"
+  }
+}

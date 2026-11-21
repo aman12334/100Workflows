@@ -63,13 +63,14 @@ async function run(wf: Workflow, inputs: Record<string, unknown>, createMessage:
 const scripted = (f: Fixture, wf: Workflow, explanations: unknown[]) => routedModel({ write: [...(isExtract(wf) ? [f.extracted] : []), ...explanations].map(json) });
 
 describe("Phase 3 catalog", () => {
-  it("adds exactly 13 calculation workflows: 90 in total, with every earlier workflow still present", () => {
+  it("adds exactly 13 calculation workflows: 90 in total before later phases, with every earlier workflow still present", () => {
     expect(IDS).toHaveLength(13);
-    expect(catalog).toHaveLength(90);
+    const later = readdirSync(path.join(process.cwd(), "tests", "fixtures", "phase4")).map((f) => f.slice(0, -5));
+    expect(catalog).toHaveLength(90 + later.length);
     const earlier = ["phase1", "phase2"].flatMap((d) => readdirSync(path.join(process.cwd(), "tests", "fixtures", d)).map((f) => f.slice(0, -5)));
     expect(earlier).toHaveLength(65);
     for (const id of [...IDS, ...earlier]) expect(byId(id), id).toBeDefined();
-    expect(catalog.filter((w) => !IDS.includes(w.id) && !earlier.includes(w.id))).toHaveLength(12);
+    expect(catalog.filter((w) => !IDS.includes(w.id) && !earlier.includes(w.id) && !later.includes(w.id))).toHaveLength(12);
   });
 });
 

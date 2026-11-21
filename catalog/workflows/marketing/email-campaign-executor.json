@@ -1,0 +1,208 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "email-campaign-executor",
+  "version": "0.1.0",
+  "name": "Email Campaign Executor",
+  "category": "marketing",
+  "summary": "Drafts a personalised email for each recipient you list, previews them, and sends each only after you approve it.",
+  "description": "Writes one personalised email per recipient from your campaign brief and the context you give for each person, and proposes each as a send through Resend. You see every email (recipient, subject, body) before anything is sent; each send needs its own approval, runs once, and is protected by an idempotency key. Recipients must be ones you listed. Who it's for: founders and marketers sending small, personal campaigns (tens of people, not bulk newsletters). Limitations: sends through Resend from your verified domain; not for bulk marketing or lists over 50 people, no unsubscribe management or tracking. Off until Resend is connected, and dry-run until WORKFLOWS_ACTIONS=live.",
+  "status": "available",
+  "problems": [
+    "I want to send personalised emails to a short list of people",
+    "Send a campaign email but let me check each one first",
+    "Email each attendee a personal follow-up"
+  ],
+  "tags": [
+    "email",
+    "campaign",
+    "personalization",
+    "outreach",
+    "resend"
+  ],
+  "inputs": [
+    {
+      "key": "campaign_brief",
+      "label": "Campaign brief",
+      "type": "long_text",
+      "required": true,
+      "description": "What the email is about, the offer and the tone.",
+      "example": "Invite agency owners to our month-end close webinar on 3 December."
+    },
+    {
+      "key": "recipients",
+      "label": "Recipients",
+      "type": "long_text",
+      "required": true,
+      "description": "One per line: name, email and anything personal to mention.",
+      "example": "Dana Lee <dana@brightline.example> - asked about Xero last week"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "drafts",
+      "label": "Drafts and proposed actions",
+      "description": "Drafted content and the exact actions proposed; nothing runs until you approve each one.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write short, personal emails that sound like a person, not a campaign. Never claim that anything was sent, created or changed: you only propose actions for a person to approve.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "campaign_summary",
+      "emails"
+    ],
+    "properties": {
+      "campaign_summary": {
+        "type": "string",
+        "title": "Campaign summary"
+      },
+      "emails": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "key",
+            "to",
+            "subject",
+            "text"
+          ],
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "Short id such as email_1."
+            },
+            "to": {
+              "type": "string",
+              "description": "Recipient, exactly as given."
+            },
+            "subject": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string",
+              "description": "Plain-text body."
+            }
+          }
+        },
+        "title": "Emails"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "draft",
+      "name": "Draft",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Drafts the content and proposes actions. Nothing is sent or changed.",
+      "prompt": "Write one email per recipient, using only the context given for that person. Use the recipient's email exactly as listed in \"to\". Keep each under 200 words with one clear call to action. Give each a key email_1, email_2, ...",
+      "tools": []
+    },
+    {
+      "id": "check_actions",
+      "name": "Check proposed actions",
+      "kind": "check",
+      "responsibility": "Validates every proposed action against its registered schema and the data read in this run.",
+      "tools": [],
+      "propose": [
+        {
+          "action": "resend.send_email@1",
+          "from": "emails[]"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "integrations": [
+    {
+      "id": "resend",
+      "name": "Resend",
+      "purpose": "Sends each approved email.",
+      "required": true
+    }
+  ],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "emails_valid",
+        "description": "Every email is a valid send.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "emails[]",
+            "action": "resend.send_email@1"
+          }
+        }
+      },
+      {
+        "id": "recipients_listed",
+        "description": "Every recipient is one you listed.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "step": "check_actions",
+          "params": {
+            "path": "emails[].to",
+            "inputs": [
+              "recipients"
+            ],
+            "minChars": 6
+          }
+        }
+      },
+      {
+        "id": "one_per_person",
+        "description": "No one gets two emails.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "step": "check_actions",
+          "params": {
+            "path": "emails[].to"
+          }
+        }
+      },
+      {
+        "id": "short_emails",
+        "description": "Emails are 250 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "step": "check_actions",
+          "params": {
+            "path": "emails[].text",
+            "max": 250
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 240,
+    "maxModelCalls": 2
+  }
+}

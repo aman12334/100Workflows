@@ -549,6 +549,12 @@
       "expect": [
         "workforce-capacity-planner"
       ]
+    },
+    {
+      "query": "send a personalised email campaign after I approve it",
+      "expect": [
+        "email-campaign-executor"
+      ]
     }
   ]
 }
