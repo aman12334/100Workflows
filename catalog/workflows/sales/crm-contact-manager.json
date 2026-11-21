@@ -1,0 +1,291 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "crm-contact-manager",
+  "version": "0.1.0",
+  "name": "CRM Contact Manager",
+  "category": "sales",
+  "summary": "Turns a list of people into HubSpot contact creates and updates, checking for duplicates first; each change needs your approval.",
+  "description": "Reads the people you paste (names, emails, companies, titles), looks up each email in HubSpot, and proposes creating contacts that don't exist, updating the ones that do, and creating companies by domain. A contact that already exists can never be created again: the plan is checked against the lookup, and the create re-checks HubSpot right before writing. Every change shows the exact fields and needs approval; the audit trail records who approved it and HubSpot's record id. Who it's for: sales and ops teams keeping HubSpot clean after events, calls or imports. Limitations: HubSpot only; maps first name, last name, company, job title and phone. It does not merge existing duplicates or associate contacts with companies.",
+  "status": "available",
+  "problems": [
+    "Add these people to our CRM without creating duplicates",
+    "Update HubSpot contacts from my event list",
+    "Create companies and contacts in HubSpot"
+  ],
+  "tags": [
+    "crm",
+    "hubspot",
+    "contacts",
+    "deduplication",
+    "data-entry"
+  ],
+  "inputs": [
+    {
+      "key": "people",
+      "label": "People",
+      "type": "long_text",
+      "required": true,
+      "description": "One per line with email, name, company and title.",
+      "example": "Dana Lee, dana@brightline.example, COO at Brightline (brightline.example)"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "drafts",
+      "label": "Drafts and proposed actions",
+      "description": "Drafted content and the exact actions proposed; nothing runs until you approve each one.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You keep a CRM accurate. Only use details the user gave; never guess job titles, phones or companies. Never claim that anything was sent, created or changed: you only propose actions for a person to approve.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "creates",
+      "updates",
+      "companies",
+      "skipped"
+    ],
+    "properties": {
+      "creates": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "email"
+          ],
+          "properties": {
+            "email": {
+              "type": "string"
+            },
+            "firstname": {
+              "type": "string"
+            },
+            "lastname": {
+              "type": "string"
+            },
+            "company": {
+              "type": "string"
+            },
+            "jobtitle": {
+              "type": "string"
+            },
+            "phone": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "New contacts"
+      },
+      "updates": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "contact_id",
+            "properties"
+          ],
+          "properties": {
+            "contact_id": {
+              "type": "string"
+            },
+            "properties": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [],
+              "properties": {
+                "firstname": {
+                  "type": "string"
+                },
+                "lastname": {
+                  "type": "string"
+                },
+                "company": {
+                  "type": "string"
+                },
+                "jobtitle": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "title": "Updates"
+      },
+      "companies": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "name",
+            "domain"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "domain": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "New companies"
+      },
+      "skipped": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Skipped"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_data",
+      "name": "Read data",
+      "kind": "check",
+      "responsibility": "Reads the records this workflow needs, read-only.",
+      "tools": [],
+      "reads": [
+        {
+          "action": "hubspot.search_contacts@1",
+          "params": {
+            "emails": {
+              "input": "people",
+              "as": "email_list"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "draft",
+      "name": "Draft",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Drafts the content and proposes actions. Nothing is sent or changed.",
+      "prompt": "For each person: if their email appears in the HubSpot lookup, propose an update with that contact id and only the fields that differ; otherwise propose a create. Propose a company only if the user gave its domain. List anything you skipped and why.",
+      "tools": []
+    },
+    {
+      "id": "check_actions",
+      "name": "Check proposed actions",
+      "kind": "check",
+      "responsibility": "Validates every proposed action against its registered schema and the data read in this run.",
+      "tools": [],
+      "propose": [
+        {
+          "action": "hubspot.create_contact@1",
+          "from": "creates[]"
+        },
+        {
+          "action": "hubspot.update_contact@1",
+          "from": "updates[]"
+        },
+        {
+          "action": "hubspot.create_company@1",
+          "from": "companies[]"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "integrations": [
+    {
+      "id": "hubspot",
+      "name": "HubSpot",
+      "purpose": "Looks up contacts and applies approved creates and updates.",
+      "required": true
+    }
+  ],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "creates_valid",
+        "description": "New contacts are valid and not already in HubSpot.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "creates[]",
+            "action": "hubspot.create_contact@1"
+          }
+        }
+      },
+      {
+        "id": "updates_valid",
+        "description": "Updates target contacts found in the lookup.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "updates[]",
+            "action": "hubspot.update_contact@1"
+          }
+        }
+      },
+      {
+        "id": "companies_valid",
+        "description": "New companies are valid.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "companies[]",
+            "action": "hubspot.create_company@1"
+          }
+        }
+      },
+      {
+        "id": "emails_supplied",
+        "description": "Every new contact's email is one you gave.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "verbatim_in_inputs",
+          "step": "check_actions",
+          "params": {
+            "path": "creates[].email",
+            "inputs": [
+              "people"
+            ],
+            "minChars": 6
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 240,
+    "maxModelCalls": 2
+  }
+}

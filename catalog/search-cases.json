@@ -555,6 +555,12 @@
       "expect": [
         "email-campaign-executor"
       ]
+    },
+    {
+      "query": "add people to HubSpot without duplicates",
+      "expect": [
+        "crm-contact-manager"
+      ]
     }
   ]
 }

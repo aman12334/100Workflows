@@ -1,0 +1,73 @@
+{
+  "inputs": {
+    "people": "Dana Lee, dana@brightline.example, COO at Brightline\nSam Ortiz, sam@northpeak.example, CFO at Northpeak (northpeak.example)"
+  },
+  "http": {
+    "POST https://api.hubapi.com/crm/objects/2026-09/contacts/search": {
+      "status": 200,
+      "body": {
+        "results": [
+          {
+            "id": "101",
+            "properties": {
+              "email": "dana@brightline.example",
+              "firstname": "Dana",
+              "lastname": "Lee",
+              "company": "Brightline"
+            }
+          }
+        ]
+      },
+      "then": {
+        "status": 200,
+        "body": {
+          "results": []
+        }
+      }
+    },
+    "POST https://api.hubapi.com/crm/objects/2026-09/contacts": {
+      "status": 201,
+      "body": {
+        "id": "202",
+        "properties": {}
+      }
+    }
+  },
+  "good": {
+    "creates": [
+      {
+        "email": "sam@northpeak.example",
+        "firstname": "Sam",
+        "lastname": "Ortiz",
+        "company": "Northpeak",
+        "jobtitle": "CFO"
+      }
+    ],
+    "updates": [
+      {
+        "contact_id": "101",
+        "properties": {
+          "jobtitle": "COO"
+        }
+      }
+    ],
+    "companies": [],
+    "skipped": []
+  },
+  "bad": {
+    "creates": [
+      {
+        "email": "dana@brightline.example",
+        "firstname": "Dana"
+      }
+    ],
+    "updates": [],
+    "companies": [],
+    "skipped": []
+  },
+  "bad_fails": "creates_valid",
+  "approve": {
+    "key": "hubspot_create_contact_1",
+    "expect_external_id": "202"
+  }
+}
