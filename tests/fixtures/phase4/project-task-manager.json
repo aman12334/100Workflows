@@ -1,0 +1,77 @@
+{
+  "inputs": {
+    "project": "Launch bulk approvals by 2026-12-15: build API, build UI; UI needs the API."
+  },
+  "http": {
+    "POST https://api.linear.app/graphql": {
+      "status": 200,
+      "body": {
+        "data": {
+          "team": {
+            "issues": {
+              "nodes": []
+            }
+          }
+        }
+      },
+      "then": {
+        "status": 200,
+        "body": {
+          "data": {
+            "issueCreate": {
+              "success": true,
+              "issue": {
+                "id": "lin-9",
+                "identifier": "ENG-9",
+                "url": "https://linear.app/x/issue/ENG-9"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "good": {
+    "issues": [
+      {
+        "key": "task_1",
+        "title": "Build bulk approval API",
+        "due_date": "2026-12-05",
+        "priority": 2
+      },
+      {
+        "key": "task_2",
+        "title": "Build bulk approval UI",
+        "due_date": "2026-12-12",
+        "priority": 2
+      }
+    ],
+    "blockers": [
+      {
+        "blocker_key": "task_1",
+        "blocked_key": "task_2"
+      }
+    ],
+    "risks": []
+  },
+  "bad": {
+    "issues": [
+      {
+        "key": "task_1",
+        "title": "Build API"
+      }
+    ],
+    "blockers": [
+      {
+        "blocker_key": "task_1",
+        "blocked_key": "task_9"
+      }
+    ],
+    "risks": []
+  },
+  "bad_fails": "blocked_known",
+  "approve": {
+    "key": "task_1",
+    "expect_external_id": "ENG-9"
+  }
+}

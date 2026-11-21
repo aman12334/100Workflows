@@ -1,0 +1,229 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "project-task-manager",
+  "version": "0.1.0",
+  "name": "Project Task Manager",
+  "category": "product",
+  "summary": "Breaks a project into Linear issues with due dates, priorities and blocking dependencies, created only after you approve them.",
+  "description": "Turns a project description and task list into Linear issues with due dates and priorities, plus \"blocks\" relations between them. Dependencies must point to issues in the same plan, issues are checked for an existing title before creating, and a relation is created only once both of its issues exist, so partial approval leaves an honest, consistent state. Who it's for: project and engineering leads setting up a project in Linear. Limitations: Linear only, in the team set by LINEAR_TEAM_ID; it does not assign people or set estimates, and updates to existing issues are not supported.",
+  "status": "available",
+  "problems": [
+    "Create project tasks with dependencies in Linear",
+    "Set up a project plan in our issue tracker",
+    "Track task due dates and what blocks what"
+  ],
+  "tags": [
+    "project-management",
+    "linear",
+    "tasks",
+    "dependencies",
+    "planning"
+  ],
+  "inputs": [
+    {
+      "key": "project",
+      "label": "Project",
+      "type": "long_text",
+      "required": true,
+      "description": "Goal, deadline and the tasks you know about.",
+      "example": "Launch bulk approvals by 2026-12-15: build API, build UI, write docs; UI needs the API."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "drafts",
+      "label": "Drafts and proposed actions",
+      "description": "Drafted content and the exact actions proposed; nothing runs until you approve each one.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You plan projects as small, ordered tasks with explicit dependencies. Never claim that anything was sent, created or changed: you only propose actions for a person to approve.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "issues",
+      "blockers",
+      "risks"
+    ],
+    "properties": {
+      "issues": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "key",
+            "title"
+          ],
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "Short id such as task_1."
+            },
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "due_date": {
+              "type": "string",
+              "description": "YYYY-MM-DD, only if known."
+            },
+            "priority": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4,
+              "description": "0 none, 1 urgent, 2 high, 3 medium, 4 low."
+            }
+          }
+        },
+        "title": "Issues"
+      },
+      "blockers": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "blocker_key",
+            "blocked_key"
+          ],
+          "properties": {
+            "blocker_key": {
+              "type": "string"
+            },
+            "blocked_key": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Dependencies"
+      },
+      "risks": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Risks"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "draft",
+      "name": "Draft",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Drafts the content and proposes actions. Nothing is sent or changed.",
+      "prompt": "List the tasks as issues (key task_1, ...) with due dates within the deadline, and dependencies as blocker → blocked using those keys only.",
+      "tools": []
+    },
+    {
+      "id": "check_actions",
+      "name": "Check proposed actions",
+      "kind": "check",
+      "responsibility": "Validates every proposed action against its registered schema and the data read in this run.",
+      "tools": [],
+      "propose": [
+        {
+          "action": "linear.create_issue@1",
+          "from": "issues[]"
+        },
+        {
+          "action": "linear.create_blocker@1",
+          "from": "blockers[]"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "integrations": [
+    {
+      "id": "linear",
+      "name": "Linear",
+      "purpose": "Creates the approved issues and dependencies.",
+      "required": true
+    }
+  ],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "issues_valid",
+        "description": "Every task is a valid issue.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "issues[]",
+            "action": "linear.create_issue@1"
+          }
+        }
+      },
+      {
+        "id": "blockers_valid",
+        "description": "Every dependency is valid.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "blockers[]",
+            "action": "linear.create_blocker@1"
+          }
+        }
+      },
+      {
+        "id": "blockers_known",
+        "description": "Dependencies refer to tasks in this plan.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "step": "check_actions",
+          "params": {
+            "from": "blockers[].blocker_key",
+            "to": "issues[].key"
+          }
+        }
+      },
+      {
+        "id": "blocked_known",
+        "description": "Blocked tasks are in this plan.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "references",
+          "step": "check_actions",
+          "params": {
+            "from": "blockers[].blocked_key",
+            "to": "issues[].key"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 240,
+    "maxModelCalls": 2
+  }
+}
