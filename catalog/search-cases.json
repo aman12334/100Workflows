@@ -585,6 +585,12 @@
       "expect": [
         "project-task-manager"
       ]
+    },
+    {
+      "query": "post an update to a Slack channel after approval",
+      "expect": [
+        "slack-communication-agent"
+      ]
     }
   ]
 }

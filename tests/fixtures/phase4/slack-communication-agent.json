@@ -1,0 +1,59 @@
+{
+  "inputs": {
+    "message_goal": "Bulk approvals ship Thursday.",
+    "channel": "launch"
+  },
+  "http": {
+    "GET https://slack.com/api/conversations.list": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "channels": [
+          {
+            "id": "C0LAUNCH",
+            "name": "launch",
+            "is_member": true,
+            "is_private": false
+          },
+          {
+            "id": "C0EXEC",
+            "name": "exec",
+            "is_member": false,
+            "is_private": true
+          }
+        ]
+      }
+    },
+    "POST https://slack.com/api/chat.postMessage": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "channel": "C0LAUNCH",
+        "ts": "1700000000.000100"
+      }
+    }
+  },
+  "good": {
+    "messages": [
+      {
+        "channel_id": "C0LAUNCH",
+        "text": "Bulk approvals ship Thursday."
+      }
+    ],
+    "notes": []
+  },
+  "bad": {
+    "messages": [
+      {
+        "channel_id": "C0EXEC",
+        "text": "Bulk approvals ship Thursday."
+      }
+    ],
+    "notes": []
+  },
+  "bad_fails": "messages_valid",
+  "approve": {
+    "key": "slack_post_message_1",
+    "expect_external_id": "C0LAUNCH/1700000000.000100"
+  }
+}

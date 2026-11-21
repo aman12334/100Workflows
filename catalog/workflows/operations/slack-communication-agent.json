@@ -1,0 +1,183 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "slack-communication-agent",
+  "version": "0.1.0",
+  "name": "Slack Communication Agent",
+  "category": "operations",
+  "summary": "Drafts a Slack update for a channel the bot belongs to, and posts it only after you approve the exact text.",
+  "description": "Lists the channels your Slack bot can see, drafts the update you describe for the channel you name, and proposes posting it. The post is allowed only to a channel the bot is a member of (so it respects your workspace's channel permissions), you approve the exact text and channel, and an approval can post once. Who it's for: team leads and founders sending announcements, status updates or reminders. Limitations: posts plain text as the bot to channels it has been invited to; no DMs, threads, scheduling or editing after posting.",
+  "status": "available",
+  "problems": [
+    "Draft and post an update to a Slack channel",
+    "Announce something in Slack after I check it",
+    "Write a team update for Slack"
+  ],
+  "tags": [
+    "slack",
+    "announcement",
+    "team-update",
+    "internal-comms",
+    "messaging"
+  ],
+  "inputs": [
+    {
+      "key": "message_goal",
+      "label": "What to say",
+      "type": "long_text",
+      "required": true,
+      "description": "The update and its audience.",
+      "example": "Tell #launch that bulk approvals ship Thursday and the help article is live."
+    },
+    {
+      "key": "channel",
+      "label": "Channel",
+      "type": "text",
+      "required": true,
+      "description": "Channel name, without #.",
+      "example": "launch"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "drafts",
+      "label": "Drafts and proposed actions",
+      "description": "Drafted content and the exact actions proposed; nothing runs until you approve each one.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write clear, friendly Slack updates: short, skimmable, no hype. Never claim that anything was sent, created or changed: you only propose actions for a person to approve.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "messages",
+      "notes"
+    ],
+    "properties": {
+      "messages": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "channel_id",
+            "text"
+          ],
+          "properties": {
+            "channel_id": {
+              "type": "string",
+              "description": "The channel id from the channel list."
+            },
+            "text": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Messages"
+      },
+      "notes": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Notes"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_data",
+      "name": "Read data",
+      "kind": "check",
+      "responsibility": "Reads the records this workflow needs, read-only.",
+      "tools": [],
+      "reads": [
+        {
+          "action": "slack.list_channels@1"
+        }
+      ]
+    },
+    {
+      "id": "draft",
+      "name": "Draft",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Drafts the content and proposes actions. Nothing is sent or changed.",
+      "prompt": "Find the requested channel in the channel list and use its id. Draft one message under 120 words. If the bot is not a member of that channel, propose nothing and say so in notes.",
+      "tools": []
+    },
+    {
+      "id": "check_actions",
+      "name": "Check proposed actions",
+      "kind": "check",
+      "responsibility": "Validates every proposed action against its registered schema and the data read in this run.",
+      "tools": [],
+      "propose": [
+        {
+          "action": "slack.post_message@1",
+          "from": "messages[]"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "integrations": [
+    {
+      "id": "slack",
+      "name": "Slack",
+      "purpose": "Lists channels and posts approved messages.",
+      "required": true
+    }
+  ],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "messages_valid",
+        "description": "Messages go only to channels the bot is a member of.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "messages[]",
+            "action": "slack.post_message@1"
+          }
+        }
+      },
+      {
+        "id": "short_messages",
+        "description": "Messages are 150 words or fewer.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "max_words",
+          "step": "check_actions",
+          "params": {
+            "path": "messages[].text",
+            "max": 150
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 240,
+    "maxModelCalls": 2
+  }
+}
