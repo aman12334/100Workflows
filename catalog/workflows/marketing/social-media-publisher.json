@@ -1,0 +1,199 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "social-media-publisher",
+  "version": "0.1.0",
+  "name": "Social Media Publishing Agent",
+  "category": "marketing",
+  "summary": "Drafts posts for your Mastodon account within its length limit, and publishes or schedules each only after you approve it.",
+  "description": "Reads your Mastodon server's post length limit, drafts posts from your brief, and proposes publishing each now or at a time you choose (at least 5 minutes ahead; Mastodon schedules it server-side). You approve each exact post and time; an idempotency key prevents a double post. Who it's for: founders and marketers posting product news or updates to Mastodon. Limitations: Mastodon only: X, LinkedIn and Bluesky are not supported (their posting APIs need app approval or could not be verified). Text posts only, no images or threads.",
+  "status": "available",
+  "problems": [
+    "Draft and schedule social media posts",
+    "Publish an announcement on Mastodon after I review it",
+    "Write posts that fit the character limit"
+  ],
+  "tags": [
+    "social-media",
+    "mastodon",
+    "publishing",
+    "scheduling",
+    "announcement"
+  ],
+  "inputs": [
+    {
+      "key": "brief",
+      "label": "What to post about",
+      "type": "long_text",
+      "required": true,
+      "description": "The news and the tone.",
+      "example": "Bulk approvals are live: approve a week of expenses in one click."
+    },
+    {
+      "key": "schedule",
+      "label": "When",
+      "type": "text",
+      "required": false,
+      "description": "ISO date-time to schedule, or leave empty to publish on approval.",
+      "example": "2030-01-08T15:00:00Z"
+    },
+    {
+      "key": "visibility",
+      "label": "Visibility",
+      "type": "select",
+      "required": true,
+      "description": "Who sees the post.",
+      "options": [
+        "public",
+        "unlisted",
+        "private"
+      ]
+    }
+  ],
+  "outputs": [
+    {
+      "key": "drafts",
+      "label": "Drafts and proposed actions",
+      "description": "Drafted content and the exact actions proposed; nothing runs until you approve each one.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You write concise, human social posts. No hashtag stuffing, no hype. Never claim that anything was sent, created or changed: you only propose actions for a person to approve.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "posts"
+    ],
+    "properties": {
+      "posts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "visibility"
+          ],
+          "properties": {
+            "status": {
+              "type": "string"
+            },
+            "visibility": {
+              "type": "string",
+              "enum": [
+                "public",
+                "unlisted",
+                "private"
+              ]
+            },
+            "scheduled_at": {
+              "type": "string",
+              "description": "Only if the user gave a time."
+            },
+            "language": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Posts"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_data",
+      "name": "Read data",
+      "kind": "check",
+      "responsibility": "Reads the records this workflow needs, read-only.",
+      "tools": [],
+      "reads": [
+        {
+          "action": "mastodon.instance_limits@1"
+        }
+      ]
+    },
+    {
+      "id": "draft",
+      "name": "Draft",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Drafts the content and proposes actions. Nothing is sent or changed.",
+      "prompt": "Write one post (two at most) within the server's max_characters, with the requested visibility, and scheduled_at only if the user gave a time.",
+      "tools": []
+    },
+    {
+      "id": "check_actions",
+      "name": "Check proposed actions",
+      "kind": "check",
+      "responsibility": "Validates every proposed action against its registered schema and the data read in this run.",
+      "tools": [],
+      "propose": [
+        {
+          "action": "mastodon.post_status@1",
+          "from": "posts[]"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "integrations": [
+    {
+      "id": "mastodon",
+      "name": "Mastodon",
+      "purpose": "Reads limits and publishes approved posts.",
+      "required": true
+    }
+  ],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "posts_valid",
+        "description": "Posts fit the server's limit and any schedule is at least 5 minutes ahead.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "posts[]",
+            "action": "mastodon.post_status@1"
+          }
+        }
+      },
+      {
+        "id": "few_posts",
+        "description": "One or two posts.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "count",
+          "step": "check_actions",
+          "params": {
+            "path": "posts",
+            "min": 1,
+            "max": 2
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 240,
+    "maxModelCalls": 2
+  }
+}

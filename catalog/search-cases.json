@@ -597,6 +597,12 @@
       "expect": [
         "invoice-payment-follow-up"
       ]
+    },
+    {
+      "query": "schedule a social media post after review",
+      "expect": [
+        "social-media-publisher"
+      ]
     }
   ]
 }

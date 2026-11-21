@@ -1,0 +1,49 @@
+{
+  "inputs": {
+    "brief": "Bulk approvals are live.",
+    "schedule": "2030-01-08T15:00:00Z",
+    "visibility": "public"
+  },
+  "http": {
+    "GET https://social.example.org/api/v2/instance": {
+      "status": 200,
+      "body": {
+        "configuration": {
+          "statuses": {
+            "max_characters": 500
+          }
+        }
+      }
+    },
+    "POST https://social.example.org/api/v1/statuses": {
+      "status": 200,
+      "body": {
+        "id": "sched_1",
+        "scheduled_at": "2030-01-08T15:00:00.000Z"
+      }
+    }
+  },
+  "good": {
+    "posts": [
+      {
+        "status": "Bulk approvals are live: approve a week of expenses in one click.",
+        "visibility": "public",
+        "scheduled_at": "2030-01-08T15:00:00Z"
+      }
+    ]
+  },
+  "bad": {
+    "posts": [
+      {
+        "status": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "visibility": "public"
+      }
+    ]
+  },
+  "bad_fails": "posts_valid",
+  "approve": {
+    "key": "mastodon_post_status_1",
+    "expect_external_id": "sched_1",
+    "expect_header": "idempotency-key"
+  }
+}
