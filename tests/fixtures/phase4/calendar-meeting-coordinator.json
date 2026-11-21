@@ -1,0 +1,96 @@
+{
+  "inputs": {
+    "attendees": [
+      "you@acme.example",
+      "dana@brightline.example"
+    ],
+    "window_start": "2030-01-07T09:00:00Z",
+    "window_end": "2030-01-07T17:00:00Z",
+    "meeting": "Q4 planning, 45 minutes"
+  },
+  "http": {
+    "POST https://oauth2.googleapis.com/token": {
+      "status": 200,
+      "body": {
+        "access_token": "ya29.test",
+        "expires_in": 3600
+      }
+    },
+    "POST https://www.googleapis.com/calendar/v3/freeBusy": {
+      "status": 200,
+      "body": {
+        "calendars": {
+          "you@acme.example": {
+            "busy": [
+              {
+                "start": "2030-01-07T09:00:00Z",
+                "end": "2030-01-07T11:00:00Z"
+              }
+            ]
+          },
+          "dana@brightline.example": {
+            "busy": []
+          }
+        }
+      },
+      "then": {
+        "status": 200,
+        "body": {
+          "calendars": {
+            "primary": {
+              "busy": []
+            }
+          }
+        }
+      }
+    },
+    "POST https://www.googleapis.com/calendar/v3/calendars/primary/events": {
+      "status": 200,
+      "body": {
+        "id": "abc123",
+        "htmlLink": "https://calendar.google.com/event?eid=abc"
+      }
+    }
+  },
+  "good": {
+    "options": [
+      {
+        "start": "2030-01-07T13:00:00Z",
+        "end": "2030-01-07T13:45:00Z",
+        "why": "Both free"
+      }
+    ],
+    "event": [
+      {
+        "summary": "Q4 planning",
+        "description": "Agenda",
+        "start": "2030-01-07T13:00:00Z",
+        "end": "2030-01-07T13:45:00Z",
+        "attendees": [
+          "dana@brightline.example"
+        ],
+        "notify_attendees": false
+      }
+    ]
+  },
+  "bad": {
+    "options": [],
+    "event": [
+      {
+        "summary": "Q4 planning",
+        "description": "x",
+        "start": "2030-01-07T10:00:00Z",
+        "end": "2030-01-07T10:45:00Z",
+        "attendees": [
+          "dana@brightline.example"
+        ],
+        "notify_attendees": false
+      }
+    ]
+  },
+  "bad_fails": "event_valid",
+  "approve": {
+    "key": "google_calendar_create_event_1",
+    "expect_external_id": "abc123"
+  }
+}

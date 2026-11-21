@@ -1,0 +1,251 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "calendar-meeting-coordinator",
+  "version": "0.1.0",
+  "name": "Calendar Meeting Coordinator",
+  "category": "operations",
+  "summary": "Finds free times across calendars you can see, proposes the best slots, and creates the meeting only after you approve it.",
+  "description": "Checks free/busy on Google Calendar for the people you list over your time window, proposes a few slots that are free for everyone, and drafts the event (title, agenda, attendees). The event is created only after you approve the exact details; your calendar is re-checked right before creating it, and a fixed event id prevents a second copy if the request is retried. Invitations are sent only if you choose to. Who it's for: founders, assistants and managers arranging meetings without the back-and-forth. Limitations: Google Calendar only; it can only see free/busy for calendars shared with you, and it does not handle rooms, recurring meetings or time-zone preferences beyond the times you give.",
+  "status": "available",
+  "problems": [
+    "Find a time that works for everyone and book it",
+    "Schedule a meeting across several calendars",
+    "Check availability before sending an invite"
+  ],
+  "tags": [
+    "calendar",
+    "scheduling",
+    "meetings",
+    "google-calendar",
+    "availability"
+  ],
+  "inputs": [
+    {
+      "key": "attendees",
+      "label": "Attendee calendars",
+      "type": "list",
+      "required": true,
+      "description": "Email address of each calendar to check, including yours.",
+      "example": "you@acme.example"
+    },
+    {
+      "key": "window_start",
+      "label": "Earliest start",
+      "type": "text",
+      "required": true,
+      "description": "ISO date-time with offset.",
+      "example": "2026-11-20T09:00:00Z"
+    },
+    {
+      "key": "window_end",
+      "label": "Latest end",
+      "type": "text",
+      "required": true,
+      "description": "ISO date-time with offset.",
+      "example": "2026-11-21T17:00:00Z"
+    },
+    {
+      "key": "meeting",
+      "label": "Meeting",
+      "type": "long_text",
+      "required": true,
+      "description": "Title, length and agenda.",
+      "example": "Q4 planning, 45 minutes"
+    }
+  ],
+  "outputs": [
+    {
+      "key": "drafts",
+      "label": "Drafts and proposed actions",
+      "description": "Drafted content and the exact actions proposed; nothing runs until you approve each one.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You schedule meetings. Only propose times that are free for every calendar in the free/busy data and inside the user's window. Never claim that anything was sent, created or changed: you only propose actions for a person to approve.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "options",
+      "event"
+    ],
+    "properties": {
+      "options": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "start",
+            "end",
+            "why"
+          ],
+          "properties": {
+            "start": {
+              "type": "string"
+            },
+            "end": {
+              "type": "string"
+            },
+            "why": {
+              "type": "string"
+            }
+          }
+        },
+        "title": "Slot options"
+      },
+      "event": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "summary",
+            "start",
+            "end",
+            "attendees",
+            "notify_attendees"
+          ],
+          "properties": {
+            "summary": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "start": {
+              "type": "string",
+              "description": "ISO date-time with offset."
+            },
+            "end": {
+              "type": "string",
+              "description": "ISO date-time with offset."
+            },
+            "attendees": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "notify_attendees": {
+              "type": "boolean",
+              "description": "Send invitations."
+            }
+          }
+        },
+        "title": "Event to create"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_data",
+      "name": "Read data",
+      "kind": "check",
+      "responsibility": "Reads the records this workflow needs, read-only.",
+      "tools": [],
+      "reads": [
+        {
+          "action": "google_calendar.free_busy@1",
+          "params": {
+            "calendars": {
+              "input": "attendees",
+              "as": "email_list"
+            },
+            "time_min": {
+              "input": "window_start",
+              "as": "text"
+            },
+            "time_max": {
+              "input": "window_end",
+              "as": "text"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "draft",
+      "name": "Draft",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Drafts the content and proposes actions. Nothing is sent or changed.",
+      "prompt": "Propose up to three slots free for everyone within the window, then put the best one in event (exactly one) with the attendees listed by the user and notify_attendees false unless the user asked to send invitations.",
+      "tools": []
+    },
+    {
+      "id": "check_actions",
+      "name": "Check proposed actions",
+      "kind": "check",
+      "responsibility": "Validates every proposed action against its registered schema and the data read in this run.",
+      "tools": [],
+      "propose": [
+        {
+          "action": "google_calendar.create_event@1",
+          "from": "event[]"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "integrations": [
+    {
+      "id": "google_calendar",
+      "name": "Google Calendar",
+      "purpose": "Reads free/busy and creates approved events.",
+      "required": true
+    }
+  ],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "event_valid",
+        "description": "The event is valid, in the future and free for every calendar.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "event[]",
+            "action": "google_calendar.create_event@1"
+          }
+        }
+      },
+      {
+        "id": "one_event",
+        "description": "Exactly one event is proposed.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "count",
+          "step": "check_actions",
+          "params": {
+            "path": "event",
+            "min": 1,
+            "max": 1
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 240,
+    "maxModelCalls": 2
+  }
+}

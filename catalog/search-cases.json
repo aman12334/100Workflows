@@ -567,6 +567,12 @@
       "expect": [
         "crm-deal-pipeline-updater"
       ]
+    },
+    {
+      "query": "find a free time across calendars and schedule a meeting",
+      "expect": [
+        "calendar-meeting-coordinator"
+      ]
     }
   ]
 }
