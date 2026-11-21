@@ -561,6 +561,12 @@
       "expect": [
         "crm-contact-manager"
       ]
+    },
+    {
+      "query": "update deal stages in the CRM pipeline from my notes",
+      "expect": [
+        "crm-deal-pipeline-updater"
+      ]
     }
   ]
 }

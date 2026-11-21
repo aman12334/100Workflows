@@ -1,0 +1,195 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "crm-deal-pipeline-updater",
+  "version": "0.1.0",
+  "name": "CRM Deal Pipeline Updater",
+  "category": "sales",
+  "summary": "Proposes HubSpot deal stage and amount updates from your notes, checking each move against the pipeline before you approve it.",
+  "description": "Reads the deals you name and their pipeline's stages from HubSpot, then turns your notes (\"Brightline signed, Northpeak slipped to Q2 at 40k\") into precise stage and amount updates. Each update must use a stage that exists in the pipeline, can't move a closed deal, and is dropped if nothing would change, so the same update can't be applied twice. The deal is re-read right before writing in case someone changed it since. Who it's for: account executives and sales managers updating the pipeline after a week of calls. Limitations: HubSpot deals in one pipeline; changes stage and amount only (deal notes are not written). Reopening a closed deal must be done in HubSpot.",
+  "status": "available",
+  "problems": [
+    "Update our deal stages from my call notes",
+    "Move deals in the HubSpot pipeline safely",
+    "Keep deal amounts in the CRM current"
+  ],
+  "tags": [
+    "crm",
+    "hubspot",
+    "deals",
+    "pipeline",
+    "forecast"
+  ],
+  "inputs": [
+    {
+      "key": "deal_ids",
+      "label": "Deal ids",
+      "type": "list",
+      "required": true,
+      "description": "HubSpot deal ids to update, one per line.",
+      "example": "9001"
+    },
+    {
+      "key": "pipeline_id",
+      "label": "Pipeline id",
+      "type": "text",
+      "required": true,
+      "description": "The deals' pipeline id (\"default\" for the standard pipeline).",
+      "example": "default"
+    },
+    {
+      "key": "changes",
+      "label": "What changed",
+      "type": "long_text",
+      "required": true,
+      "description": "Your notes on each deal.",
+      "example": "Brightline (9001) signed the contract."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "drafts",
+      "label": "Drafts and proposed actions",
+      "description": "Drafted content and the exact actions proposed; nothing runs until you approve each one.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You are a careful sales operations analyst updating a CRM pipeline from notes. Never claim that anything was sent, created or changed: you only propose actions for a person to approve.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "updates",
+      "unclear"
+    ],
+    "properties": {
+      "updates": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "deal_id"
+          ],
+          "properties": {
+            "deal_id": {
+              "type": "string"
+            },
+            "dealstage": {
+              "type": "string",
+              "description": "A stage id from the pipeline."
+            },
+            "amount": {
+              "type": "number",
+              "description": "New amount, only if stated."
+            }
+          }
+        },
+        "title": "Updates"
+      },
+      "unclear": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Unclear notes"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "read_data",
+      "name": "Read data",
+      "kind": "check",
+      "responsibility": "Reads the records this workflow needs, read-only.",
+      "tools": [],
+      "reads": [
+        {
+          "action": "hubspot.get_deals@1",
+          "params": {
+            "deal_ids": {
+              "input": "deal_ids",
+              "as": "text_list"
+            }
+          }
+        },
+        {
+          "action": "hubspot.list_deal_stages@1",
+          "params": {
+            "pipeline_id": {
+              "input": "pipeline_id",
+              "as": "text"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "draft",
+      "name": "Draft",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Drafts the content and proposes actions. Nothing is sent or changed.",
+      "prompt": "For each deal mentioned, propose an update using the exact stage id from the pipeline stages and the amount only if the notes state one. Skip deals with no real change. List notes you could not map under unclear.",
+      "tools": []
+    },
+    {
+      "id": "check_actions",
+      "name": "Check proposed actions",
+      "kind": "check",
+      "responsibility": "Validates every proposed action against its registered schema and the data read in this run.",
+      "tools": [],
+      "propose": [
+        {
+          "action": "hubspot.update_deal@1",
+          "from": "updates[]"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "integrations": [
+    {
+      "id": "hubspot",
+      "name": "HubSpot",
+      "purpose": "Reads deals and stages and applies approved updates.",
+      "required": true
+    }
+  ],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "updates_valid",
+        "description": "Every update uses a real stage, doesn't move a closed deal and changes something.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "updates[]",
+            "action": "hubspot.update_deal@1"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 240,
+    "maxModelCalls": 2
+  }
+}
