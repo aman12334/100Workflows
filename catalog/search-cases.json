@@ -573,6 +573,12 @@
       "expect": [
         "calendar-meeting-coordinator"
       ]
+    },
+    {
+      "query": "turn meeting notes into Linear tasks and a follow-up email",
+      "expect": [
+        "meeting-follow-up-agent"
+      ]
     }
   ]
 }

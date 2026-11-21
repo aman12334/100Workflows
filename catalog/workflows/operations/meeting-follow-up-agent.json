@@ -1,0 +1,186 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "schemaVersion": 2,
+  "id": "meeting-follow-up-agent",
+  "version": "0.1.0",
+  "name": "Meeting Notes & Follow-up Agent",
+  "category": "operations",
+  "summary": "Turns meeting notes into a summary, action items and a follow-up email draft, and creates the action items in Linear after approval.",
+  "description": "Reads your meeting notes and produces a short summary, the decisions, a follow-up email draft for you to send yourself, and one Linear issue per action item with a due date when the notes give one. Each issue is created only after you approve it, and an issue with the same title in your team is never created twice. Who it's for: managers and project leads who run recurring meetings and track work in Linear. Limitations: Linear only, in the team set by LINEAR_TEAM_ID; it does not assign people (Linear user ids would be needed) and the email draft is not sent.",
+  "status": "available",
+  "problems": [
+    "Turn my meeting notes into tasks in Linear",
+    "Create follow-up tasks after a meeting",
+    "Write a recap email and log the action items"
+  ],
+  "tags": [
+    "meeting-notes",
+    "action-items",
+    "linear",
+    "follow-up",
+    "tasks"
+  ],
+  "inputs": [
+    {
+      "key": "notes",
+      "label": "Meeting notes",
+      "type": "long_text",
+      "required": true,
+      "description": "Notes or transcript.",
+      "example": "Agreed to launch on 19 June. Priya to update the help center by 2026-12-05."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "drafts",
+      "label": "Drafts and proposed actions",
+      "description": "Drafted content and the exact actions proposed; nothing runs until you approve each one.",
+      "format": "markdown"
+    }
+  ],
+  "execution": {
+    "engine": "generic",
+    "system": "You turn meeting notes into accurate summaries and concrete action items. Only include actions the notes state. Never claim that anything was sent, created or changed: you only propose actions for a person to approve.",
+    "effort": "medium",
+    "maxOutputTokens": 6000
+  },
+  "outputSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "summary",
+      "decisions",
+      "follow_up_email",
+      "issues"
+    ],
+    "properties": {
+      "summary": {
+        "type": "string",
+        "title": "Summary"
+      },
+      "decisions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "title": "Decisions"
+      },
+      "follow_up_email": {
+        "type": "string",
+        "description": "Not sent; for you to send.",
+        "title": "Follow-up email draft"
+      },
+      "issues": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "key",
+            "title"
+          ],
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "Short id such as task_1."
+            },
+            "title": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "due_date": {
+              "type": "string",
+              "description": "YYYY-MM-DD, only if known."
+            },
+            "priority": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 4,
+              "description": "0 none, 1 urgent, 2 high, 3 medium, 4 low."
+            }
+          }
+        },
+        "title": "Action items"
+      }
+    }
+  },
+  "steps": [
+    {
+      "id": "draft",
+      "name": "Draft",
+      "kind": "agent",
+      "mode": "generate",
+      "responsibility": "Drafts the content and proposes actions. Nothing is sent or changed.",
+      "prompt": "Summarise the meeting, list decisions, draft a short follow-up email, and turn each action item into an issue (key task_1, task_2, ...) with a due date only when the notes give a date.",
+      "tools": []
+    },
+    {
+      "id": "check_actions",
+      "name": "Check proposed actions",
+      "kind": "check",
+      "responsibility": "Validates every proposed action against its registered schema and the data read in this run.",
+      "tools": [],
+      "propose": [
+        {
+          "action": "linear.create_issue@1",
+          "from": "issues[]"
+        }
+      ]
+    }
+  ],
+  "tools": [],
+  "integrations": [
+    {
+      "id": "linear",
+      "name": "Linear",
+      "purpose": "Creates the approved action items as issues.",
+      "required": true
+    }
+  ],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Output matches the schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "issues_valid",
+        "description": "Every action item is a valid issue.",
+        "method": "rule",
+        "critical": true,
+        "rule": {
+          "id": "valid_action_payloads",
+          "step": "check_actions",
+          "params": {
+            "path": "issues[]",
+            "action": "linear.create_issue@1"
+          }
+        }
+      },
+      {
+        "id": "distinct_titles",
+        "description": "Issue titles are unique.",
+        "method": "rule",
+        "critical": false,
+        "rule": {
+          "id": "distinct",
+          "step": "check_actions",
+          "params": {
+            "path": "issues[].title"
+          }
+        }
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 1,
+    "timeoutSeconds": 240,
+    "maxModelCalls": 2
+  }
+}
