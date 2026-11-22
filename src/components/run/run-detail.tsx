@@ -54,6 +54,15 @@ export function RunDetail({ initial, packageName, meta }: { initial: RunRecord; 
     return () => clearInterval(timer);
   }, [live, run.id]);
 
+  const [retry, setRetry] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null });
+  const retryable = !live && run.workflows.some((w) => ["failed", "needs_review", "cancelled", "interrupted", "blocked"].includes(w.status));
+  const retryFailed = async () => {
+    setRetry({ busy: true, error: null });
+    const res = await api<{ runId: string }>(`/api/runs/${run.id}/retry`);
+    if (res.ok) window.location.assign(`/runs/${res.data.runId}`);
+    else setRetry({ busy: false, error: res.error.message });
+  };
+
   const cancel = async () => {
     setCancelling(true);
     await api(`/api/runs/${run.id}/cancel`);
@@ -82,7 +91,22 @@ export function RunDetail({ initial, packageName, meta }: { initial: RunRecord; 
             </div>
             {run.error && <p className="mt-2 text-sm text-[#ffb4b4]">{run.error}</p>}
             {pollError && <p className="mt-2 text-sm text-amber-300">{pollError}</p>}
+            {run.retryOf && (
+              <p className="mt-2 text-sm text-ink-300">
+                Retry of{" "}
+                <Link href={`/runs/${run.retryOf}`} className="underline">
+                  an earlier run
+                </Link>
+                : identical accepted results were reused, the rest ran again.
+              </p>
+            )}
+            {retry.error && <p className="mt-2 text-sm text-[#ffb4b4]">{retry.error}</p>}
           </div>
+          {retryable && (
+            <button onClick={retryFailed} disabled={retry.busy} title="Re-runs what didn't succeed; reuses accepted results whose inputs haven't changed." className="inline-flex items-center gap-2 self-start rounded-full bg-white/10 px-4 py-2 text-sm font-semibold ring-1 ring-white/20 hover:bg-white/15 disabled:opacity-60">
+              {retry.busy ? <Loader2 className="size-4 animate-spin" /> : <Repeat className="size-4" />} Retry failed
+            </button>
+          )}
           {live && (
             <button onClick={cancel} disabled={cancelling} className="inline-flex items-center gap-2 self-start rounded-full bg-white/10 px-4 py-2 text-sm font-semibold ring-1 ring-white/20 hover:bg-white/15 disabled:opacity-60">
               {cancelling ? <Loader2 className="size-4 animate-spin" /> : <Ban className="size-4" />} {cancelling ? "Cancelling…" : "Cancel run"}
@@ -180,6 +204,11 @@ function WorkflowRunCard({ wr, meta, now }: { wr: WorkflowRunRecord; meta?: Meta
               <RunStatusPill status={wr.status} />
             </div>
             {wr.statusReason && <p className="mt-1.5 text-sm text-ink-700">{wr.statusReason}</p>}
+            {wr.reusedFrom?.runId && (
+              <Link href={`/runs/${wr.reusedFrom.runId}`} className="mt-1 inline-block text-xs font-semibold text-volt-600 hover:underline">
+                View the original run (its proposed actions are approved there)
+              </Link>
+            )}
             {wr.status === "running" && <RunningStep steps={wr.steps} meta={meta} now={now} />}
           </div>
         </div>

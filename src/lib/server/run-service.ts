@@ -21,10 +21,17 @@ import {
   insertEvaluation,
   insertStep,
   insertToolCall,
+  reusableResults,
+  reuseWorkflowResult,
+  setInputsHash,
+  setRetryOf,
   setWorkflowRunStatus,
   type WorkflowRunStatus,
 } from "./db/runs";
 import { log } from "./log";
+import { createHash } from "node:crypto";
+import { canonicalJson } from "@/lib/integrations/core";
+import type { Workflow } from "@/lib/catalog/schema";
 import type { PackageView } from "./package-service";
 
 export interface PreflightItem {
@@ -104,14 +111,29 @@ export class RunError extends Error {
   }
 }
 
-/** Creates the run and starts it in the background. Returns as soon as the run is recorded. */
+/** What a workflow ran on: definition, version, inputs and the accepted upstream outputs it received. */
+export const inputsHash = (wf: Workflow, inputs: unknown, upstream: Record<string, UpstreamOutput>) =>
+  createHash("sha256").update(canonicalJson({ id: wf.id, version: wf.version, inputs, upstream })).digest("hex");
+
+/**
+ * Creates the run and starts it in the background. Returns as soon as the run is recorded.
+ * With `retryOf`, workflows whose accepted result in that run was produced from exactly the
+ * same version, inputs and upstream results are reused instead of executed again; everything
+ * else (failed, needs review, cancelled, changed) runs again.
+ */
 export function startRun(
   db: DB,
   view: PackageView,
-  deps: { createMessage?: CreateMessage; env?: Record<string, string | undefined>; toolOverrides?: ToolOverrides; integrationTransport?: HttpTransport } = {},
+  deps: { createMessage?: CreateMessage; env?: Record<string, string | undefined>; toolOverrides?: ToolOverrides; integrationTransport?: HttpTransport; retryOf?: string } = {},
 ): string {
   const env = deps.env ?? process.env;
   if (activeRunFor(db, view.pkg.id)) throw new RunError("This package is already running. Wait for it to finish or cancel it.", 409);
+  let reuse: ReturnType<typeof reusableResults> | undefined;
+  if (deps.retryOf) {
+    const source = getRun(db, deps.retryOf);
+    if (!source || source.packageId !== view.pkg.id) throw new RunError("That run isn't part of this package.", 404);
+    reuse = reusableResults(db, deps.retryOf);
+  }
   const check = preflight(view, env);
   if (!check.canRun) throw new RunError(check.summary ?? "This package can't run yet.", 409);
 
@@ -124,11 +146,12 @@ export function startRun(
   const config = getModelConfig(env);
   // The price is snapshotted with the run, and only when it is verified (see pricing.ts).
   const { runId, workflowRunIds } = createRun(db, view.pkg.id, plan, { provider: config.provider, model: config.model, pricing: pricingFor(config.model) });
+  if (deps.retryOf) setRetryOf(db, runId, deps.retryOf);
   const controller = new AbortController();
   active.set(runId, controller);
   log.info("run.started", { runId, packageId: view.pkg.id, provider: config.provider, model: config.model, workflows: plan.map((p) => `${p.workflowId}:${p.status}`) });
 
-  void executeRun(db, view, runId, workflowRunIds, controller.signal, deps.createMessage ?? providerCreateMessage, config.model, { env, toolOverrides: deps.toolOverrides, integrationTransport: deps.integrationTransport })
+  void executeRun(db, view, runId, workflowRunIds, controller.signal, deps.createMessage ?? providerCreateMessage, config.model, { env, toolOverrides: deps.toolOverrides, integrationTransport: deps.integrationTransport, reuse })
     .catch((err) => {
       log.error("run.crashed", { runId, error: err });
       finishRun(db, runId, "failed", "The run stopped because of an internal error. Check the terminal log.");
@@ -146,7 +169,7 @@ export async function executeRun(
   signal: AbortSignal,
   createMessage: CreateMessage,
   model: string,
-  tools: { env?: Record<string, string | undefined>; toolOverrides?: ToolOverrides; integrationTransport?: HttpTransport } = {},
+  tools: { env?: Record<string, string | undefined>; toolOverrides?: ToolOverrides; integrationTransport?: HttpTransport; reuse?: ReturnType<typeof reusableResults> } = {},
 ): Promise<void> {
   const outcomes = new Map<string, { status: WorkflowRunStatus; output: unknown; version: string }>();
   const run = getRun(db, runId)!;
@@ -178,7 +201,18 @@ export async function executeRun(
       if (o?.status === "succeeded") upstream[d.workflowId] = { workflowId: d.workflowId, version: o.version, output: o.output };
     }
 
+    const inputs = inputsFor(wf, view.inputs);
+    const hash = inputsHash(wf, inputs, upstream);
+    const prior = tools.reuse?.get(wf.id);
+    if (prior && prior.hash === hash) {
+      reuseWorkflowResult(db, prior.workflowRunId, wrId);
+      outcomes.set(wf.id, { status: "succeeded", output: prior.output, version: wf.version });
+      log.info("run.workflow_reused", { runId, workflowId: wf.id, from: prior.workflowRunId });
+      continue;
+    }
+
     setWorkflowRunStatus(db, wrId, "running");
+    setInputsHash(db, wrId, hash);
     const recorder: Recorder = {
       step(stepId, kind, attempt) {
         const id = insertStep(db, wrId, stepId, kind, attempt);
@@ -195,7 +229,7 @@ export async function executeRun(
       workflow: wf,
       // preflight() only marks a workflow "pending" when runnability() found an executor.
       executor: resolveExecutor(wf)!,
-      inputs: inputsFor(wf, view.inputs),
+      inputs,
       upstream,
       createMessage,
       model,
