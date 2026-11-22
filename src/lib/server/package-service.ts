@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { loadCatalog } from "@/lib/catalog/load";
+import { loadAppCatalog } from "@/lib/catalog/load";
 import type { Workflow } from "@/lib/catalog/schema";
 import {
   PackageError,
@@ -76,7 +76,7 @@ export function buildView(record: PackageRecord, catalog: Workflow[]): PackageVi
 export async function loadPackageView(db: DB, id: string): Promise<PackageView | null> {
   const record = getPackage(db, id);
   if (!record) return null;
-  return buildView(record, (await loadCatalog()).workflows);
+  return buildView(record, (await loadAppCatalog()).workflows);
 }
 
 function defaultName(workflows: Member[]): string {
@@ -85,7 +85,7 @@ function defaultName(workflows: Member[]): string {
 }
 
 export async function createFromSelection(db: DB, input: z.infer<typeof CreatePackageSchema>): Promise<string> {
-  const { workflows } = await loadCatalog();
+  const { workflows } = await loadAppCatalog();
   const members = expandSelection(workflows, input.workflowIds);
   return createPackage(db, {
     name: input.name ?? defaultName(members),
@@ -98,7 +98,7 @@ export async function createFromSelection(db: DB, input: z.infer<typeof CreatePa
 export async function addWorkflow(db: DB, packageId: string, workflowId: string): Promise<boolean> {
   const record = getPackage(db, packageId);
   if (!record) return false;
-  const { workflows } = await loadCatalog();
+  const { workflows } = await loadAppCatalog();
   setMembers(db, packageId, expandSelection(workflows, [workflowId], record.members));
   return true;
 }
@@ -117,7 +117,7 @@ export function removeWorkflow(db: DB, packageId: string, workflowId: string): b
 export async function updateWorkflow(db: DB, packageId: string, workflowId: string): Promise<boolean> {
   const record = getPackage(db, packageId);
   if (!record) return false;
-  const { workflows } = await loadCatalog();
+  const { workflows } = await loadAppCatalog();
   const latest = workflows.find((w) => w.id === workflowId);
   if (!latest) throw new PackageError(`"${workflowId}" is no longer in the catalog, so there is nothing to update to.`, "unknown_workflow");
   if (!record.members.some((m) => m.workflow.id === workflowId)) throw new PackageError(`"${workflowId}" is not in this package.`, "not_in_package");

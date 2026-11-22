@@ -9,5 +9,6 @@ export default defineConfig({
       "server-only": fileURLToPath(new URL("./tests/stubs/server-only.ts", import.meta.url)),
     },
   },
-  test: { environment: "node", include: ["tests/**/*.test.ts"] },
+  // Local builder workflows (data/custom-workflows) must not change test results.
+  test: { environment: "node", include: ["tests/**/*.test.ts"], env: { WORKFLOWS_CUSTOM_DIR: "off" } },
 });

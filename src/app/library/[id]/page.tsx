@@ -19,7 +19,7 @@ import {
 import { CategoryBadge, StatusBadge } from "@/components/workflow-bits";
 import { findWorkflow } from "@/lib/catalog/catalog";
 import { CATEGORY_STYLES } from "@/lib/catalog/category-style";
-import { loadCatalog } from "@/lib/catalog/load";
+import { loadAppCatalog } from "@/lib/catalog/load";
 
 const INPUT_TYPE_LABEL: Record<string, string> = {
   text: "Short text",
@@ -34,7 +34,7 @@ const METHOD_LABEL = { schema: "Schema", rule: "Rule", model: "Model review" } a
 
 export default async function WorkflowPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const catalog = await loadCatalog();
+  const catalog = await loadAppCatalog();
   const workflow = findWorkflow(catalog, id);
   if (!workflow) notFound();
 
@@ -299,7 +299,12 @@ export default async function WorkflowPage({ params }: { params: Promise<{ id: s
             )}
           </Panel>
 
-          <p className="px-1 font-mono text-[11px] text-ink-500">Source: catalog/workflows/{catalog.sources[workflow.id]}</p>
+          <p className="px-1 font-mono text-[11px] text-ink-500">
+            Source:{" "}
+            {catalog.sources[workflow.id]?.startsWith("custom/")
+              ? `data/custom-workflows/${catalog.sources[workflow.id].slice(7)} (made with the builder, local to this computer)`
+              : `catalog/workflows/${catalog.sources[workflow.id]}`}
+          </p>
         </aside>
       </div>
     </div>

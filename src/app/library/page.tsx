@@ -1,10 +1,10 @@
 import { LibraryBrowser } from "@/components/library-browser";
-import { loadCatalog } from "@/lib/catalog/load";
+import { loadAppCatalog } from "@/lib/catalog/load";
 import { CategorySchema } from "@/lib/catalog/schema";
 
 export default async function LibraryPage({ searchParams }: { searchParams: Promise<{ category?: string; q?: string }> }) {
   const params = await searchParams;
-  const catalog = await loadCatalog();
+  const catalog = await loadAppCatalog();
   const category = CategorySchema.safeParse(params.category);
 
   return (

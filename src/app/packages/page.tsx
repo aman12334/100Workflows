@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, MessageCircleMore, Package, PackageOpen } from "lucide-react";
 import { CATEGORY_STYLES } from "@/lib/catalog/category-style";
-import { loadCatalog } from "@/lib/catalog/load";
+import { loadAppCatalog } from "@/lib/catalog/load";
 import { getDb } from "@/lib/server/db";
 import { listPackages } from "@/lib/server/db/packages";
 
@@ -9,7 +9,7 @@ const dateFormat = new Intl.DateTimeFormat("en", { month: "short", day: "numeric
 
 export default async function PackagesPage() {
   const packages = listPackages(getDb());
-  const catalog = await loadCatalog();
+  const catalog = await loadAppCatalog();
   const byId = new Map(catalog.workflows.map((w) => [w.id, w]));
 
   return (

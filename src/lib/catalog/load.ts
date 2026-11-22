@@ -6,6 +6,13 @@ import { SharedInputsFileSchema, ToolsFileSchema } from "./schema";
 
 export const CATALOG_ROOT = path.join(process.cwd(), "catalog");
 export const CATALOG_DIR = path.join(CATALOG_ROOT, "workflows");
+/**
+ * Workflows made with the builder: local to this installation (data/ is git-ignored),
+ * laid out like the catalog (<category>/<id>.json). WORKFLOWS_CUSTOM_DIR=off disables them.
+ */
+export const customDir = (env: Record<string, string | undefined> = process.env): string | null =>
+  env.WORKFLOWS_CUSTOM_DIR === "off" ? null : path.resolve(/*turbopackIgnore: true*/ env.WORKFLOWS_CUSTOM_DIR?.trim() || path.join(process.cwd(), "data", "custom-workflows"));
+export const CUSTOM_PREFIX = "custom/";
 
 /** Every *.json under `dir`, as paths relative to it ("gtm/market-research.json"). */
 async function listJson(dir: string, prefix = ""): Promise<string[]> {
@@ -50,7 +57,7 @@ export async function loadRegistry(root: string = CATALOG_ROOT): Promise<{ regis
  * restarting. It lives next to the app at runtime, so the reads are excluded
  * from build tracing.
  */
-export async function loadCatalog(dir: string = CATALOG_DIR, root: string = path.dirname(dir)): Promise<Catalog> {
+export async function loadCatalog(dir: string = CATALOG_DIR, root: string = path.dirname(dir), opts: { customDir?: string | null } = {}): Promise<Catalog> {
   const { registry, errors: registryErrors } = await loadRegistry(root);
   let files: string[];
   try {
@@ -73,6 +80,26 @@ export async function loadCatalog(dir: string = CATALOG_DIR, root: string = path
     }
   }
 
+  // Custom workflows come after the catalog, so they can never replace a catalog workflow (a clash is reported).
+  if (opts.customDir) {
+    let custom: string[] = [];
+    try {
+      custom = await listJson(opts.customDir);
+    } catch {
+      custom = []; // no custom workflows yet
+    }
+    for (const file of custom) {
+      try {
+        entries.push({ file: `${CUSTOM_PREFIX}${file}`, data: await readJson(path.join(/*turbopackIgnore: true*/ opts.customDir, file)) });
+      } catch (err) {
+        parseErrors.push({ file: `${CUSTOM_PREFIX}${file}`, message: `invalid JSON: ${(err as Error).message}` });
+      }
+    }
+  }
+
   const catalog = buildCatalog(entries, registry);
   return { ...catalog, errors: [...registryErrors, ...parseErrors, ...catalog.errors] };
 }
+
+/** The catalog plus this installation's custom workflows: what the app shows and runs. */
+export const loadAppCatalog = () => loadCatalog(CATALOG_DIR, CATALOG_ROOT, { customDir: customDir() });

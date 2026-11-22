@@ -1,5 +1,5 @@
 import "server-only";
-import { loadCatalog } from "@/lib/catalog/load";
+import { loadAppCatalog } from "@/lib/catalog/load";
 import { historyWindow, type StoredMessage } from "@/lib/chat-types";
 import { runChatTurn } from "./chat";
 import type { MappedError } from "./claude";
@@ -26,7 +26,7 @@ export async function respond(db: DB, conversationId: string): Promise<RespondRe
     return { ok: false, error: { status: 409, code: "nothing_to_answer", message: "The latest message already has a reply." } };
   }
 
-  const catalog = await loadCatalog();
+  const catalog = await loadAppCatalog();
   if (catalog.errors.length) log.warn("catalog.invalid_entries", { count: catalog.errors.length });
 
   const started = Date.now();
