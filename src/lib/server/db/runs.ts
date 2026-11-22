@@ -70,6 +70,8 @@ export interface WorkflowRunRecord {
   /** Tool calls in order (empty for runs before migration 005 and for model-only workflows). */
   toolCalls: Array<ToolCallRecord & { seq: number }>;
   evaluations: EvaluationRecord[];
+  /** Set when this result was reused from an earlier run's identical, accepted result instead of executing again. */
+  reusedFrom: { workflowRunId: string; runId: string } | null;
 }
 
 export interface RunRecord {
@@ -87,6 +89,8 @@ export interface RunRecord {
   pricing: PriceBasis | null;
   summary: RunUsageSummary;
   workflows: WorkflowRunRecord[];
+  /** The run this one retried, if any. */
+  retryOf: string | null;
 }
 
 /** Totals across every workflow in a run. */
@@ -180,6 +184,38 @@ export function finishWorkflowRun(
   );
 }
 
+export function setInputsHash(db: DB, workflowRunId: string, hash: string) {
+  db.prepare("UPDATE workflow_runs SET inputs_hash = ? WHERE id = ?").run(hash, workflowRunId);
+}
+
+/** Accepted results of a run that can be reused by a retry: workflow id → workflow run id and fingerprint. */
+export function reusableResults(db: DB, runId: string): Map<string, { workflowRunId: string; hash: string; output: unknown }> {
+  const rows = db.prepare("SELECT id, workflow_id, inputs_hash, output_json FROM workflow_runs WHERE run_id = ? AND status = 'succeeded' AND inputs_hash IS NOT NULL").all(runId) as Array<{ id: string; workflow_id: string; inputs_hash: string; output_json: string | null }>;
+  return new Map(rows.map((r) => [r.workflow_id, { workflowRunId: r.id, hash: r.inputs_hash, output: json(r.output_json) }]));
+}
+
+/**
+ * Copies an accepted result (output, score, checks) into a retry's workflow run instead of executing it again.
+ * Usage is not copied, so the retry's cost covers only what it executed. Proposed actions are not copied:
+ * they stay with (and are approved on) the original run.
+ */
+export function reuseWorkflowResult(db: DB, fromId: string, toId: string) {
+  db.transaction(() => {
+    db.prepare(
+      `UPDATE workflow_runs SET (status, status_reason, attempts, quality_score, decision, confidence_json, output_json, output_markdown, inputs_hash, started_at, finished_at) =
+         (SELECT 'succeeded', 'Reused the accepted result of an earlier run: same version, inputs and upstream results.', attempts, quality_score, decision, confidence_json, output_json, output_markdown, inputs_hash, ?, ? FROM workflow_runs WHERE id = ?),
+         reused_from = ? WHERE id = ?`,
+    ).run(now(), now(), fromId, fromId, toId);
+    const evals = db.prepare("SELECT attempt, score, passed, decision, criteria_json, created_at FROM evaluations WHERE workflow_run_id = ?").all(fromId) as Array<Record<string, unknown>>;
+    const insert = db.prepare("INSERT INTO evaluations (id, workflow_run_id, attempt, score, passed, decision, criteria_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    for (const e of evals) insert.run(randomUUID(), toId, e.attempt, e.score, e.passed, e.decision, e.criteria_json, e.created_at);
+  })();
+}
+
+export function setRetryOf(db: DB, runId: string, retryOf: string) {
+  db.prepare("UPDATE runs SET retry_of = ? WHERE id = ?").run(retryOf, runId);
+}
+
 export function finishRun(db: DB, runId: string, status: RunStatus, error: string | null = null) {
   db.prepare("UPDATE runs SET status = ?, error = ?, finished_at = ? WHERE id = ?").run(status, error, now(), runId);
 }
@@ -253,6 +289,7 @@ interface WorkflowRunRow {
   usage_json: string | null;
   started_at: string | null;
   finished_at: string | null;
+  reused_from: string | null;
 }
 
 const durationMs = (from: string | null, to: string | null): number | null =>
@@ -261,9 +298,10 @@ const durationMs = (from: string | null, to: string | null): number | null =>
 export function getRun(db: DB, runId: string): RunRecord | null {
   const row = db
     .prepare(
-      "SELECT id, package_id AS packageId, status, error, created_at AS createdAt, started_at AS startedAt, finished_at AS finishedAt, provider, model, pricing_json FROM runs WHERE id = ?",
+      "SELECT id, package_id AS packageId, status, error, created_at AS createdAt, started_at AS startedAt, finished_at AS finishedAt, provider, model, pricing_json, retry_of AS retryOf FROM runs WHERE id = ?",
     )
     .get(runId) as (Omit<RunRecord, "workflows" | "pricing" | "summary"> & { pricing_json: string | null }) | undefined;
+  const reusedRun = db.prepare("SELECT run_id FROM workflow_runs WHERE id = ?");
   if (!row) return null;
   const { pricing_json, ...run } = row;
   const pricing = json<PriceBasis>(pricing_json);
@@ -290,6 +328,7 @@ export function getRun(db: DB, runId: string): RunRecord | null {
     finishedAt: r.finished_at,
     durationMs: durationMs(r.started_at, r.finished_at),
     costUsd: cost(json<Usage>(r.usage_json)),
+    reusedFrom: r.reused_from ? { workflowRunId: r.reused_from, runId: (reusedRun.get(r.reused_from) as { run_id: string } | undefined)?.run_id ?? "" } : null,
     steps: (steps.all(r.id) as Array<Record<string, unknown>>).map((s) => ({
       id: s.id as string,
       seq: s.seq as number,
@@ -374,21 +413,75 @@ export interface RunSummary {
   createdAt: string;
   finishedAt: string | null;
   counts: Record<string, number>;
+  workflowIds: string[];
+  /** Proposed external actions still waiting for a person. */
+  pendingActions: number;
 }
 
-export function listRuns(db: DB, opts: { packageId?: string; limit?: number } = {}): RunSummary[] {
+export interface RunFilter {
+  packageId?: string;
+  status?: string;
+  /** Runs that include this workflow. */
+  workflowId?: string;
+  /** Text matched against the package name and workflow ids. */
+  q?: string;
+  /** ISO date or date-time: runs created at or after. */
+  since?: string;
+  limit?: number;
+}
+
+export function listRuns(db: DB, opts: RunFilter = {}): RunSummary[] {
+  const where: string[] = [];
+  const args: unknown[] = [];
+  if (opts.packageId) (where.push("r.package_id = ?"), args.push(opts.packageId));
+  if (opts.status) (where.push("r.status = ?"), args.push(opts.status));
+  if (opts.workflowId) (where.push("EXISTS (SELECT 1 FROM workflow_runs w WHERE w.run_id = r.id AND w.workflow_id = ?)"), args.push(opts.workflowId));
+  if (opts.q?.trim()) {
+    const like = `%${opts.q.trim().toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+    where.push("(lower(p.name) LIKE ? ESCAPE '\\' OR EXISTS (SELECT 1 FROM workflow_runs w WHERE w.run_id = r.id AND w.workflow_id LIKE ? ESCAPE '\\'))");
+    args.push(like, like);
+  }
+  if (opts.since && !Number.isNaN(Date.parse(opts.since))) (where.push("r.created_at >= ?"), args.push(new Date(opts.since).toISOString()));
+  const limit = Math.min(Math.max(opts.limit ?? 50, 1), 500);
   const rows = db
     .prepare(
       `SELECT r.id, r.package_id AS packageId, p.name AS packageName, r.status, r.created_at AS createdAt, r.finished_at AS finishedAt
-       FROM runs r JOIN packages p ON p.id = r.package_id ${opts.packageId ? "WHERE r.package_id = ?" : ""}
+       FROM runs r JOIN packages p ON p.id = r.package_id ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
        ORDER BY r.created_at DESC LIMIT ?`,
     )
-    .all(...(opts.packageId ? [opts.packageId, opts.limit ?? 50] : [opts.limit ?? 50])) as Omit<RunSummary, "counts">[];
+    .all(...args, limit) as Array<Omit<RunSummary, "counts" | "workflowIds" | "pendingActions">>;
   const counts = db.prepare("SELECT status, COUNT(*) AS n FROM workflow_runs WHERE run_id = ? GROUP BY status");
+  const ids = db.prepare("SELECT workflow_id FROM workflow_runs WHERE run_id = ? ORDER BY position");
+  const pending = db.prepare("SELECT COUNT(*) AS n FROM action_requests a JOIN workflow_runs w ON w.id = a.workflow_run_id WHERE w.run_id = ? AND a.status = 'pending_approval'");
   return rows.map((r) => ({
     ...r,
     counts: Object.fromEntries((counts.all(r.id) as Array<{ status: string; n: number }>).map((c) => [c.status, c.n])),
+    workflowIds: (ids.all(r.id) as Array<{ workflow_id: string }>).map((x) => x.workflow_id),
+    pendingActions: (pending.get(r.id) as { n: number }).n,
   }));
+}
+
+export interface WorkflowStats {
+  workflowId: string;
+  runs: number;
+  succeeded: number;
+  needsReview: number;
+  failed: number;
+  avgQuality: number | null;
+  avgAttempts: number | null;
+  lastRunAt: string;
+}
+
+/** Per-workflow outcomes across run history, for spotting workflows that often need review or fail. */
+export function workflowStats(db: DB): WorkflowStats[] {
+  return db
+    .prepare(
+      `SELECT workflow_id AS workflowId, COUNT(*) AS runs,
+              SUM(status = 'succeeded') AS succeeded, SUM(status = 'needs_review') AS needsReview, SUM(status = 'failed') AS failed,
+              AVG(quality_score) AS avgQuality, AVG(NULLIF(attempts, 0)) AS avgAttempts, MAX(COALESCE(finished_at, started_at, '')) AS lastRunAt
+       FROM workflow_runs WHERE status NOT IN ('pending', 'skipped', 'blocked') GROUP BY workflow_id ORDER BY runs DESC, workflowId`,
+    )
+    .all() as WorkflowStats[];
 }
 
 /** Runs that were in flight when the server stopped can't resume; mark them so the UI doesn't show them as live. */
