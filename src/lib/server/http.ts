@@ -10,9 +10,11 @@ export function fail(status: number, code: string, message: string, extra: Recor
 }
 
 /** Reads and validates a JSON body. Returns either the parsed data or a ready-made error response. */
-export async function readJson<T extends z.ZodType>(request: Request, schema: T): Promise<{ data: z.infer<T> } | { response: NextResponse }> {
+export async function readJson<T extends z.ZodType>(request: Request, schema: T, maxBytes: number = MAX_BODY_BYTES): Promise<{ data: z.infer<T> } | { response: NextResponse }> {
+  const declared = Number(request.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > maxBytes) return { response: fail(413, "too_large", "Request body is too large.") };
   const raw = await request.text();
-  if (raw.length > MAX_BODY_BYTES) return { response: fail(413, "too_large", "Request body is too large.") };
+  if (raw.length > maxBytes) return { response: fail(413, "too_large", "Request body is too large.") };
   let body: unknown;
   try {
     body = raw ? JSON.parse(raw) : {};
