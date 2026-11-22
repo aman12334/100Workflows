@@ -4,6 +4,10 @@ import { ConnectionCheck } from "@/components/connection-check";
 import { PROVIDERS } from "@/lib/providers";
 import { getModelConfig } from "@/lib/server/config";
 import { actionsLive, connectionStatus } from "@/lib/integrations/registry";
+import { accessToken, tokenTooShort } from "@/lib/auth";
+import { getDb } from "@/lib/server/db";
+import { listAudit } from "@/lib/server/db/audit";
+import { currentWorkspace } from "@/lib/server/workspace";
 
 export default function SettingsPage() {
   const config = getModelConfig();
@@ -75,6 +79,8 @@ export default function SettingsPage() {
       </section>
 
       <IntegrationsSection />
+
+      <SecuritySection />
 
       <section className="mt-8 grid gap-6 md:grid-cols-2">
         <div className="rounded-3xl border border-line bg-surface p-6">
@@ -235,6 +241,47 @@ function IntegrationsSection() {
           </li>
         ))}
       </ul>
+    </section>
+  );
+}
+
+function SecuritySection() {
+  const events = listAudit(getDb(), currentWorkspace(), 20);
+  const token = accessToken(process.env);
+  const hosts = process.env.WORKFLOWS_ALLOWED_HOSTS?.split(",").map((h) => h.trim()).filter(Boolean) ?? [];
+  const rows: Array<[string, string]> = [
+    ["Sign-in", token ? (tokenTooShort(process.env) ? "misconfigured: token shorter than 24 characters (everything is locked)" : "on (WORKFLOWS_ACCESS_TOKEN)") : "off: anyone who can reach this server can use it"],
+    ["Reachable at", hosts.length ? `localhost and ${hosts.join(", ")}` : "localhost only"],
+    ["External actions", actionsLive(process.env) ? "live after approval" : "dry run (nothing is sent)"],
+    ["Approver name in audit log", process.env.WORKFLOWS_OPERATOR?.trim() || "local user"],
+  ];
+  return (
+    <section className="mt-8 rounded-3xl border border-line bg-surface p-6" id="security">
+      <h2 className="font-display text-lg font-bold text-ink-950">Security</h2>
+      <p className="mt-1 text-sm text-ink-700">
+        Single-user and local by design: there are no user accounts or roles. Keep it on localhost, or set WORKFLOWS_ACCESS_TOKEN before exposing it to anyone else. See docs/security.md.
+      </p>
+      <dl className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
+        {rows.map(([k, v]) => (
+          <div key={k} className="rounded-2xl bg-canvas/60 p-3">
+            <dt className="text-xs font-semibold text-ink-500">{k}</dt>
+            <dd className="text-ink-950">{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <h3 className="mt-5 text-sm font-semibold text-ink-950">Recent security events</h3>
+      {events.length === 0 ? (
+        <p className="mt-1 text-xs text-ink-500">None yet. Sign-ins, uploads, deletions and builder saves appear here; approvals are logged on each action.</p>
+      ) : (
+        <ul className="mt-2 space-y-1 font-mono text-[11px] text-ink-700">
+          {events.map((e, i) => (
+            <li key={i}>
+              {e.createdAt.replace("T", " ").slice(0, 19)} · {e.event} · {e.actor}
+              {e.detail ? ` · ${e.detail}` : ""}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
