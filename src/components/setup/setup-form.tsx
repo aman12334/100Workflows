@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { InsertPicker } from "@/components/context/insert-picker";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Link2, Loader2, Save } from "lucide-react";
@@ -200,7 +201,14 @@ function Field({
             ))}
           </select>
         ) : f.field.type === "long_text" || f.field.type === "list" ? (
-          <textarea id={id} rows={f.field.type === "list" ? 3 : 4} value={value} placeholder={placeholder} onChange={(e) => onChange(f.storageKey, e.target.value)} className={base} />
+          <>
+            <textarea id={id} rows={f.field.type === "list" ? 3 : 4} value={value} placeholder={placeholder} onChange={(e) => onChange(f.storageKey, e.target.value)} className={base} />
+            {f.field.type === "long_text" && (
+              <div className="mt-1">
+                <InsertPicker onInsert={(text) => onChange(f.storageKey, value ? `${value}\n\n${text}` : text)} />
+              </div>
+            )}
+          </>
         ) : (
           <input
             id={id}
