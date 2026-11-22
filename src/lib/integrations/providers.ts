@@ -587,6 +587,8 @@ export const stripeListOpenInvoices: ActionDefinition<{ overdue_only: boolean },
   describe: (i) => ({ target: "Stripe account", summary: i.overdue_only ? "Read overdue open invoices" : "Read open invoices" }),
   async execute(i, ctx) {
     const keyValue = requireEnv(stripe, ctx.env).STRIPE_API_KEY;
+    // A full secret key can change and refund things; this integration only ever needs to read invoices.
+    if (/^sk_/.test(keyValue)) throw new IntegrationError("not_configured", "STRIPE_API_KEY is a full secret key (sk_...). Use a restricted key (rk_...) with Invoices: Read only.");
     const res = await request(stripe, { method: "GET", url: "https://api.stripe.com/v1/invoices?status=open&limit=100", headers: { authorization: `Bearer ${keyValue}` } }, ctx, { safeToRetry: true, timeoutMs: this.timeoutMs });
     const j = parseJsonBody<{ data: Array<Record<string, unknown>> }>(res);
     const now = ctx.now().getTime();

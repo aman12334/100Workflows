@@ -349,6 +349,16 @@ describe("Phase 4 workflows through run-service and approval (mocked providers)"
     expect(http.calls).toHaveLength(0);
   });
 
+  it("refuses a full Stripe secret key: only a restricted read-only key is accepted", async () => {
+    const wf = byId("invoice-payment-follow-up");
+    const http = mockTransport(fixture("invoice-payment-follow-up").http);
+    const { r } = await run(wf, fixture("invoice-payment-follow-up").inputs, scripted(fixture("invoice-payment-follow-up").good).createMessage, http.transport, { ...ENV, STRIPE_API_KEY: "sk_test_full_access" });
+    expect(r.status).toBe("failed");
+    expect(r.reason).toMatch(/restricted key \(rk_/);
+    expect(r.reason).not.toContain("sk_test_full_access");
+    expect(http.calls).toHaveLength(0);
+  });
+
   it("a workflow that needs review stores no proposals", async () => {
     const f = fixture("slack-communication-agent");
     const { runId, result } = await runThroughService(db, "slack-communication-agent", mockTransport(f.http).transport, f.bad);
