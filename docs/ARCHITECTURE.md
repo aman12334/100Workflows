@@ -19,10 +19,15 @@
 | Pricing | `src/lib/runtime/pricing.ts` | Verified list prices and the cost estimate shown for a run. Models without a verified price get no estimate |
 | Calculations | `src/lib/runtime/calc/*`, `src/lib/runtime/executors/calculation.ts`, `src/lib/runtime/rules/calculation.ts` | Registered, versioned, deterministic calculations with strict input/output schemas, units and rounding; the runner (allowlist, validation, size budget, cancellation, logging); the extract/calculate/explain flow; and the rule that keeps model explanations to calculated numbers. See [calculations.md](calculations.md) |
 | Tools | `src/lib/runtime/tools/*`, `src/lib/runtime/executors/research.ts` | The read-only tool allowlist (`web-search`, `web-fetch`), the runner that enforces it (validation, budgets, timeouts, retries, cancellation, logging), the SSRF-safe fetch transport, page extraction, and the gather step research workflows use. See [tools.md](tools.md) |
-| Run service | `src/lib/server/run-service.ts`, `db/runs.ts`, `app/api/runs/*`, `app/runs/*` | Preflight, background execution in dependency order, cancellation, restart recovery, trace and evaluation storage |
+| Integrations | `src/lib/integrations/*`, `src/lib/runtime/executors/integration.ts`, `src/lib/runtime/rules/actions.ts` | Registered providers and versioned actions with side-effect classes, input/output schemas, deterministic checks and idempotency strategies; an HTTP core with timeouts, cancellation, client-side rate limits, `Retry-After`, safe-only retries and normalised errors; the read and propose steps; the `valid_action_payloads` rule. See [integrations.md](integrations.md) |
+| Approvals | `src/lib/server/action-service.ts`, `db/actions.ts`, `app/api/actions/*`, `components/run/actions-panel.tsx` | The only path from a proposal to a side effect: hash-bound, single-use approval with conditional state transitions, dry run by default, honest outcomes (`unconfirmed`) and an append-only audit trail |
+| Workspace memory | `src/lib/server/workspace.ts`, `db/context.ts`, `db/files.ts`, `src/lib/files/extract.ts`, `app/context`, `app/api/context/*`, `app/api/files/*` | Saved context items and uploaded files' extracted text, always queried by workspace id; a dependency-free TXT/CSV/DOCX/XLSX/PDF extractor with size and type limits |
+| Builder | `src/lib/catalog/builder.ts`, `src/lib/server/builder-service.ts`, `app/builder`, `app/api/builder/*` | A form spec turned into a model-only schema-v2 definition, validated like catalog workflows and saved under `data/custom-workflows`, which `loadAppCatalog()` loads after the catalog |
+| Run service | `src/lib/server/run-service.ts`, `db/runs.ts`, `app/api/runs/*`, `app/runs/*` | Preflight, background execution in dependency order, cancellation, restart recovery, trace and evaluation storage, storing proposed actions, retry with reuse of identical accepted results (by inputs hash), history filters and per-workflow outcomes |
 | Model client | `src/lib/providers.ts`, `src/lib/server/model-client.ts`, `claude.ts`, `openai.ts`, `src/lib/runtime/openai-translate.ts` | Picks the provider from the environment; one file per provider SDK; a translator so OpenAI serves the same request shape |
 | Config | `src/lib/server/config.ts` | Reads env at call time and reports `configured`/`model`/`problem`, never the key |
-| Request guard | `src/lib/request-guard.ts`, `src/proxy.ts` | Host allowlist, same-origin and JSON checks on `/api/*` |
+| Request guard and sign-in | `src/lib/request-guard.ts`, `src/lib/auth.ts`, `src/proxy.ts`, `app/api/auth/*`, `app/login` | Host allowlist, same-origin and JSON checks on `/api/*`; optional token sign-in (HMAC session cookie) for every page and API |
+| Audit and health | `db/audit.ts`, `app/api/health` | Security events (sign-ins, uploads, deletions, builder saves); a public, secret-free readiness check |
 | Logging | `src/lib/server/log.ts` | JSON lines with recursive secret redaction |
 | UI | `src/app/*`, `src/components/*` | Chat, library, workflow detail, settings |
 
@@ -88,9 +93,13 @@
 | Prompt injection through catalog text | Tool results are labeled as data in the system prompt. Cited ids are verified server-side regardless of what the text says |
 | Runaway cost | Chat: per-turn model call cap, `max_tokens`, history size. Runs: per-workflow `maxModelCalls`, `maxRetries`, `timeoutSeconds`, ≤5 searches per run; web search is opt-in; generic model reviews are skipped once a critical rule has failed. Each run shows its usage and, where a price is verified, an estimated cost |
 | Prompt injection through web pages | Pages are delimited, untrusted data; source ids are verified in code; downstream workflows re-validate upstream outputs with a schema |
-| Repeated side effects on retry | No runnable workflow has side effects. Executors with side effects (sending, writing records) will need an approval gate and idempotency keys before they can be registered |
+| Unapproved or repeated side effects | Workflows only propose actions. Execution needs a single-use approval of the exact payload hash; dry run unless `WORKFLOWS_ACTIONS=live`; idempotency keys or prechecks per provider; writes that might have happened are `unconfirmed` and never retried automatically |
+| Credentials reaching the model or logs | Provider credentials are read from env at call time, never put in prompts, definitions, outputs or logs; tests assert this with fake credentials |
+| Clickjacking approve buttons | `X-Frame-Options: DENY` and `frame-ancestors 'none'` on every page |
+| Hostile uploaded files | Type checked against magic bytes; size caps before and after decompression; encrypted and ZIP64 refused; text only kept; nothing executed |
+| Someone else on the network | Optional `WORKFLOWS_ACCESS_TOKEN` sign-in; see [security.md](security.md) |
 
-**Not addressed yet:** other local programs can call the API (there is no per-session token), and nothing limits a user's own request rate.
+**Not addressed yet:** without `WORKFLOWS_ACCESS_TOKEN`, other local programs can call the API; there are no user accounts or roles; nothing limits a user's own request rate.
 
 ## Data model
 
@@ -106,5 +115,7 @@
 | `run_steps` | Trace: every agent call and check per attempt, with timing, detail, error and token/search usage |
 | `evaluations` | One row per attempt: score, pass/fail, decision (`accept`, `retry`, `escalate`) and each criterion's result |
 | `tool_calls` | One row per tool call (migration `005`): tool id and version, status and error kind, attempts, target URL or search request, timing and sizes |
+| `action_requests`, `action_events` | Proposed external actions (migration `006`): action and version, side effect, target, exact payload and its hash, status, idempotency key, approver, provider id or error; plus an append-only event trail |
+| `context_items`, `files`, `audit_events` | Workspace-scoped memory and security audit (migration `007`); `files` keeps extracted text only. `workflow_runs.inputs_hash` and `reused_from` and `runs.retry_of` support retry with reuse |
 
 Secrets never go into the database.

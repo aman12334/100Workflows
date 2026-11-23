@@ -174,6 +174,26 @@ A research workflow adds a `gather` step before `generate`. It names registered 
 
 When a workflow's output is numbers, the numbers must come from a registered calculation: add a `calculate` check step naming it (`"calculation": "unit_economics@1"`), map typed inputs to its fields, add an `extract` step only if users paste tables as text, and make `numbers_from_calculation` a critical rule on the explanation. The full guide, the numerical policy and how to add a new calculation are in [calculations.md](calculations.md).
 
+### Integration workflows (actions that need approval)
+
+A workflow that works with another service declares its providers in `integrations` (`{"id": "hubspot", ...}`, a registered provider id) and uses two check steps around its generate step:
+
+- **`reads`** (before generate, optional): 1 to 5 registered **read-only** actions. `params` map typed inputs to the action's input, as in `{"emails": {"input": "people", "as": "email_list"}}`, or fix a value, as in `{"overdue_only": {"value": true}}`. The results are given to the model as `<integration_data>`.
+- **`propose`** (after generate): 1 to 5 `{ "action": "<provider>.<action>@<version>", "from": "<output path>[]" }`. Every item at `from` becomes a proposed action. Each one needs a **critical** `valid_action_payloads` rule with the same `path` and `action`, which checks the item against the action's schema and its checks against the data read. Add `field` and `allowedFrom` when a value must be one that was read, for example a reminder's `to` from `stripe.list_open_invoices:invoices[].customer_email`.
+
+Integration steps can't be mixed with `gather` or `calculate` steps. Actions are added only in code (`src/lib/integrations/providers.ts`), with:
+- a side-effect class;
+- strict input and output schemas;
+- deterministic `validate` checks;
+- an idempotency strategy;
+- a mocked test.
+
+Read [integrations.md](integrations.md) first. Fixtures for integration workflows (`tests/fixtures/phase4/`) script the provider's HTTP responses; they never call a provider.
+
+### Builder workflows
+
+`/builder` creates model-only workflows from a form and saves them to `data/custom-workflows/` (local, git-ignored). To contribute one to the catalog, move its file to `catalog/workflows/<category>/`, remove the `custom` tag if it doesn't help search, add a search case and a fixture test, and run `npm run check`.
+
 ## 7. Workflows that need code (hand-written executors)
 
 Use a hand-written executor when a workflow needs tools or checks the generic executor doesn't offer (Market Research and ICP Builder are hand-written). `npm run new:workflow -- ... --executable` creates a v1 definition plus stubs for steps 1 and 4:

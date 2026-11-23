@@ -4,7 +4,15 @@
 
 100 Workflows is an open-source, local-first app. You run it on your own computer, connect your own Anthropic or OpenAI API key, and talk to an assistant that searches a catalog of workflow definitions across go-to-market, marketing, sales, finance, product, user research and operations. It explains which workflows fit your goal and what each one needs.
 
-> **Status: Phase 3 is done.** Chat, grounded recommendations, persistent packages, setup forms, and real execution of **83 workflows** with evaluation, bounded retries, saved results, and per-run usage with cost estimates where a price is verified. Two are hand-written (**Market Research Agent**, **Ideal Customer Profile Builder**); the other 81 run on the schema-v2 generic executor straight from their JSON definitions. 48 work from what you type in; **20 research workflows** search the web and read pages with read-only tools, and keep every source with the result; **13 calculation workflows** compute their numbers with registered, tested calculations and use the model only to explain them. The catalog has 90 workflows; the other 7 are *definition only*, and the app says so wherever they appear.
+> **Status: Phase 5 is done.** The catalog has **100 workflows**; **93 can run**, and 7 are *definition only*, which the app says wherever they appear.
+>
+> - Two runnable workflows are hand-written (**Market Research Agent**, **Ideal Customer Profile Builder**); the other 91 run on the schema-v2 generic executor straight from their JSON definitions.
+> - **48** work from what you type in.
+> - **20 research workflows** search the web and read pages with read-only tools, and keep every source with the result.
+> - **13 calculation workflows** compute their numbers in tested code and use the model only to explain them.
+> - **10 integration workflows** read from and propose changes to email, CRM, calendar, tasks, Slack, invoices, social posts and tickets. Every action waits for your approval of its exact payload and runs once. Approvals are dry runs until you turn real actions on.
+>
+> Around them: discovery filters, run history with retry, a basic workflow builder, workspace context and file uploads, audit logs, optional sign-in and a health check.
 
 ---
 
@@ -102,6 +110,24 @@ How the tools work, their limits and the security model: [docs/tools.md](docs/to
 
 **13 calculation workflows** (Phase 3) do the maths in code, not in the model: unit economics, break-even, revenue forecast, budget variance, investment return, conversion funnel, cohort retention, acquisition efficiency, A/B test results, inventory reorder point, demand forecast, supplier scorecard and workforce capacity. Each runs a registered, versioned calculation with documented formulas, units and rounding. The model only explains the results, and a check rejects any number in its explanation that the calculation did not produce. If the explanation fails, you still get the calculated results. See [docs/calculations.md](docs/calculations.md).
 
+**10 integration workflows** (Phase 4) work with other services: Email Campaign Executor (Resend), CRM Contact Manager, CRM Deal Pipeline Updater and Customer Support Ticket Manager (HubSpot), Calendar Meeting Coordinator (Google Calendar), Meeting Notes & Follow-up Agent and Project Task Manager (Linear), Slack Communication Agent, Invoice & Payment Follow-up Agent (Stripe read-only, plus Resend), and Social Media Publishing Agent (Mastodon).
+
+- They read what they need, draft, and **propose** actions. Nothing is sent or changed until you approve an action's exact payload on the run page.
+- Each approval runs once and is recorded with your name and the provider's result.
+- Approvals are **dry runs** until you set `WORKFLOWS_ACTIONS=live`.
+- None is connected by default: each needs its own credentials in `.env.local`.
+
+See [docs/integrations.md](docs/integrations.md).
+
+**Around the workflows** (Phase 5):
+- **Library filters:** by what a workflow needs (model only, web research, calculations, apps) and by tag.
+- **Run history:** search and filters, per-workflow outcomes, and **Retry failed**, which re-runs only what didn't succeed and reuses identical accepted results.
+- **Workflow builder:** for your own model-only workflows (`/builder`).
+- **Context & files:** saved context and uploaded TXT/CSV/DOCX/XLSX/PDF text that you can insert into any long text input.
+- **Security:** optional sign-in (`WORKFLOWS_ACCESS_TOKEN`), audit logs in Settings → Security, and `/api/health`.
+
+See [docs/api.md](docs/api.md), [docs/security.md](docs/security.md) and [docs/deployment.md](docs/deployment.md).
+
 **Web search is opt-in.** Market Research uses Anthropic's server-side web search tool with the same API key, so you don't need another account. Anthropic bills searches separately from tokens, so the tool is off until you add `WORKFLOWS_WEB_SEARCH=on` to `.env.local` and restart. While it is off, Market Research is skipped with that explanation, and it never produces a report without sources. Your Anthropic organization must also allow web search (an admin enables it in the Anthropic Console). If it doesn't, the run fails and shows Anthropic's own error message.
 
 ### How results are judged
@@ -179,7 +205,9 @@ src/lib/packages/       Package logic: dependencies, ordering, input merging and
 src/lib/runtime/        Workflow runtime: engine, budget, evaluation, rules, pricing, generic and hand-written executors
 src/lib/server/         Server-only: config, Anthropic client, chat engine, services, logging
 src/lib/server/db/      SQLite connection, migration runner, repositories
-src/proxy.ts            Localhost and origin guard for /api/*
+src/lib/integrations/   Providers, versioned actions, side-effect classes, HTTP core (timeouts, retries, rate limits)
+src/lib/files/          Dependency-free text extraction for uploads (TXT/CSV/DOCX/XLSX/PDF)
+src/proxy.ts            Localhost and origin guard for /api/*, optional sign-in
 tests/                  Vitest suites
 docs/                   Architecture, contributor guide, generated catalog index
 .github/                CI workflow, PR and issue templates
@@ -197,17 +225,27 @@ docs/                   Architecture, contributor guide, generated catalog index
 | 6–10 | Schema v2 and the generic executor, three migrated workflows, run usage and cost estimates | ✅ done |
 | Phase 1 | 45 new model-only workflows on the generic executor (57 in the catalog, 50 executable) | ✅ done |
 | Phase 2 | Shared read-only tool layer (web search, page reading), 20 research workflows with checked citations (77 in the catalog, 70 executable) | ✅ done |
-| Phase 3 | Registered deterministic calculation layer and 13 calculation workflows (90 in the catalog, 83 executable) | ✅ this release |
+| Phase 3 | Registered deterministic calculation layer and 13 calculation workflows (90 in the catalog, 83 executable) | ✅ done |
+| Phase 4 | Integration layer with approval gates, 7 providers, 10 integration workflows (100 in the catalog, 93 executable) | ✅ done |
+| Phase 5 | Discovery filters, run history and retry, builder, workspace context and files, audit, sign-in, health, API and deployment docs | ✅ this release |
 
 ## Known limitations
 
-- 83 workflows can execute. The other 7 are definitions. Calculation workflows use simple, documented methods (flat baseline forecasts, a normal-approximation z-test, cycle-service-level safety stock) and cannot read spreadsheets directly: paste figures as text or use the typed inputs. The 45 Phase 1 workflows are model-only. The 20 research workflows read public web pages only: no PDFs, no pages that need JavaScript or a login, no paywalled content, and many review sites block automated reading. Search coverage depends on what Anthropic's web search returns that day. Web search cost is not estimated (no verified price), and page reads run on your computer. All Phase 1 and Phase 2 workflows have been tested with scripted model responses and canned pages, not yet against a live model or the live web.
+- 93 workflows can execute. The other 7 are definitions. Calculation workflows use simple, documented methods (flat baseline forecasts, a normal-approximation z-test, cycle-service-level safety stock) and cannot read spreadsheets directly: paste figures as text or use the typed inputs. The 45 Phase 1 workflows are model-only. The 20 research workflows read public web pages only: no PDFs, no pages that need JavaScript or a login, no paywalled content, and many review sites block automated reading. Search coverage depends on what Anthropic's web search returns that day. Web search cost is not estimated (no verified price), and page reads run on your computer. All Phase 1 and Phase 2 workflows have been tested with scripted model responses and canned pages, not yet against a live model or the live web.
 - There are no separate categories for customer success, HR or strategy yet: those workflows live under Sales and Operations.
 - Catalog search is keyword-based with light stemming. It is tested by `catalog/search-cases.json` and should hold up to a few hundred workflows. Beyond that, an embedding index may be worth adding.
 - Runs execute inside the dev or production server process. Closing the server interrupts a run, and it can't resume.
 - One run at a time per package. Different packages can run at the same time, which also spends credits in parallel.
 - Cost is bounded by model-call counts, `max_tokens` and time limits per workflow. There is no dollar-denominated budget yet. Run details show an **estimated** cost only for models with a verified list price (current Claude models, excluding Haiku 5.5's tiered pricing). It excludes web search charges and caching discounts. OpenAI runs show token usage without a cost estimate, because no verified OpenAI price is recorded.
-- No runnable workflow has external side effects (they only read the web and write text). Human approval gates for actions such as sending email are designed for (definitions declare integrations) but not yet built, so no workflow with side effects is executable.
+- Integration workflows have been tested only against **mocked** providers (canned HTTP responses). No real provider was called while building them, so try each one with a low-risk action before relying on it. Approvals are dry runs until `WORKFLOWS_ACTIONS=live`. Supported:
+  - Resend, HubSpot, Slack, Google Calendar (with a refresh token you obtain yourself), Linear, Stripe (read-only) and Mastodon;
+  - no X, LinkedIn or Bluesky publishing, no HubSpot ticket assignment, no attachments.
+- Single user: no accounts or roles. Optional sign-in is one shared token. Context, files and audit events are stored per workspace, but there is one workspace per installation. Don't host publicly; see [docs/deployment.md](docs/deployment.md).
+- File reading is basic:
+  - PDF text only (scanned PDFs need OCR, which isn't supported; unusual font encodings may not decode);
+  - spreadsheet dates show as serial numbers;
+  - only the extracted text is kept.
+- Builder workflows are model-only (no tools, calculations or integrations) and are local to the computer they were made on.
 - Confidence levels are coarse heuristics. Treat **Accepted** as "passed its checks", not "verified true". Research output is a starting point, not a substitute for expert research.
 - Chat history from Milestone 1 (browser local storage) was not imported, and there is no button for deleting chats yet.
 - Replies and runs are polled, not streamed.
