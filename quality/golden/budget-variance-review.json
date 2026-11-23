@@ -1,0 +1,181 @@
+{
+  "workflowId": "budget-variance-review",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/budget-variance-review.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "variance_data": "Software: budget $8,000, actual $11,200, variance +$3,200 (+40%)\nContractors: budget $20,000, actual $14,500, variance -$5,500 (-28%)"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "overview",
+          "lines",
+          "reforecast_flags"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "overview": "Software over, contractors under.",
+            "lines": [
+              {
+                "line_item": "Software",
+                "variance": "variance +$3,200 (+40%)",
+                "direction": "over",
+                "drivers": [
+                  {
+                    "driver": "Annual renewal",
+                    "basis": "hypothesis"
+                  }
+                ],
+                "questions_for_owner": [
+                  "Which tools renewed?"
+                ],
+                "action": "investigate"
+              },
+              {
+                "line_item": "Contractors",
+                "variance": "variance -$5,500 (-28%)",
+                "direction": "under",
+                "drivers": [
+                  {
+                    "driver": "Contract ended",
+                    "basis": "hypothesis"
+                  }
+                ],
+                "questions_for_owner": [
+                  "Is the role still needed?"
+                ],
+                "action": "reforecast"
+              }
+            ],
+            "reforecast_flags": [
+              "Contractors"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"figures_quoted\" must not be accepted.",
+      "inputs": {
+        "variance_data": "Software: budget $8,000, actual $11,200, variance +$3,200 (+40%)\nContractors: budget $20,000, actual $14,500, variance -$5,500 (-28%)"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "figures_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "overview": "Software over, contractors under.",
+            "lines": [
+              {
+                "line_item": "Software",
+                "variance": "variance +$4,000 (+50%)",
+                "direction": "over",
+                "drivers": [
+                  {
+                    "driver": "x",
+                    "basis": "hypothesis"
+                  }
+                ],
+                "questions_for_owner": [],
+                "action": "monitor"
+              }
+            ],
+            "reforecast_flags": [
+              "Contractors"
+            ]
+          },
+          {
+            "overview": "Software over, contractors under.",
+            "lines": [
+              {
+                "line_item": "Software",
+                "variance": "variance +$4,000 (+50%)",
+                "direction": "over",
+                "drivers": [
+                  {
+                    "driver": "x",
+                    "basis": "hypothesis"
+                  }
+                ],
+                "questions_for_owner": [],
+                "action": "monitor"
+              }
+            ],
+            "reforecast_flags": [
+              "Contractors"
+            ]
+          },
+          {
+            "overview": "Software over, contractors under.",
+            "lines": [
+              {
+                "line_item": "Software",
+                "variance": "variance +$4,000 (+50%)",
+                "direction": "over",
+                "drivers": [
+                  {
+                    "driver": "x",
+                    "basis": "hypothesis"
+                  }
+                ],
+                "questions_for_owner": [],
+                "action": "monitor"
+              }
+            ],
+            "reforecast_flags": [
+              "Contractors"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "figures_quoted",
+      "question": "Every variance quotes the data word for word."
+    },
+    {
+      "id": "unique_lines",
+      "question": "Each line item appears once."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

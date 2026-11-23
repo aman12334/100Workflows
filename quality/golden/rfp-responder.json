@@ -1,0 +1,139 @@
+{
+  "workflowId": "rfp-responder",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/rfp-responder.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "questions": "Do you support SSO via SAML?\nAre you SOC 2 Type II certified?",
+        "facts": "SSO via SAML 2.0 on the Business plan. SOC 2 Type I completed March; Type II audit in progress."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "answers",
+          "needs_expert"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "answers": [
+              {
+                "question": "Do you support SSO via SAML?",
+                "compliance": "yes",
+                "answer": "Yes, SAML 2.0 on the Business plan.",
+                "supporting_fact": "SSO via SAML 2.0 on the Business plan."
+              },
+              {
+                "question": "Are you SOC 2 Type II certified?",
+                "compliance": "partial",
+                "answer": "Type I is complete; Type II is in progress.",
+                "supporting_fact": "SOC 2 Type I completed March; Type II audit in progress."
+              }
+            ],
+            "needs_expert": []
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"facts_quoted\" must not be accepted.",
+      "inputs": {
+        "questions": "Do you support SSO via SAML?\nAre you SOC 2 Type II certified?",
+        "facts": "SSO via SAML 2.0 on the Business plan. SOC 2 Type I completed March; Type II audit in progress."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "facts_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "answers": [
+              {
+                "question": "Are you SOC 2 Type II certified?",
+                "compliance": "yes",
+                "answer": "Yes.",
+                "supporting_fact": "SOC 2 Type II certified since 2024"
+              }
+            ],
+            "needs_expert": []
+          },
+          {
+            "answers": [
+              {
+                "question": "Are you SOC 2 Type II certified?",
+                "compliance": "yes",
+                "answer": "Yes.",
+                "supporting_fact": "SOC 2 Type II certified since 2024"
+              }
+            ],
+            "needs_expert": []
+          },
+          {
+            "answers": [
+              {
+                "question": "Are you SOC 2 Type II certified?",
+                "compliance": "yes",
+                "answer": "Yes.",
+                "supporting_fact": "SOC 2 Type II certified since 2024"
+              }
+            ],
+            "needs_expert": []
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "facts_quoted",
+      "question": "Every supporting fact is copied from your facts word for word."
+    },
+    {
+      "id": "questions_quoted",
+      "question": "Every question is copied from the RFP word for word."
+    },
+    {
+      "id": "no_duplicate_answers",
+      "question": "No question is answered twice."
+    },
+    {
+      "id": "concise_answers",
+      "question": "Answers are 80 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

@@ -1,0 +1,253 @@
+{
+  "workflowId": "pre-mortem",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/pre-mortem.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "plan": "Launch a self-serve plan at $29/month in Q3 to reach 500 paying agencies by year end."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "failure_scenarios",
+          "preventive_actions",
+          "plan_changes",
+          "kill_criteria"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "failure_scenarios": [
+              {
+                "id": "F1",
+                "story": "Self-serve users never connected their banks.",
+                "likelihood": "high",
+                "impact": "high",
+                "early_warning_sign": "Bank connection rate under 40%"
+              },
+              {
+                "id": "F2",
+                "story": "Support load swamped the team.",
+                "likelihood": "medium",
+                "impact": "medium",
+                "early_warning_sign": "Tickets per signup rising"
+              },
+              {
+                "id": "F3",
+                "story": "Price cannibalised the sales-led plan.",
+                "likelihood": "medium",
+                "impact": "high",
+                "early_warning_sign": "Downgrades"
+              }
+            ],
+            "preventive_actions": [
+              {
+                "action": "Guided bank connection",
+                "scenario_ids": [
+                  "F1"
+                ],
+                "owner_role": "PM",
+                "when": "Before launch"
+              },
+              {
+                "action": "Help center first",
+                "scenario_ids": [
+                  "F2"
+                ],
+                "owner_role": "Support",
+                "when": "Before launch"
+              },
+              {
+                "action": "Seat cap on self-serve",
+                "scenario_ids": [
+                  "F3"
+                ],
+                "owner_role": "CEO",
+                "when": "Pricing"
+              }
+            ],
+            "plan_changes": [],
+            "kill_criteria": [
+              "Under 100 paying by October"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"scenarios_prevented\" must not be accepted.",
+      "inputs": {
+        "plan": "Launch a self-serve plan at $29/month in Q3 to reach 500 paying agencies by year end."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "scenarios_prevented"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "failure_scenarios": [
+              {
+                "id": "F1",
+                "story": "Self-serve users never connected their banks.",
+                "likelihood": "high",
+                "impact": "high",
+                "early_warning_sign": "Bank connection rate under 40%"
+              },
+              {
+                "id": "F2",
+                "story": "Support load swamped the team.",
+                "likelihood": "medium",
+                "impact": "medium",
+                "early_warning_sign": "Tickets per signup rising"
+              },
+              {
+                "id": "F3",
+                "story": "Price cannibalised the sales-led plan.",
+                "likelihood": "medium",
+                "impact": "high",
+                "early_warning_sign": "Downgrades"
+              }
+            ],
+            "preventive_actions": [
+              {
+                "action": "Guided bank connection",
+                "scenario_ids": [
+                  "F1"
+                ],
+                "owner_role": "PM",
+                "when": "Before launch"
+              }
+            ],
+            "plan_changes": [],
+            "kill_criteria": [
+              "Under 100 paying by October"
+            ]
+          },
+          {
+            "failure_scenarios": [
+              {
+                "id": "F1",
+                "story": "Self-serve users never connected their banks.",
+                "likelihood": "high",
+                "impact": "high",
+                "early_warning_sign": "Bank connection rate under 40%"
+              },
+              {
+                "id": "F2",
+                "story": "Support load swamped the team.",
+                "likelihood": "medium",
+                "impact": "medium",
+                "early_warning_sign": "Tickets per signup rising"
+              },
+              {
+                "id": "F3",
+                "story": "Price cannibalised the sales-led plan.",
+                "likelihood": "medium",
+                "impact": "high",
+                "early_warning_sign": "Downgrades"
+              }
+            ],
+            "preventive_actions": [
+              {
+                "action": "Guided bank connection",
+                "scenario_ids": [
+                  "F1"
+                ],
+                "owner_role": "PM",
+                "when": "Before launch"
+              }
+            ],
+            "plan_changes": [],
+            "kill_criteria": [
+              "Under 100 paying by October"
+            ]
+          },
+          {
+            "failure_scenarios": [
+              {
+                "id": "F1",
+                "story": "Self-serve users never connected their banks.",
+                "likelihood": "high",
+                "impact": "high",
+                "early_warning_sign": "Bank connection rate under 40%"
+              },
+              {
+                "id": "F2",
+                "story": "Support load swamped the team.",
+                "likelihood": "medium",
+                "impact": "medium",
+                "early_warning_sign": "Tickets per signup rising"
+              },
+              {
+                "id": "F3",
+                "story": "Price cannibalised the sales-led plan.",
+                "likelihood": "medium",
+                "impact": "high",
+                "early_warning_sign": "Downgrades"
+              }
+            ],
+            "preventive_actions": [
+              {
+                "action": "Guided bank connection",
+                "scenario_ids": [
+                  "F1"
+                ],
+                "owner_role": "PM",
+                "when": "Before launch"
+              }
+            ],
+            "plan_changes": [],
+            "kill_criteria": [
+              "Under 100 paying by October"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "scenarios_prevented",
+      "question": "Actions target real scenarios, and every scenario has an action."
+    },
+    {
+      "id": "distinct_stories",
+      "question": "Failure stories are distinct."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

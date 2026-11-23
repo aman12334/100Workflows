@@ -1,0 +1,220 @@
+{
+  "workflowId": "positioning-statement",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/positioning-statement.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "alternatives": "Spreadsheets and a part-time bookkeeper"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "alternatives",
+          "unique_attributes",
+          "value_themes",
+          "best_fit_buyers",
+          "market_category",
+          "positioning_statement",
+          "risks"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "alternatives": [
+              "Spreadsheets and a part-time bookkeeper"
+            ],
+            "unique_attributes": [
+              {
+                "id": "A1",
+                "attribute": "Agency-specific categories",
+                "basis": "supplied"
+              },
+              {
+                "id": "A2",
+                "attribute": "Nightly reconciliation",
+                "basis": "supplied"
+              }
+            ],
+            "value_themes": [
+              {
+                "value": "Books always current",
+                "attribute_ids": [
+                  "A2"
+                ],
+                "proof_needed": "Customer data"
+              }
+            ],
+            "best_fit_buyers": "Agency owners with 10-50 staff.",
+            "market_category": "Agency bookkeeping automation",
+            "positioning_statement": "For agency owners who close books by hand, Acme is agency bookkeeping automation that keeps books current nightly.",
+            "risks": [
+              "Category unfamiliar"
+            ]
+          }
+        ],
+        "review": 4
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"value_from_attributes\" must not be accepted.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "alternatives": "Spreadsheets and a part-time bookkeeper"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "value_from_attributes"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "alternatives": [
+              "Spreadsheets and a part-time bookkeeper"
+            ],
+            "unique_attributes": [
+              {
+                "id": "A1",
+                "attribute": "Agency-specific categories",
+                "basis": "supplied"
+              },
+              {
+                "id": "A2",
+                "attribute": "Nightly reconciliation",
+                "basis": "supplied"
+              }
+            ],
+            "value_themes": [
+              {
+                "value": "x",
+                "attribute_ids": [
+                  "A7"
+                ],
+                "proof_needed": "y"
+              }
+            ],
+            "best_fit_buyers": "Agency owners with 10-50 staff.",
+            "market_category": "Agency bookkeeping automation",
+            "positioning_statement": "For agency owners who close books by hand, Acme is agency bookkeeping automation that keeps books current nightly.",
+            "risks": [
+              "Category unfamiliar"
+            ]
+          },
+          {
+            "alternatives": [
+              "Spreadsheets and a part-time bookkeeper"
+            ],
+            "unique_attributes": [
+              {
+                "id": "A1",
+                "attribute": "Agency-specific categories",
+                "basis": "supplied"
+              },
+              {
+                "id": "A2",
+                "attribute": "Nightly reconciliation",
+                "basis": "supplied"
+              }
+            ],
+            "value_themes": [
+              {
+                "value": "x",
+                "attribute_ids": [
+                  "A7"
+                ],
+                "proof_needed": "y"
+              }
+            ],
+            "best_fit_buyers": "Agency owners with 10-50 staff.",
+            "market_category": "Agency bookkeeping automation",
+            "positioning_statement": "For agency owners who close books by hand, Acme is agency bookkeeping automation that keeps books current nightly.",
+            "risks": [
+              "Category unfamiliar"
+            ]
+          },
+          {
+            "alternatives": [
+              "Spreadsheets and a part-time bookkeeper"
+            ],
+            "unique_attributes": [
+              {
+                "id": "A1",
+                "attribute": "Agency-specific categories",
+                "basis": "supplied"
+              },
+              {
+                "id": "A2",
+                "attribute": "Nightly reconciliation",
+                "basis": "supplied"
+              }
+            ],
+            "value_themes": [
+              {
+                "value": "x",
+                "attribute_ids": [
+                  "A7"
+                ],
+                "proof_needed": "y"
+              }
+            ],
+            "best_fit_buyers": "Agency owners with 10-50 staff.",
+            "market_category": "Agency bookkeeping automation",
+            "positioning_statement": "For agency owners who close books by hand, Acme is agency bookkeeping automation that keeps books current nightly.",
+            "risks": [
+              "Category unfamiliar"
+            ]
+          }
+        ],
+        "review": 4
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "value_from_attributes",
+      "question": "Every value theme traces to a declared unique attribute."
+    },
+    {
+      "id": "statement_length",
+      "question": "The positioning statement is 60 words or fewer."
+    },
+    {
+      "id": "differentiates",
+      "question": "The statement clearly differentiates from the named alternatives."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

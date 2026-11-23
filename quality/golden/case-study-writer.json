@@ -1,0 +1,172 @@
+{
+  "workflowId": "case-study-writer",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/case-study-writer.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "company_name": "Acme",
+        "client": "Brightline Agency",
+        "interview_notes": "Dana Lee, COO: \"Month-end used to take three days. Now it takes four hours.\" They switched from spreadsheets in January."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "title",
+          "summary",
+          "challenge",
+          "solution",
+          "results",
+          "pull_quotes",
+          "questions_for_client"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "title": "How Brightline closes the month in four hours",
+            "summary": "Brightline replaced spreadsheets.",
+            "challenge": "Three-day month-end.",
+            "solution": "Automated reconciliation.",
+            "results": [
+              {
+                "result": "Month-end from three days to four hours",
+                "evidence": "Month-end used to take three days. Now it takes four hours."
+              }
+            ],
+            "pull_quotes": [
+              {
+                "quote": "Now it takes four hours.",
+                "attribution": "Dana Lee, COO"
+              }
+            ],
+            "questions_for_client": [
+              "How many people were involved before?"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"results_evidenced\" must not be accepted.",
+      "inputs": {
+        "company_name": "Acme",
+        "client": "Brightline Agency",
+        "interview_notes": "Dana Lee, COO: \"Month-end used to take three days. Now it takes four hours.\" They switched from spreadsheets in January."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "results_evidenced"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "title": "How Brightline closes the month in four hours",
+            "summary": "Brightline replaced spreadsheets.",
+            "challenge": "Three-day month-end.",
+            "solution": "Automated reconciliation.",
+            "results": [
+              {
+                "result": "Saved $50,000 a year",
+                "evidence": "We saved fifty thousand dollars a year"
+              }
+            ],
+            "pull_quotes": [
+              {
+                "quote": "Now it takes four hours.",
+                "attribution": "Dana Lee, COO"
+              }
+            ],
+            "questions_for_client": [
+              "How many people were involved before?"
+            ]
+          },
+          {
+            "title": "How Brightline closes the month in four hours",
+            "summary": "Brightline replaced spreadsheets.",
+            "challenge": "Three-day month-end.",
+            "solution": "Automated reconciliation.",
+            "results": [
+              {
+                "result": "Saved $50,000 a year",
+                "evidence": "We saved fifty thousand dollars a year"
+              }
+            ],
+            "pull_quotes": [
+              {
+                "quote": "Now it takes four hours.",
+                "attribution": "Dana Lee, COO"
+              }
+            ],
+            "questions_for_client": [
+              "How many people were involved before?"
+            ]
+          },
+          {
+            "title": "How Brightline closes the month in four hours",
+            "summary": "Brightline replaced spreadsheets.",
+            "challenge": "Three-day month-end.",
+            "solution": "Automated reconciliation.",
+            "results": [
+              {
+                "result": "Saved $50,000 a year",
+                "evidence": "We saved fifty thousand dollars a year"
+              }
+            ],
+            "pull_quotes": [
+              {
+                "quote": "Now it takes four hours.",
+                "attribution": "Dana Lee, COO"
+              }
+            ],
+            "questions_for_client": [
+              "How many people were involved before?"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "results_evidenced",
+      "question": "Every result is backed by words copied from the notes."
+    },
+    {
+      "id": "quotes_exact",
+      "question": "Every pull quote is copied word for word."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

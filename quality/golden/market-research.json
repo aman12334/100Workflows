@@ -1,0 +1,66 @@
+{
+  "workflowId": "market-research",
+  "datasetVersion": 1,
+  "derivedFrom": "written by hand (inputs from the definition examples)",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Example inputs from the definition.",
+      "inputs": {
+        "research_objective": "How large is the market for AI bookkeeping tools for US agencies, and who leads it?",
+        "company_name": "Acme Analytics",
+        "product_description": "AI bookkeeping that reconciles agency expenses automatically.",
+        "target_market": "US marketing agencies with 10-50 employees"
+      },
+      "expect": {
+        "status": "succeeded",
+        "minSources": 1,
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "live": true
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "sources_support_claims",
+      "question": "Does each cited source actually support the claim it is attached to?"
+    },
+    {
+      "id": "sections_complete",
+      "question": "All required report sections are present and substantive."
+    },
+    {
+      "id": "sources_traceable",
+      "question": "Every finding, key player and trend cites a retrieved source."
+    },
+    {
+      "id": "answers_objective",
+      "question": "The report directly addresses the research objective."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Unreadable pages are listed as unavailable and never cited.",
+    "With no usable sources nothing is written.",
+    "Links to private or local addresses are refused."
+  ],
+  "knownGaps": [
+    "Hand-written executor with web search: no scripted scenario, so the harness can only check it statically; its own test suite covers it."
+  ]
+}

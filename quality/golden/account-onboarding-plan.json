@@ -1,0 +1,296 @@
+{
+  "workflowId": "account-onboarding-plan",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/account-onboarding-plan.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "product_description": "AI bookkeeping",
+        "handover_notes": "Brightline, 15 seats, two entities. Bought to close month-end in a day."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "success_criteria",
+          "first_value_moment",
+          "milestones",
+          "stakeholders",
+          "risks"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "success_criteria": [
+              {
+                "id": "SC1",
+                "criterion": "Month-end closed in one day"
+              }
+            ],
+            "first_value_moment": "First auto-reconciled week.",
+            "milestones": [
+              {
+                "id": "M1",
+                "day": 3,
+                "milestone": "Kickoff",
+                "owner": "both",
+                "owner_role": "CSM",
+                "depends_on": [],
+                "serves": [
+                  "SC1"
+                ]
+              },
+              {
+                "id": "M2",
+                "day": 7,
+                "milestone": "Banks connected",
+                "owner": "customer",
+                "owner_role": "Bookkeeper",
+                "depends_on": [
+                  "M1"
+                ],
+                "serves": [
+                  "SC1"
+                ]
+              },
+              {
+                "id": "M3",
+                "day": 35,
+                "milestone": "First one-day close",
+                "owner": "both",
+                "owner_role": "COO",
+                "depends_on": [
+                  "M2"
+                ],
+                "serves": [
+                  "SC1"
+                ]
+              }
+            ],
+            "stakeholders": [],
+            "risks": []
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"criteria_served\" must not be accepted.",
+      "inputs": {
+        "product_description": "AI bookkeeping",
+        "handover_notes": "Brightline, 15 seats, two entities. Bought to close month-end in a day."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "criteria_served"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "success_criteria": [
+              {
+                "id": "SC1",
+                "criterion": "One-day close"
+              },
+              {
+                "id": "SC2",
+                "criterion": "Bookkeeper trained"
+              }
+            ],
+            "first_value_moment": "First auto-reconciled week.",
+            "milestones": [
+              {
+                "id": "M1",
+                "day": 3,
+                "milestone": "Kickoff",
+                "owner": "both",
+                "owner_role": "CSM",
+                "depends_on": [],
+                "serves": [
+                  "SC1"
+                ]
+              },
+              {
+                "id": "M2",
+                "day": 7,
+                "milestone": "Banks connected",
+                "owner": "customer",
+                "owner_role": "Bookkeeper",
+                "depends_on": [
+                  "M1"
+                ],
+                "serves": [
+                  "SC1"
+                ]
+              },
+              {
+                "id": "M3",
+                "day": 35,
+                "milestone": "First one-day close",
+                "owner": "both",
+                "owner_role": "COO",
+                "depends_on": [
+                  "M2"
+                ],
+                "serves": [
+                  "SC1"
+                ]
+              }
+            ],
+            "stakeholders": [],
+            "risks": []
+          },
+          {
+            "success_criteria": [
+              {
+                "id": "SC1",
+                "criterion": "One-day close"
+              },
+              {
+                "id": "SC2",
+                "criterion": "Bookkeeper trained"
+              }
+            ],
+            "first_value_moment": "First auto-reconciled week.",
+            "milestones": [
+              {
+                "id": "M1",
+                "day": 3,
+                "milestone": "Kickoff",
+                "owner": "both",
+                "owner_role": "CSM",
+                "depends_on": [],
+                "serves": [
+                  "SC1"
+                ]
+              },
+              {
+                "id": "M2",
+                "day": 7,
+                "milestone": "Banks connected",
+                "owner": "customer",
+                "owner_role": "Bookkeeper",
+                "depends_on": [
+                  "M1"
+                ],
+                "serves": [
+                  "SC1"
+                ]
+              },
+              {
+                "id": "M3",
+                "day": 35,
+                "milestone": "First one-day close",
+                "owner": "both",
+                "owner_role": "COO",
+                "depends_on": [
+                  "M2"
+                ],
+                "serves": [
+                  "SC1"
+                ]
+              }
+            ],
+            "stakeholders": [],
+            "risks": []
+          },
+          {
+            "success_criteria": [
+              {
+                "id": "SC1",
+                "criterion": "One-day close"
+              },
+              {
+                "id": "SC2",
+                "criterion": "Bookkeeper trained"
+              }
+            ],
+            "first_value_moment": "First auto-reconciled week.",
+            "milestones": [
+              {
+                "id": "M1",
+                "day": 3,
+                "milestone": "Kickoff",
+                "owner": "both",
+                "owner_role": "CSM",
+                "depends_on": [],
+                "serves": [
+                  "SC1"
+                ]
+              },
+              {
+                "id": "M2",
+                "day": 7,
+                "milestone": "Banks connected",
+                "owner": "customer",
+                "owner_role": "Bookkeeper",
+                "depends_on": [
+                  "M1"
+                ],
+                "serves": [
+                  "SC1"
+                ]
+              },
+              {
+                "id": "M3",
+                "day": 35,
+                "milestone": "First one-day close",
+                "owner": "both",
+                "owner_role": "COO",
+                "depends_on": [
+                  "M2"
+                ],
+                "serves": [
+                  "SC1"
+                ]
+              }
+            ],
+            "stakeholders": [],
+            "risks": []
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "criteria_served",
+      "question": "Milestones serve declared success criteria, and every criterion is served."
+    },
+    {
+      "id": "dependencies_exist",
+      "question": "Every milestone dependency exists in the plan."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

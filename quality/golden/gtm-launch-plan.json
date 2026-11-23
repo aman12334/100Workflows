@@ -1,0 +1,300 @@
+{
+  "workflowId": "gtm-launch-plan",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/gtm-launch-plan.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "product_description": "AI bookkeeping",
+        "launch": "Bulk approvals: admins approve a week of expenses in one click.",
+        "launch_week": 4
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "tier",
+          "tier_rationale",
+          "audiences",
+          "messages",
+          "milestones",
+          "success_metrics",
+          "risks"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "tier": "tier_2_notable",
+            "tier_rationale": "Visible time saver for admins.",
+            "audiences": [
+              {
+                "id": "AU1",
+                "audience": "Admins",
+                "what_they_care_about": "Time"
+              }
+            ],
+            "messages": [
+              {
+                "audience_id": "AU1",
+                "message": "Approve a week in one click.",
+                "channels": [
+                  "In-app"
+                ]
+              }
+            ],
+            "milestones": [
+              {
+                "id": "MS1",
+                "week": 1,
+                "milestone": "Messaging approved",
+                "owner_role": "PMM",
+                "depends_on": []
+              },
+              {
+                "id": "MS2",
+                "week": 2,
+                "milestone": "Help article",
+                "owner_role": "Support lead",
+                "depends_on": [
+                  "MS1"
+                ]
+              },
+              {
+                "id": "MS3",
+                "week": 4,
+                "milestone": "Launch email",
+                "owner_role": "PMM",
+                "depends_on": [
+                  "MS1",
+                  "MS2"
+                ]
+              }
+            ],
+            "success_metrics": [
+              "Bulk approvals used by 30% of admins"
+            ],
+            "risks": []
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"messages_target_audiences\" must not be accepted.",
+      "inputs": {
+        "product_description": "AI bookkeeping",
+        "launch": "Bulk approvals: admins approve a week of expenses in one click.",
+        "launch_week": 4
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "messages_target_audiences"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "tier": "tier_2_notable",
+            "tier_rationale": "Visible time saver for admins.",
+            "audiences": [
+              {
+                "id": "AU1",
+                "audience": "Admins",
+                "what_they_care_about": "Time"
+              }
+            ],
+            "messages": [
+              {
+                "audience_id": "AU9",
+                "message": "x",
+                "channels": [
+                  "Email"
+                ]
+              }
+            ],
+            "milestones": [
+              {
+                "id": "MS1",
+                "week": 1,
+                "milestone": "Messaging approved",
+                "owner_role": "PMM",
+                "depends_on": []
+              },
+              {
+                "id": "MS2",
+                "week": 2,
+                "milestone": "Help article",
+                "owner_role": "Support lead",
+                "depends_on": [
+                  "MS1"
+                ]
+              },
+              {
+                "id": "MS3",
+                "week": 4,
+                "milestone": "Launch email",
+                "owner_role": "PMM",
+                "depends_on": [
+                  "MS1",
+                  "MS2"
+                ]
+              }
+            ],
+            "success_metrics": [
+              "Bulk approvals used by 30% of admins"
+            ],
+            "risks": []
+          },
+          {
+            "tier": "tier_2_notable",
+            "tier_rationale": "Visible time saver for admins.",
+            "audiences": [
+              {
+                "id": "AU1",
+                "audience": "Admins",
+                "what_they_care_about": "Time"
+              }
+            ],
+            "messages": [
+              {
+                "audience_id": "AU9",
+                "message": "x",
+                "channels": [
+                  "Email"
+                ]
+              }
+            ],
+            "milestones": [
+              {
+                "id": "MS1",
+                "week": 1,
+                "milestone": "Messaging approved",
+                "owner_role": "PMM",
+                "depends_on": []
+              },
+              {
+                "id": "MS2",
+                "week": 2,
+                "milestone": "Help article",
+                "owner_role": "Support lead",
+                "depends_on": [
+                  "MS1"
+                ]
+              },
+              {
+                "id": "MS3",
+                "week": 4,
+                "milestone": "Launch email",
+                "owner_role": "PMM",
+                "depends_on": [
+                  "MS1",
+                  "MS2"
+                ]
+              }
+            ],
+            "success_metrics": [
+              "Bulk approvals used by 30% of admins"
+            ],
+            "risks": []
+          },
+          {
+            "tier": "tier_2_notable",
+            "tier_rationale": "Visible time saver for admins.",
+            "audiences": [
+              {
+                "id": "AU1",
+                "audience": "Admins",
+                "what_they_care_about": "Time"
+              }
+            ],
+            "messages": [
+              {
+                "audience_id": "AU9",
+                "message": "x",
+                "channels": [
+                  "Email"
+                ]
+              }
+            ],
+            "milestones": [
+              {
+                "id": "MS1",
+                "week": 1,
+                "milestone": "Messaging approved",
+                "owner_role": "PMM",
+                "depends_on": []
+              },
+              {
+                "id": "MS2",
+                "week": 2,
+                "milestone": "Help article",
+                "owner_role": "Support lead",
+                "depends_on": [
+                  "MS1"
+                ]
+              },
+              {
+                "id": "MS3",
+                "week": 4,
+                "milestone": "Launch email",
+                "owner_role": "PMM",
+                "depends_on": [
+                  "MS1",
+                  "MS2"
+                ]
+              }
+            ],
+            "success_metrics": [
+              "Bulk approvals used by 30% of admins"
+            ],
+            "risks": []
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "dependencies_exist",
+      "question": "Every milestone dependency exists in the plan."
+    },
+    {
+      "id": "messages_target_audiences",
+      "question": "Every message targets a declared audience, and every audience gets a message."
+    },
+    {
+      "id": "unique_milestones",
+      "question": "Milestone ids are unique."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

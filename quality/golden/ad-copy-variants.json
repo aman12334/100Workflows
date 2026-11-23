@@ -1,0 +1,305 @@
+{
+  "workflowId": "ad-copy-variants",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/ad-copy-variants.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "offer": "14-day free trial, no card required",
+        "proof": "Used by 300 agencies"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "angles",
+          "variants",
+          "proof_used"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "angles": [
+              {
+                "id": "pain",
+                "idea": "Month-end pain"
+              },
+              {
+                "id": "proof",
+                "idea": "Social proof"
+              }
+            ],
+            "variants": [
+              {
+                "platform": "google",
+                "angle": "pain",
+                "headline": "Month-end in hours",
+                "description": "Stop reconciling by hand.",
+                "cta": "Start trial"
+              },
+              {
+                "platform": "google",
+                "angle": "proof",
+                "headline": "Used by 300 agencies",
+                "description": "Try it free for 14 days.",
+                "cta": "Start trial"
+              },
+              {
+                "platform": "linkedin",
+                "angle": "pain",
+                "headline": "Your books, closed faster",
+                "description": "No card required.",
+                "cta": "Try free"
+              }
+            ],
+            "proof_used": [
+              "Used by 300 agencies"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"proof_supplied\" must not be accepted.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "offer": "14-day free trial, no card required",
+        "proof": "Used by 300 agencies"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "proof_supplied"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "angles": [
+              {
+                "id": "pain",
+                "idea": "Month-end pain"
+              },
+              {
+                "id": "proof",
+                "idea": "Social proof"
+              }
+            ],
+            "variants": [
+              {
+                "platform": "google",
+                "angle": "pain",
+                "headline": "Month-end in hours",
+                "description": "Stop reconciling by hand.",
+                "cta": "Start trial"
+              },
+              {
+                "platform": "google",
+                "angle": "proof",
+                "headline": "Used by 300 agencies",
+                "description": "Try it free for 14 days.",
+                "cta": "Start trial"
+              },
+              {
+                "platform": "linkedin",
+                "angle": "pain",
+                "headline": "Your books, closed faster",
+                "description": "No card required.",
+                "cta": "Try free"
+              }
+            ],
+            "proof_used": [
+              "Rated #1 by accountants"
+            ]
+          },
+          {
+            "angles": [
+              {
+                "id": "pain",
+                "idea": "Month-end pain"
+              },
+              {
+                "id": "proof",
+                "idea": "Social proof"
+              }
+            ],
+            "variants": [
+              {
+                "platform": "google",
+                "angle": "pain",
+                "headline": "Month-end in hours",
+                "description": "Stop reconciling by hand.",
+                "cta": "Start trial"
+              },
+              {
+                "platform": "google",
+                "angle": "proof",
+                "headline": "Used by 300 agencies",
+                "description": "Try it free for 14 days.",
+                "cta": "Start trial"
+              },
+              {
+                "platform": "linkedin",
+                "angle": "pain",
+                "headline": "Your books, closed faster",
+                "description": "No card required.",
+                "cta": "Try free"
+              }
+            ],
+            "proof_used": [
+              "Rated #1 by accountants"
+            ]
+          },
+          {
+            "angles": [
+              {
+                "id": "pain",
+                "idea": "Month-end pain"
+              },
+              {
+                "id": "proof",
+                "idea": "Social proof"
+              }
+            ],
+            "variants": [
+              {
+                "platform": "google",
+                "angle": "pain",
+                "headline": "Month-end in hours",
+                "description": "Stop reconciling by hand.",
+                "cta": "Start trial"
+              },
+              {
+                "platform": "google",
+                "angle": "proof",
+                "headline": "Used by 300 agencies",
+                "description": "Try it free for 14 days.",
+                "cta": "Start trial"
+              },
+              {
+                "platform": "linkedin",
+                "angle": "pain",
+                "headline": "Your books, closed faster",
+                "description": "No card required.",
+                "cta": "Try free"
+              }
+            ],
+            "proof_used": [
+              "Rated #1 by accountants"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "required-only",
+      "kind": "edge",
+      "description": "Only the required inputs (without proof). The typical reply quotes details from those optional inputs, so the grounding checks must reject it.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "offer": "14-day free trial, no card required"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "proof_supplied"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "angles": [
+              {
+                "id": "pain",
+                "idea": "Month-end pain"
+              },
+              {
+                "id": "proof",
+                "idea": "Social proof"
+              }
+            ],
+            "variants": [
+              {
+                "platform": "google",
+                "angle": "pain",
+                "headline": "Month-end in hours",
+                "description": "Stop reconciling by hand.",
+                "cta": "Start trial"
+              },
+              {
+                "platform": "google",
+                "angle": "proof",
+                "headline": "Used by 300 agencies",
+                "description": "Try it free for 14 days.",
+                "cta": "Start trial"
+              },
+              {
+                "platform": "linkedin",
+                "angle": "pain",
+                "headline": "Your books, closed faster",
+                "description": "No card required.",
+                "cta": "Try free"
+              }
+            ],
+            "proof_used": [
+              "Used by 300 agencies"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "headline_length",
+      "question": "Headlines are 6 words or fewer."
+    },
+    {
+      "id": "angles_declared",
+      "question": "Every variant uses a declared angle."
+    },
+    {
+      "id": "proof_supplied",
+      "question": "Any proof used is copied from the proof supplied."
+    },
+    {
+      "id": "description_length",
+      "question": "Descriptions are 18 words or fewer."
+    },
+    {
+      "id": "distinct_headlines",
+      "question": "Headlines are unique."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

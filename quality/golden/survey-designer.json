@@ -1,0 +1,461 @@
+{
+  "workflowId": "survey-designer",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/run-service-generic.test.ts",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the Phase 0 run-service tests.",
+      "inputs": {
+        "research_question": "Why do trial users churn?",
+        "audience": "Trial users",
+        "max_questions": 5
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "questions",
+          "analysis_plan"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "questions": [
+              {
+                "text": "How often do you use the product each week?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "How easy was it to set up your first project?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "How likely are you to keep using it after the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              }
+            ],
+            "analysis_plan": "Compare answers between active and inactive trial users."
+          }
+        ],
+        "review": 4
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks a critical check must not be accepted.",
+      "inputs": {
+        "research_question": "Why do trial users churn?",
+        "audience": "Trial users",
+        "max_questions": 5
+      },
+      "expect": {
+        "status": "needs_review"
+      },
+      "mock": {
+        "replies": [
+          {
+            "questions": [
+              {
+                "text": "Question number 1 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 2 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 3 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 4 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 5 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 6 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 7 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 8 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              }
+            ],
+            "analysis_plan": "Compare answers between active and inactive trial users."
+          },
+          {
+            "questions": [
+              {
+                "text": "Question number 1 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 2 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 3 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 4 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 5 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 6 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 7 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 8 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              }
+            ],
+            "analysis_plan": "Compare answers between active and inactive trial users."
+          },
+          {
+            "questions": [
+              {
+                "text": "Question number 1 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 2 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 3 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 4 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 5 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 6 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 7 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              },
+              {
+                "text": "Question number 8 about the trial?",
+                "format": "scale",
+                "options": [
+                  "1",
+                  "2",
+                  "3",
+                  "4",
+                  "5"
+                ],
+                "rationale": "Answers the research question.",
+                "analysis": "Compare means by segment."
+              }
+            ],
+            "analysis_plan": "Compare answers between active and inactive trial users."
+          }
+        ],
+        "review": 4
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "within_limit",
+      "question": "Question count does not exceed the maximum."
+    },
+    {
+      "id": "analysis_mapped",
+      "question": "Every question has a rationale and an analysis method."
+    },
+    {
+      "id": "no_repeats",
+      "question": "No question is asked twice."
+    },
+    {
+      "id": "short_questions",
+      "question": "Each question is short enough to read at a glance (30 words or fewer)."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Only one typical scenario; add more before certifying."
+  ]
+}

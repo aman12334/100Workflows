@@ -1,0 +1,172 @@
+{
+  "workflowId": "investor-update",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/investor-update.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "company_name": "Acme",
+        "metrics": "MRR $42,300 (Mar: $38,900)\nNet revenue retention 108%",
+        "notes": "Signed Brightline (15 seats). Lost our first enterprise pilot on SSO."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "subject",
+          "tldr",
+          "kpis",
+          "highlights",
+          "lowlights",
+          "focus_next",
+          "asks"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "subject": "Acme April update",
+            "tldr": "MRR up; lost a pilot on SSO.",
+            "kpis": [
+              {
+                "metric": "MRR",
+                "value": "$42,300 (Mar: $38,900)"
+              },
+              {
+                "metric": "NRR",
+                "value": "108%"
+              }
+            ],
+            "highlights": [
+              "Signed Brightline"
+            ],
+            "lowlights": [
+              "Lost enterprise pilot on SSO"
+            ],
+            "focus_next": [
+              "SSO"
+            ],
+            "asks": []
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"kpis_exact\" must not be accepted.",
+      "inputs": {
+        "company_name": "Acme",
+        "metrics": "MRR $42,300 (Mar: $38,900)\nNet revenue retention 108%",
+        "notes": "Signed Brightline (15 seats). Lost our first enterprise pilot on SSO."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "kpis_exact"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "subject": "Acme April update",
+            "tldr": "MRR up; lost a pilot on SSO.",
+            "kpis": [
+              {
+                "metric": "MRR",
+                "value": "$45k"
+              }
+            ],
+            "highlights": [
+              "Signed Brightline"
+            ],
+            "lowlights": [
+              "Lost enterprise pilot on SSO"
+            ],
+            "focus_next": [
+              "SSO"
+            ],
+            "asks": []
+          },
+          {
+            "subject": "Acme April update",
+            "tldr": "MRR up; lost a pilot on SSO.",
+            "kpis": [
+              {
+                "metric": "MRR",
+                "value": "$45k"
+              }
+            ],
+            "highlights": [
+              "Signed Brightline"
+            ],
+            "lowlights": [
+              "Lost enterprise pilot on SSO"
+            ],
+            "focus_next": [
+              "SSO"
+            ],
+            "asks": []
+          },
+          {
+            "subject": "Acme April update",
+            "tldr": "MRR up; lost a pilot on SSO.",
+            "kpis": [
+              {
+                "metric": "MRR",
+                "value": "$45k"
+              }
+            ],
+            "highlights": [
+              "Signed Brightline"
+            ],
+            "lowlights": [
+              "Lost enterprise pilot on SSO"
+            ],
+            "focus_next": [
+              "SSO"
+            ],
+            "asks": []
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "kpis_exact",
+      "question": "Every KPI value is copied exactly from your metrics."
+    },
+    {
+      "id": "short_tldr",
+      "question": "The TL;DR is 50 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

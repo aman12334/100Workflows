@@ -1,0 +1,266 @@
+{
+  "workflowId": "experiment-design",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/experiment-design.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "change": "Show annual pricing first on the pricing page because annual plans retain better."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "hypothesis",
+          "metrics",
+          "variants",
+          "audience",
+          "decision_rules",
+          "power_inputs_needed",
+          "risks"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "hypothesis": "If annual pricing is shown first, annual plan share will rise because the discount is more visible.",
+            "metrics": [
+              {
+                "id": "M1",
+                "name": "Annual plan share",
+                "role": "primary",
+                "definition": "Annual checkouts / all checkouts"
+              },
+              {
+                "id": "M2",
+                "name": "Checkout conversion",
+                "role": "guardrail",
+                "definition": "Checkouts / pricing visitors"
+              }
+            ],
+            "variants": [
+              {
+                "id": "control",
+                "description": "Monthly first"
+              },
+              {
+                "id": "B",
+                "description": "Annual first"
+              }
+            ],
+            "audience": "New visitors to the pricing page.",
+            "decision_rules": [
+              {
+                "metric_id": "M1",
+                "condition": "Significant increase",
+                "decision": "ship"
+              },
+              {
+                "metric_id": "M2",
+                "condition": "Drop over 5% relative",
+                "decision": "stop"
+              }
+            ],
+            "power_inputs_needed": [
+              "Baseline annual share"
+            ],
+            "risks": [
+              "Seasonality"
+            ]
+          }
+        ],
+        "review": 4
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"two_or_more_variants\" must not be accepted.",
+      "inputs": {
+        "change": "Show annual pricing first on the pricing page because annual plans retain better."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "two_or_more_variants"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "hypothesis": "If annual pricing is shown first, annual plan share will rise because the discount is more visible.",
+            "metrics": [
+              {
+                "id": "M1",
+                "name": "Annual plan share",
+                "role": "primary",
+                "definition": "Annual checkouts / all checkouts"
+              },
+              {
+                "id": "M2",
+                "name": "Checkout conversion",
+                "role": "guardrail",
+                "definition": "Checkouts / pricing visitors"
+              }
+            ],
+            "variants": [
+              {
+                "id": "B",
+                "description": "Annual first"
+              }
+            ],
+            "audience": "New visitors to the pricing page.",
+            "decision_rules": [
+              {
+                "metric_id": "M1",
+                "condition": "Significant increase",
+                "decision": "ship"
+              },
+              {
+                "metric_id": "M2",
+                "condition": "Drop over 5% relative",
+                "decision": "stop"
+              }
+            ],
+            "power_inputs_needed": [
+              "Baseline annual share"
+            ],
+            "risks": [
+              "Seasonality"
+            ]
+          },
+          {
+            "hypothesis": "If annual pricing is shown first, annual plan share will rise because the discount is more visible.",
+            "metrics": [
+              {
+                "id": "M1",
+                "name": "Annual plan share",
+                "role": "primary",
+                "definition": "Annual checkouts / all checkouts"
+              },
+              {
+                "id": "M2",
+                "name": "Checkout conversion",
+                "role": "guardrail",
+                "definition": "Checkouts / pricing visitors"
+              }
+            ],
+            "variants": [
+              {
+                "id": "B",
+                "description": "Annual first"
+              }
+            ],
+            "audience": "New visitors to the pricing page.",
+            "decision_rules": [
+              {
+                "metric_id": "M1",
+                "condition": "Significant increase",
+                "decision": "ship"
+              },
+              {
+                "metric_id": "M2",
+                "condition": "Drop over 5% relative",
+                "decision": "stop"
+              }
+            ],
+            "power_inputs_needed": [
+              "Baseline annual share"
+            ],
+            "risks": [
+              "Seasonality"
+            ]
+          },
+          {
+            "hypothesis": "If annual pricing is shown first, annual plan share will rise because the discount is more visible.",
+            "metrics": [
+              {
+                "id": "M1",
+                "name": "Annual plan share",
+                "role": "primary",
+                "definition": "Annual checkouts / all checkouts"
+              },
+              {
+                "id": "M2",
+                "name": "Checkout conversion",
+                "role": "guardrail",
+                "definition": "Checkouts / pricing visitors"
+              }
+            ],
+            "variants": [
+              {
+                "id": "B",
+                "description": "Annual first"
+              }
+            ],
+            "audience": "New visitors to the pricing page.",
+            "decision_rules": [
+              {
+                "metric_id": "M1",
+                "condition": "Significant increase",
+                "decision": "ship"
+              },
+              {
+                "metric_id": "M2",
+                "condition": "Drop over 5% relative",
+                "decision": "stop"
+              }
+            ],
+            "power_inputs_needed": [
+              "Baseline annual share"
+            ],
+            "risks": [
+              "Seasonality"
+            ]
+          }
+        ],
+        "review": 4
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "rules_use_metrics",
+      "question": "Decision rules only use metrics defined in the plan."
+    },
+    {
+      "id": "two_or_more_variants",
+      "question": "The test has a control and at most three variants."
+    },
+    {
+      "id": "unique_variants",
+      "question": "Variant ids are unique."
+    },
+    {
+      "id": "falsifiable",
+      "question": "The hypothesis is falsifiable and measured by the primary metric."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

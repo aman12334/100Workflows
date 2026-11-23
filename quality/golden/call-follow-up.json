@@ -1,0 +1,202 @@
+{
+  "workflowId": "call-follow-up",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/call-follow-up.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "call_notes": "Dana (COO) - month-end takes 3 days. Wants pilot with 2 entities. Will intro CFO by Friday. We send security doc.",
+        "prospect": "Brightline Agency, Dana Lee (COO)"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "summary",
+          "stated_needs",
+          "next_steps",
+          "crm_updates",
+          "email"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Dana wants a two-entity pilot.",
+            "stated_needs": [
+              {
+                "need": "Faster month-end",
+                "quote": "month-end takes 3 days"
+              }
+            ],
+            "next_steps": [
+              {
+                "step": "Intro to CFO",
+                "owner": "them",
+                "due": "Friday",
+                "quote": "Will intro CFO by Friday"
+              },
+              {
+                "step": "Send security doc",
+                "owner": "us",
+                "due": "not agreed",
+                "quote": "We send security doc"
+              }
+            ],
+            "crm_updates": [
+              {
+                "field": "pain",
+                "value": "Three-day month-end"
+              }
+            ],
+            "email": {
+              "subject": "Next steps from today",
+              "body": "Thanks Dana. Security doc attached; looking forward to meeting your CFO."
+            }
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"steps_quoted\" must not be accepted.",
+      "inputs": {
+        "call_notes": "Dana (COO) - month-end takes 3 days. Wants pilot with 2 entities. Will intro CFO by Friday. We send security doc.",
+        "prospect": "Brightline Agency, Dana Lee (COO)"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "steps_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Dana wants a two-entity pilot.",
+            "stated_needs": [
+              {
+                "need": "Faster month-end",
+                "quote": "month-end takes 3 days"
+              }
+            ],
+            "next_steps": [
+              {
+                "step": "Sign contract",
+                "owner": "them",
+                "due": "Monday",
+                "quote": "Will sign the contract on Monday"
+              }
+            ],
+            "crm_updates": [
+              {
+                "field": "pain",
+                "value": "Three-day month-end"
+              }
+            ],
+            "email": {
+              "subject": "Next steps from today",
+              "body": "Thanks Dana. Security doc attached; looking forward to meeting your CFO."
+            }
+          },
+          {
+            "summary": "Dana wants a two-entity pilot.",
+            "stated_needs": [
+              {
+                "need": "Faster month-end",
+                "quote": "month-end takes 3 days"
+              }
+            ],
+            "next_steps": [
+              {
+                "step": "Sign contract",
+                "owner": "them",
+                "due": "Monday",
+                "quote": "Will sign the contract on Monday"
+              }
+            ],
+            "crm_updates": [
+              {
+                "field": "pain",
+                "value": "Three-day month-end"
+              }
+            ],
+            "email": {
+              "subject": "Next steps from today",
+              "body": "Thanks Dana. Security doc attached; looking forward to meeting your CFO."
+            }
+          },
+          {
+            "summary": "Dana wants a two-entity pilot.",
+            "stated_needs": [
+              {
+                "need": "Faster month-end",
+                "quote": "month-end takes 3 days"
+              }
+            ],
+            "next_steps": [
+              {
+                "step": "Sign contract",
+                "owner": "them",
+                "due": "Monday",
+                "quote": "Will sign the contract on Monday"
+              }
+            ],
+            "crm_updates": [
+              {
+                "field": "pain",
+                "value": "Three-day month-end"
+              }
+            ],
+            "email": {
+              "subject": "Next steps from today",
+              "body": "Thanks Dana. Security doc attached; looking forward to meeting your CFO."
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "steps_quoted",
+      "question": "Every next step quotes the call notes word for word."
+    },
+    {
+      "id": "needs_quoted",
+      "question": "Every stated need quotes the call notes word for word."
+    },
+    {
+      "id": "short_email",
+      "question": "The email body is 180 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

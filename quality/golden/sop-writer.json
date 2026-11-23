@@ -1,0 +1,181 @@
+{
+  "workflowId": "sop-writer",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/run-service-generic.test.ts",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the Phase 0 run-service tests.",
+      "inputs": {
+        "company_name": "Acme",
+        "process_description": "Every month-end, Priya exports invoices from the billing tool and checks them against the contracts sheet."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "purpose",
+          "scope",
+          "roles",
+          "steps",
+          "failure_modes",
+          "assumptions"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "purpose": "Close the books every month.",
+            "scope": "Month-end only.",
+            "roles": [
+              "Finance lead"
+            ],
+            "steps": [
+              {
+                "action": "Export invoices from the billing tool",
+                "owner": "Finance lead",
+                "check": "Invoice count matches the billing tool"
+              },
+              {
+                "action": "Reconcile invoices with contracts",
+                "owner": "Account manager",
+                "check": "No unmatched invoices remain"
+              }
+            ],
+            "failure_modes": [
+              {
+                "failure": "Late exports",
+                "prevention": "Calendar reminder"
+              }
+            ],
+            "assumptions": [
+              "The account manager owns reconciliation."
+            ]
+          }
+        ],
+        "review": 4
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks a critical check must not be accepted.",
+      "inputs": {
+        "company_name": "Acme",
+        "process_description": "Every month-end, Priya exports invoices from the billing tool and checks them against the contracts sheet."
+      },
+      "expect": {
+        "status": "needs_review"
+      },
+      "mock": {
+        "replies": [
+          {
+            "purpose": "Close the books every month.",
+            "scope": "Month-end only.",
+            "roles": [
+              "Finance lead"
+            ],
+            "steps": [
+              {
+                "action": "Export invoices",
+                "owner": "",
+                "check": "Count matches"
+              }
+            ],
+            "failure_modes": [
+              {
+                "failure": "Late exports",
+                "prevention": "Calendar reminder"
+              }
+            ],
+            "assumptions": [
+              "The account manager owns reconciliation."
+            ]
+          },
+          {
+            "purpose": "Close the books every month.",
+            "scope": "Month-end only.",
+            "roles": [
+              "Finance lead"
+            ],
+            "steps": [
+              {
+                "action": "Export invoices",
+                "owner": "",
+                "check": "Count matches"
+              }
+            ],
+            "failure_modes": [
+              {
+                "failure": "Late exports",
+                "prevention": "Calendar reminder"
+              }
+            ],
+            "assumptions": [
+              "The account manager owns reconciliation."
+            ]
+          },
+          {
+            "purpose": "Close the books every month.",
+            "scope": "Month-end only.",
+            "roles": [
+              "Finance lead"
+            ],
+            "steps": [
+              {
+                "action": "Export invoices",
+                "owner": "",
+                "check": "Count matches"
+              }
+            ],
+            "failure_modes": [
+              {
+                "failure": "Late exports",
+                "prevention": "Calendar reminder"
+              }
+            ],
+            "assumptions": [
+              "The account manager owns reconciliation."
+            ]
+          }
+        ],
+        "review": 4
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "owners_assigned",
+      "question": "Every step names an owner role, an action and a check."
+    },
+    {
+      "id": "assumptions_listed",
+      "question": "Anything not in the description is listed as an assumption."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Only one typical scenario; add more before certifying."
+  ]
+}

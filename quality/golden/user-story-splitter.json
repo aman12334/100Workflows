@@ -1,0 +1,286 @@
+{
+  "workflowId": "user-story-splitter",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/user-story-splitter.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "epic": "Customers can export their transactions to Xero with category mapping and scheduled syncs.",
+        "max_stories": 4
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "slicing_approach",
+          "stories",
+          "deferred"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "slicing_approach": "By workflow step.",
+            "stories": [
+              {
+                "id": "S1",
+                "title": "One-off export",
+                "story": "As a bookkeeper, I want to export this month to Xero so that I stop retyping.",
+                "acceptance_criteria": [
+                  "Export creates matching transactions in Xero"
+                ],
+                "size": "M",
+                "depends_on": []
+              },
+              {
+                "id": "S2",
+                "title": "Category mapping",
+                "story": "As a bookkeeper, I want to map categories so that exports land in the right accounts.",
+                "acceptance_criteria": [
+                  "Mapped categories appear in Xero"
+                ],
+                "size": "M",
+                "depends_on": [
+                  "S1"
+                ]
+              },
+              {
+                "id": "S3",
+                "title": "Scheduled sync",
+                "story": "As an admin, I want nightly syncs so that Xero stays current.",
+                "acceptance_criteria": [
+                  "A sync runs nightly"
+                ],
+                "size": "L",
+                "depends_on": [
+                  "S1",
+                  "S2"
+                ]
+              }
+            ],
+            "deferred": [
+              "Two-way sync"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"dependencies_exist\" must not be accepted.",
+      "inputs": {
+        "epic": "Customers can export their transactions to Xero with category mapping and scheduled syncs.",
+        "max_stories": 4
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "dependencies_exist"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "slicing_approach": "By workflow step.",
+            "stories": [
+              {
+                "id": "S1",
+                "title": "Export",
+                "story": "As a bookkeeper, I want exports.",
+                "acceptance_criteria": [
+                  "Works"
+                ],
+                "size": "M",
+                "depends_on": [
+                  "S7"
+                ]
+              },
+              {
+                "id": "S2",
+                "title": "Mapping",
+                "story": "As a bookkeeper, I want mapping.",
+                "acceptance_criteria": [
+                  "Works"
+                ],
+                "size": "M",
+                "depends_on": []
+              }
+            ],
+            "deferred": [
+              "Two-way sync"
+            ]
+          },
+          {
+            "slicing_approach": "By workflow step.",
+            "stories": [
+              {
+                "id": "S1",
+                "title": "Export",
+                "story": "As a bookkeeper, I want exports.",
+                "acceptance_criteria": [
+                  "Works"
+                ],
+                "size": "M",
+                "depends_on": [
+                  "S7"
+                ]
+              },
+              {
+                "id": "S2",
+                "title": "Mapping",
+                "story": "As a bookkeeper, I want mapping.",
+                "acceptance_criteria": [
+                  "Works"
+                ],
+                "size": "M",
+                "depends_on": []
+              }
+            ],
+            "deferred": [
+              "Two-way sync"
+            ]
+          },
+          {
+            "slicing_approach": "By workflow step.",
+            "stories": [
+              {
+                "id": "S1",
+                "title": "Export",
+                "story": "As a bookkeeper, I want exports.",
+                "acceptance_criteria": [
+                  "Works"
+                ],
+                "size": "M",
+                "depends_on": [
+                  "S7"
+                ]
+              },
+              {
+                "id": "S2",
+                "title": "Mapping",
+                "story": "As a bookkeeper, I want mapping.",
+                "acceptance_criteria": [
+                  "Works"
+                ],
+                "size": "M",
+                "depends_on": []
+              }
+            ],
+            "deferred": [
+              "Two-way sync"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "required-only",
+      "kind": "edge",
+      "description": "Only the required inputs (without max_stories).",
+      "inputs": {
+        "epic": "Customers can export their transactions to Xero with category mapping and scheduled syncs."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "slicing_approach",
+          "stories",
+          "deferred"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "slicing_approach": "By workflow step.",
+            "stories": [
+              {
+                "id": "S1",
+                "title": "One-off export",
+                "story": "As a bookkeeper, I want to export this month to Xero so that I stop retyping.",
+                "acceptance_criteria": [
+                  "Export creates matching transactions in Xero"
+                ],
+                "size": "M",
+                "depends_on": []
+              },
+              {
+                "id": "S2",
+                "title": "Category mapping",
+                "story": "As a bookkeeper, I want to map categories so that exports land in the right accounts.",
+                "acceptance_criteria": [
+                  "Mapped categories appear in Xero"
+                ],
+                "size": "M",
+                "depends_on": [
+                  "S1"
+                ]
+              },
+              {
+                "id": "S3",
+                "title": "Scheduled sync",
+                "story": "As an admin, I want nightly syncs so that Xero stays current.",
+                "acceptance_criteria": [
+                  "A sync runs nightly"
+                ],
+                "size": "L",
+                "depends_on": [
+                  "S1",
+                  "S2"
+                ]
+              }
+            ],
+            "deferred": [
+              "Two-way sync"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "dependencies_exist",
+      "question": "Every dependency points to a story in this plan."
+    },
+    {
+      "id": "within_limit",
+      "question": "The number of stories is within the limit."
+    },
+    {
+      "id": "unique_titles",
+      "question": "Story titles are unique."
+    },
+    {
+      "id": "short_stories",
+      "question": "Each story sentence is 40 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

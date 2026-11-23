@@ -1,0 +1,188 @@
+{
+  "workflowId": "release-notes-writer",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/release-notes-writer.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "changes": "Added bulk approve endpoint and UI for expenses\nFixed currency rounding in CSV export\nDeprecated v1 receipts API (removal on 1 Sept)",
+        "audience": "admins"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "headline",
+          "highlights",
+          "fixes",
+          "action_required",
+          "omitted"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "headline": "Approve expenses in bulk",
+            "highlights": [
+              {
+                "title": "Bulk approval",
+                "benefit": "Approve many expenses at once.",
+                "source_change": "Added bulk approve endpoint and UI for expenses"
+              }
+            ],
+            "fixes": [
+              {
+                "description": "CSV exports now round currencies correctly.",
+                "source_change": "Fixed currency rounding in CSV export"
+              }
+            ],
+            "action_required": [
+              {
+                "action": "Move to the v2 receipts API.",
+                "deadline": "1 Sept",
+                "source_change": "Deprecated v1 receipts API (removal on 1 Sept)"
+              }
+            ],
+            "omitted": []
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"highlights_sourced\" must not be accepted.",
+      "inputs": {
+        "changes": "Added bulk approve endpoint and UI for expenses\nFixed currency rounding in CSV export\nDeprecated v1 receipts API (removal on 1 Sept)",
+        "audience": "admins"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "highlights_sourced"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "headline": "Approve expenses in bulk",
+            "highlights": [
+              {
+                "title": "AI receipts",
+                "benefit": "Receipts are read by AI.",
+                "source_change": "Added AI receipt scanning for all plans"
+              }
+            ],
+            "fixes": [
+              {
+                "description": "CSV exports now round currencies correctly.",
+                "source_change": "Fixed currency rounding in CSV export"
+              }
+            ],
+            "action_required": [
+              {
+                "action": "Move to the v2 receipts API.",
+                "deadline": "1 Sept",
+                "source_change": "Deprecated v1 receipts API (removal on 1 Sept)"
+              }
+            ],
+            "omitted": []
+          },
+          {
+            "headline": "Approve expenses in bulk",
+            "highlights": [
+              {
+                "title": "AI receipts",
+                "benefit": "Receipts are read by AI.",
+                "source_change": "Added AI receipt scanning for all plans"
+              }
+            ],
+            "fixes": [
+              {
+                "description": "CSV exports now round currencies correctly.",
+                "source_change": "Fixed currency rounding in CSV export"
+              }
+            ],
+            "action_required": [
+              {
+                "action": "Move to the v2 receipts API.",
+                "deadline": "1 Sept",
+                "source_change": "Deprecated v1 receipts API (removal on 1 Sept)"
+              }
+            ],
+            "omitted": []
+          },
+          {
+            "headline": "Approve expenses in bulk",
+            "highlights": [
+              {
+                "title": "AI receipts",
+                "benefit": "Receipts are read by AI.",
+                "source_change": "Added AI receipt scanning for all plans"
+              }
+            ],
+            "fixes": [
+              {
+                "description": "CSV exports now round currencies correctly.",
+                "source_change": "Fixed currency rounding in CSV export"
+              }
+            ],
+            "action_required": [
+              {
+                "action": "Move to the v2 receipts API.",
+                "deadline": "1 Sept",
+                "source_change": "Deprecated v1 receipts API (removal on 1 Sept)"
+              }
+            ],
+            "omitted": []
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "highlights_sourced",
+      "question": "Every highlight quotes a change from the list word for word."
+    },
+    {
+      "id": "fixes_sourced",
+      "question": "Every fix quotes a change from the list word for word."
+    },
+    {
+      "id": "actions_sourced",
+      "question": "Every required action quotes a change from the list word for word."
+    },
+    {
+      "id": "short_benefits",
+      "question": "Each benefit is 35 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

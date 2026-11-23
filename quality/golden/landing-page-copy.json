@@ -1,0 +1,268 @@
+{
+  "workflowId": "landing-page-copy",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/landing-page-copy.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "audience": "Agency owners",
+        "proof": "Brightline cut month-end from 3 days to 4 hours.",
+        "cta": "Start a 14-day trial"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "headline",
+          "subheadline",
+          "sections",
+          "proof_points",
+          "faq",
+          "cta_variants"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "headline": "Close your agency books in hours, not days",
+            "subheadline": "Expenses reconcile themselves.",
+            "sections": [
+              {
+                "heading": "Automatic matching",
+                "body": "x",
+                "benefit": "Less typing"
+              },
+              {
+                "heading": "Month-end in an afternoon",
+                "body": "y",
+                "benefit": "Time back"
+              }
+            ],
+            "proof_points": [
+              {
+                "claim": "Brightline cut month-end from 3 days to 4 hours.",
+                "placement": "Below the hero"
+              }
+            ],
+            "faq": [
+              {
+                "question": "Does it work with Xero?",
+                "answer": "Not stated yet."
+              }
+            ],
+            "cta_variants": [
+              "Start a 14-day trial"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"proof_supplied\" must not be accepted.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "audience": "Agency owners",
+        "proof": "Brightline cut month-end from 3 days to 4 hours.",
+        "cta": "Start a 14-day trial"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "proof_supplied"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "headline": "Close your agency books in hours, not days",
+            "subheadline": "Expenses reconcile themselves.",
+            "sections": [
+              {
+                "heading": "Automatic matching",
+                "body": "x",
+                "benefit": "Less typing"
+              },
+              {
+                "heading": "Month-end in an afternoon",
+                "body": "y",
+                "benefit": "Time back"
+              }
+            ],
+            "proof_points": [
+              {
+                "claim": "Trusted by 5,000 agencies worldwide",
+                "placement": "Hero"
+              }
+            ],
+            "faq": [
+              {
+                "question": "Does it work with Xero?",
+                "answer": "Not stated yet."
+              }
+            ],
+            "cta_variants": [
+              "Start a 14-day trial"
+            ]
+          },
+          {
+            "headline": "Close your agency books in hours, not days",
+            "subheadline": "Expenses reconcile themselves.",
+            "sections": [
+              {
+                "heading": "Automatic matching",
+                "body": "x",
+                "benefit": "Less typing"
+              },
+              {
+                "heading": "Month-end in an afternoon",
+                "body": "y",
+                "benefit": "Time back"
+              }
+            ],
+            "proof_points": [
+              {
+                "claim": "Trusted by 5,000 agencies worldwide",
+                "placement": "Hero"
+              }
+            ],
+            "faq": [
+              {
+                "question": "Does it work with Xero?",
+                "answer": "Not stated yet."
+              }
+            ],
+            "cta_variants": [
+              "Start a 14-day trial"
+            ]
+          },
+          {
+            "headline": "Close your agency books in hours, not days",
+            "subheadline": "Expenses reconcile themselves.",
+            "sections": [
+              {
+                "heading": "Automatic matching",
+                "body": "x",
+                "benefit": "Less typing"
+              },
+              {
+                "heading": "Month-end in an afternoon",
+                "body": "y",
+                "benefit": "Time back"
+              }
+            ],
+            "proof_points": [
+              {
+                "claim": "Trusted by 5,000 agencies worldwide",
+                "placement": "Hero"
+              }
+            ],
+            "faq": [
+              {
+                "question": "Does it work with Xero?",
+                "answer": "Not stated yet."
+              }
+            ],
+            "cta_variants": [
+              "Start a 14-day trial"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "required-only",
+      "kind": "edge",
+      "description": "Only the required inputs (without proof). The typical reply quotes details from those optional inputs, so the grounding checks must reject it.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "audience": "Agency owners",
+        "cta": "Start a 14-day trial"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "proof_supplied"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "headline": "Close your agency books in hours, not days",
+            "subheadline": "Expenses reconcile themselves.",
+            "sections": [
+              {
+                "heading": "Automatic matching",
+                "body": "x",
+                "benefit": "Less typing"
+              },
+              {
+                "heading": "Month-end in an afternoon",
+                "body": "y",
+                "benefit": "Time back"
+              }
+            ],
+            "proof_points": [
+              {
+                "claim": "Brightline cut month-end from 3 days to 4 hours.",
+                "placement": "Below the hero"
+              }
+            ],
+            "faq": [
+              {
+                "question": "Does it work with Xero?",
+                "answer": "Not stated yet."
+              }
+            ],
+            "cta_variants": [
+              "Start a 14-day trial"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "proof_supplied",
+      "question": "Every proof point is copied from the proof you supplied."
+    },
+    {
+      "id": "short_headline",
+      "question": "The headline is 10 words or fewer."
+    },
+    {
+      "id": "distinct_sections",
+      "question": "Section headings are unique."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

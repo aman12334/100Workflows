@@ -1,0 +1,160 @@
+{
+  "workflowId": "spec-reviewer",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/spec-reviewer.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "spec": "Users can invite teammates. Invites expire after a while. Admins can remove anyone."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "verdict",
+          "issues",
+          "missing_sections",
+          "strengths"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "verdict": "ready_with_changes",
+            "issues": [
+              {
+                "quote": "Invites expire after a while",
+                "type": "ambiguity",
+                "severity": "medium",
+                "problem": "No expiry period.",
+                "suggestion": "State 7 days."
+              },
+              {
+                "quote": "Admins can remove anyone",
+                "type": "missing_edge_case",
+                "severity": "high",
+                "problem": "Can an admin remove the last admin?",
+                "suggestion": "Block removing the last admin."
+              }
+            ],
+            "missing_sections": [
+              "Audit logging"
+            ],
+            "strengths": [
+              "Short and clear"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"quotes_in_spec\" must not be accepted.",
+      "inputs": {
+        "spec": "Users can invite teammates. Invites expire after a while. Admins can remove anyone."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "quotes_in_spec"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "verdict": "ready_with_changes",
+            "issues": [
+              {
+                "quote": "Invites are sent by SMS",
+                "type": "ambiguity",
+                "severity": "low",
+                "problem": "x",
+                "suggestion": "y"
+              }
+            ],
+            "missing_sections": [
+              "Audit logging"
+            ],
+            "strengths": [
+              "Short and clear"
+            ]
+          },
+          {
+            "verdict": "ready_with_changes",
+            "issues": [
+              {
+                "quote": "Invites are sent by SMS",
+                "type": "ambiguity",
+                "severity": "low",
+                "problem": "x",
+                "suggestion": "y"
+              }
+            ],
+            "missing_sections": [
+              "Audit logging"
+            ],
+            "strengths": [
+              "Short and clear"
+            ]
+          },
+          {
+            "verdict": "ready_with_changes",
+            "issues": [
+              {
+                "quote": "Invites are sent by SMS",
+                "type": "ambiguity",
+                "severity": "low",
+                "problem": "x",
+                "suggestion": "y"
+              }
+            ],
+            "missing_sections": [
+              "Audit logging"
+            ],
+            "strengths": [
+              "Short and clear"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "quotes_in_spec",
+      "question": "Every issue quotes the spec word for word."
+    },
+    {
+      "id": "no_duplicate_issues",
+      "question": "No passage is reported twice."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

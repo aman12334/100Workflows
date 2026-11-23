@@ -1,0 +1,266 @@
+{
+  "workflowId": "discovery-call-prep",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/run-service-generic.test.ts",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the Phase 0 run-service tests.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "prospect": "Dana Lee, COO at Brightline Agency (35 people)",
+        "prospect_notes": "Booked after reading our post on month-end close; mentioned spreadsheets."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "prospect_summary",
+          "facts",
+          "hypotheses",
+          "questions",
+          "qualification_criteria",
+          "next_steps"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "prospect_summary": "Dana Lee is COO at Brightline Agency.",
+            "facts": [
+              {
+                "statement": "They use spreadsheets today.",
+                "evidence": "mentioned spreadsheets"
+              }
+            ],
+            "hypotheses": [
+              {
+                "id": "H1",
+                "statement": "Month-end close takes too long.",
+                "basis": "They read the month-end post."
+              },
+              {
+                "id": "H2",
+                "statement": "Agencies like them dislike manual reconciliation.",
+                "basis": "ICP pains."
+              }
+            ],
+            "questions": [
+              {
+                "text": "Walk me through your last month-end close.",
+                "tests": [
+                  "H1"
+                ]
+              },
+              {
+                "text": "What happens when invoices don't match?",
+                "tests": [
+                  "H2"
+                ]
+              }
+            ],
+            "qualification_criteria": [
+              {
+                "criterion": "Owns the close process",
+                "listen_for": "Dana makes the call"
+              }
+            ],
+            "next_steps": [
+              "Agree a follow-up with the finance lead."
+            ]
+          }
+        ],
+        "review": 4
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks a critical check must not be accepted.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "prospect": "Dana Lee, COO at Brightline Agency (35 people)",
+        "prospect_notes": "Booked after reading our post on month-end close; mentioned spreadsheets."
+      },
+      "expect": {
+        "status": "needs_review"
+      },
+      "mock": {
+        "replies": [
+          {
+            "prospect_summary": "Dana Lee is COO at Brightline Agency.",
+            "facts": [
+              {
+                "statement": "They have 3 accountants.",
+                "evidence": "We have three accountants on staff"
+              }
+            ],
+            "hypotheses": [
+              {
+                "id": "H1",
+                "statement": "Month-end close takes too long.",
+                "basis": "They read the month-end post."
+              },
+              {
+                "id": "H2",
+                "statement": "Agencies like them dislike manual reconciliation.",
+                "basis": "ICP pains."
+              }
+            ],
+            "questions": [
+              {
+                "text": "Walk me through your last month-end close.",
+                "tests": [
+                  "H1"
+                ]
+              },
+              {
+                "text": "What happens when invoices don't match?",
+                "tests": [
+                  "H2"
+                ]
+              }
+            ],
+            "qualification_criteria": [
+              {
+                "criterion": "Owns the close process",
+                "listen_for": "Dana makes the call"
+              }
+            ],
+            "next_steps": [
+              "Agree a follow-up with the finance lead."
+            ]
+          },
+          {
+            "prospect_summary": "Dana Lee is COO at Brightline Agency.",
+            "facts": [
+              {
+                "statement": "They have 3 accountants.",
+                "evidence": "We have three accountants on staff"
+              }
+            ],
+            "hypotheses": [
+              {
+                "id": "H1",
+                "statement": "Month-end close takes too long.",
+                "basis": "They read the month-end post."
+              },
+              {
+                "id": "H2",
+                "statement": "Agencies like them dislike manual reconciliation.",
+                "basis": "ICP pains."
+              }
+            ],
+            "questions": [
+              {
+                "text": "Walk me through your last month-end close.",
+                "tests": [
+                  "H1"
+                ]
+              },
+              {
+                "text": "What happens when invoices don't match?",
+                "tests": [
+                  "H2"
+                ]
+              }
+            ],
+            "qualification_criteria": [
+              {
+                "criterion": "Owns the close process",
+                "listen_for": "Dana makes the call"
+              }
+            ],
+            "next_steps": [
+              "Agree a follow-up with the finance lead."
+            ]
+          },
+          {
+            "prospect_summary": "Dana Lee is COO at Brightline Agency.",
+            "facts": [
+              {
+                "statement": "They have 3 accountants.",
+                "evidence": "We have three accountants on staff"
+              }
+            ],
+            "hypotheses": [
+              {
+                "id": "H1",
+                "statement": "Month-end close takes too long.",
+                "basis": "They read the month-end post."
+              },
+              {
+                "id": "H2",
+                "statement": "Agencies like them dislike manual reconciliation.",
+                "basis": "ICP pains."
+              }
+            ],
+            "questions": [
+              {
+                "text": "Walk me through your last month-end close.",
+                "tests": [
+                  "H1"
+                ]
+              },
+              {
+                "text": "What happens when invoices don't match?",
+                "tests": [
+                  "H2"
+                ]
+              }
+            ],
+            "qualification_criteria": [
+              {
+                "criterion": "Owns the close process",
+                "listen_for": "Dana makes the call"
+              }
+            ],
+            "next_steps": [
+              "Agree a follow-up with the finance lead."
+            ]
+          }
+        ],
+        "review": 4
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "hypotheses_labelled",
+      "question": "Claims about the prospect that aren't in the notes are labelled hypotheses: every fact quotes the prospect or notes word for word."
+    },
+    {
+      "id": "questions_mapped",
+      "question": "Each hypothesis has at least one question that tests it."
+    },
+    {
+      "id": "distinct_hypotheses",
+      "question": "Hypothesis ids are unique."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Only one typical scenario; add more before certifying."
+  ]
+}

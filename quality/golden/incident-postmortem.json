@@ -1,0 +1,255 @@
+{
+  "workflowId": "incident-postmortem",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/incident-postmortem.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "incident_notes": "09:12 alerts: sync queue at 40k\n09:30 on-call restarts workers, no change\n10:05 found expired Xero API token\n10:20 token rotated, queue drains by 11:00"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "summary",
+          "impact",
+          "timeline",
+          "root_causes",
+          "what_went_well",
+          "action_items"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "An expired token stopped syncs.",
+            "impact": "unknown",
+            "timeline": [
+              {
+                "time": "09:12",
+                "event": "Alert",
+                "record": "09:12 alerts: sync queue at 40k"
+              },
+              {
+                "time": "10:05",
+                "event": "Cause found",
+                "record": "10:05 found expired Xero API token"
+              }
+            ],
+            "root_causes": [
+              {
+                "id": "RC1",
+                "cause": "Token expiry not monitored",
+                "type": "root_cause"
+              },
+              {
+                "id": "RC2",
+                "cause": "Restart runbook first step",
+                "type": "contributing_factor"
+              }
+            ],
+            "what_went_well": [
+              "Fast rotation"
+            ],
+            "action_items": [
+              {
+                "action": "Alert 7 days before token expiry",
+                "cause_ids": [
+                  "RC1"
+                ],
+                "owner_role": "Platform lead",
+                "priority": "p1"
+              },
+              {
+                "action": "Update runbook",
+                "cause_ids": [
+                  "RC2"
+                ],
+                "owner_role": "On-call lead",
+                "priority": "p2"
+              }
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"causes_have_actions\" must not be accepted.",
+      "inputs": {
+        "incident_notes": "09:12 alerts: sync queue at 40k\n09:30 on-call restarts workers, no change\n10:05 found expired Xero API token\n10:20 token rotated, queue drains by 11:00"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "causes_have_actions"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "An expired token stopped syncs.",
+            "impact": "unknown",
+            "timeline": [
+              {
+                "time": "09:12",
+                "event": "Alert",
+                "record": "09:12 alerts: sync queue at 40k"
+              },
+              {
+                "time": "10:05",
+                "event": "Cause found",
+                "record": "10:05 found expired Xero API token"
+              }
+            ],
+            "root_causes": [
+              {
+                "id": "RC1",
+                "cause": "Token expiry not monitored",
+                "type": "root_cause"
+              },
+              {
+                "id": "RC2",
+                "cause": "Restart runbook first step",
+                "type": "contributing_factor"
+              }
+            ],
+            "what_went_well": [
+              "Fast rotation"
+            ],
+            "action_items": [
+              {
+                "action": "Alert on token expiry",
+                "cause_ids": [
+                  "RC1"
+                ],
+                "owner_role": "Platform lead",
+                "priority": "p1"
+              }
+            ]
+          },
+          {
+            "summary": "An expired token stopped syncs.",
+            "impact": "unknown",
+            "timeline": [
+              {
+                "time": "09:12",
+                "event": "Alert",
+                "record": "09:12 alerts: sync queue at 40k"
+              },
+              {
+                "time": "10:05",
+                "event": "Cause found",
+                "record": "10:05 found expired Xero API token"
+              }
+            ],
+            "root_causes": [
+              {
+                "id": "RC1",
+                "cause": "Token expiry not monitored",
+                "type": "root_cause"
+              },
+              {
+                "id": "RC2",
+                "cause": "Restart runbook first step",
+                "type": "contributing_factor"
+              }
+            ],
+            "what_went_well": [
+              "Fast rotation"
+            ],
+            "action_items": [
+              {
+                "action": "Alert on token expiry",
+                "cause_ids": [
+                  "RC1"
+                ],
+                "owner_role": "Platform lead",
+                "priority": "p1"
+              }
+            ]
+          },
+          {
+            "summary": "An expired token stopped syncs.",
+            "impact": "unknown",
+            "timeline": [
+              {
+                "time": "09:12",
+                "event": "Alert",
+                "record": "09:12 alerts: sync queue at 40k"
+              },
+              {
+                "time": "10:05",
+                "event": "Cause found",
+                "record": "10:05 found expired Xero API token"
+              }
+            ],
+            "root_causes": [
+              {
+                "id": "RC1",
+                "cause": "Token expiry not monitored",
+                "type": "root_cause"
+              },
+              {
+                "id": "RC2",
+                "cause": "Restart runbook first step",
+                "type": "contributing_factor"
+              }
+            ],
+            "what_went_well": [
+              "Fast rotation"
+            ],
+            "action_items": [
+              {
+                "action": "Alert on token expiry",
+                "cause_ids": [
+                  "RC1"
+                ],
+                "owner_role": "Platform lead",
+                "priority": "p1"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "timeline_from_record",
+      "question": "Every timeline event quotes the incident record word for word."
+    },
+    {
+      "id": "causes_have_actions",
+      "question": "Actions address real causes, and every cause has an action."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

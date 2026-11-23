@@ -1,0 +1,224 @@
+{
+  "workflowId": "launch-readiness-review",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/launch-readiness-review.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "launch": "Bulk approvals GA on 12 June",
+        "status_notes": "QA: 2 P1 bugs open in bulk approve, fix ETA Friday.\nSupport: macros written, team trained on Tuesday.\nDocs: help article drafted, not reviewed."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "recommendation",
+          "rationale",
+          "areas",
+          "blockers",
+          "next_actions"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "recommendation": "conditional_go",
+            "rationale": "Ship if the P1 bugs are fixed by Friday.",
+            "areas": [
+              {
+                "area": "qa",
+                "status": "blocked",
+                "evidence": "QA: 2 P1 bugs open in bulk approve, fix ETA Friday.",
+                "owner": "QA",
+                "needed_to_be_ready": "Fix and verify both P1s"
+              },
+              {
+                "area": "support",
+                "status": "ready",
+                "evidence": "Support: macros written, team trained on Tuesday.",
+                "owner": "Support",
+                "needed_to_be_ready": "Nothing"
+              },
+              {
+                "area": "docs",
+                "status": "at_risk",
+                "evidence": "Docs: help article drafted, not reviewed.",
+                "owner": "Docs",
+                "needed_to_be_ready": "Review the article"
+              },
+              {
+                "area": "marketing",
+                "status": "unknown",
+                "owner": "unassigned",
+                "needed_to_be_ready": "Confirm announcement plan"
+              }
+            ],
+            "blockers": [
+              {
+                "area": "qa",
+                "blocker": "Two P1 bugs",
+                "resolution": "Fix by Friday"
+              }
+            ],
+            "next_actions": [
+              "Ask marketing for status"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"evidence_quoted\" must not be accepted.",
+      "inputs": {
+        "launch": "Bulk approvals GA on 12 June",
+        "status_notes": "QA: 2 P1 bugs open in bulk approve, fix ETA Friday.\nSupport: macros written, team trained on Tuesday.\nDocs: help article drafted, not reviewed."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "evidence_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "recommendation": "conditional_go",
+            "rationale": "Ship if the P1 bugs are fixed by Friday.",
+            "areas": [
+              {
+                "area": "qa",
+                "status": "ready",
+                "evidence": "QA: all tests green, no open bugs.",
+                "owner": "QA",
+                "needed_to_be_ready": "Nothing"
+              },
+              {
+                "area": "support",
+                "status": "ready",
+                "evidence": "Support: macros written, team trained on Tuesday.",
+                "owner": "Support",
+                "needed_to_be_ready": "Nothing"
+              },
+              {
+                "area": "docs",
+                "status": "at_risk",
+                "evidence": "Docs: help article drafted, not reviewed.",
+                "owner": "Docs",
+                "needed_to_be_ready": "Review"
+              }
+            ],
+            "blockers": [],
+            "next_actions": [
+              "Ask marketing for status"
+            ]
+          },
+          {
+            "recommendation": "conditional_go",
+            "rationale": "Ship if the P1 bugs are fixed by Friday.",
+            "areas": [
+              {
+                "area": "qa",
+                "status": "ready",
+                "evidence": "QA: all tests green, no open bugs.",
+                "owner": "QA",
+                "needed_to_be_ready": "Nothing"
+              },
+              {
+                "area": "support",
+                "status": "ready",
+                "evidence": "Support: macros written, team trained on Tuesday.",
+                "owner": "Support",
+                "needed_to_be_ready": "Nothing"
+              },
+              {
+                "area": "docs",
+                "status": "at_risk",
+                "evidence": "Docs: help article drafted, not reviewed.",
+                "owner": "Docs",
+                "needed_to_be_ready": "Review"
+              }
+            ],
+            "blockers": [],
+            "next_actions": [
+              "Ask marketing for status"
+            ]
+          },
+          {
+            "recommendation": "conditional_go",
+            "rationale": "Ship if the P1 bugs are fixed by Friday.",
+            "areas": [
+              {
+                "area": "qa",
+                "status": "ready",
+                "evidence": "QA: all tests green, no open bugs.",
+                "owner": "QA",
+                "needed_to_be_ready": "Nothing"
+              },
+              {
+                "area": "support",
+                "status": "ready",
+                "evidence": "Support: macros written, team trained on Tuesday.",
+                "owner": "Support",
+                "needed_to_be_ready": "Nothing"
+              },
+              {
+                "area": "docs",
+                "status": "at_risk",
+                "evidence": "Docs: help article drafted, not reviewed.",
+                "owner": "Docs",
+                "needed_to_be_ready": "Review"
+              }
+            ],
+            "blockers": [],
+            "next_actions": [
+              "Ask marketing for status"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "evidence_quoted",
+      "question": "Every piece of evidence quotes the status notes word for word."
+    },
+    {
+      "id": "blockers_in_areas",
+      "question": "Every blocker belongs to an assessed area."
+    },
+    {
+      "id": "areas_unique",
+      "question": "Each area is assessed once."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

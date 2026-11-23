@@ -1,0 +1,294 @@
+{
+  "workflowId": "deal-review",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/deal-review.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "deal": "Brightline, $14k ARR",
+        "deal_notes": "Champion: Dana (COO), says \"this is my top priority for Q3\". CFO not met yet. Competing with LedgerLoop. Pain: month-end takes 3 days."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "elements",
+          "risk",
+          "risk_reasons",
+          "next_actions"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "elements": [
+              {
+                "element": "metrics",
+                "status": "partial",
+                "evidence": "month-end takes 3 days",
+                "gap_question": "What would 4 hours be worth?"
+              },
+              {
+                "element": "economic_buyer",
+                "status": "unknown",
+                "gap_question": "Can we meet the CFO?"
+              },
+              {
+                "element": "decision_criteria",
+                "status": "unknown",
+                "gap_question": "How will you compare vendors?"
+              },
+              {
+                "element": "decision_process",
+                "status": "unknown",
+                "gap_question": "Who signs off?"
+              },
+              {
+                "element": "paper_process",
+                "status": "unknown",
+                "gap_question": "Does legal review SaaS contracts?"
+              },
+              {
+                "element": "identified_pain",
+                "status": "known",
+                "evidence": "Pain: month-end takes 3 days.",
+                "gap_question": "None"
+              },
+              {
+                "element": "champion",
+                "status": "known",
+                "evidence": "this is my top priority for Q3",
+                "gap_question": "None"
+              },
+              {
+                "element": "competition",
+                "status": "known",
+                "evidence": "Competing with LedgerLoop.",
+                "gap_question": "What do they like about LedgerLoop?"
+              }
+            ],
+            "risk": "medium",
+            "risk_reasons": [
+              "No access to the CFO"
+            ],
+            "next_actions": [
+              "Ask Dana for a CFO meeting"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"evidence_quoted\" must not be accepted.",
+      "inputs": {
+        "deal": "Brightline, $14k ARR",
+        "deal_notes": "Champion: Dana (COO), says \"this is my top priority for Q3\". CFO not met yet. Competing with LedgerLoop. Pain: month-end takes 3 days."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "evidence_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "elements": [
+              {
+                "element": "metrics",
+                "status": "known",
+                "evidence": "ROI of 300% agreed with finance",
+                "gap_question": "x"
+              },
+              {
+                "element": "economic_buyer",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "decision_criteria",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "decision_process",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "paper_process",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "identified_pain",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "champion",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "competition",
+                "status": "unknown",
+                "gap_question": "x"
+              }
+            ],
+            "risk": "medium",
+            "risk_reasons": [
+              "No access to the CFO"
+            ],
+            "next_actions": [
+              "Ask Dana for a CFO meeting"
+            ]
+          },
+          {
+            "elements": [
+              {
+                "element": "metrics",
+                "status": "known",
+                "evidence": "ROI of 300% agreed with finance",
+                "gap_question": "x"
+              },
+              {
+                "element": "economic_buyer",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "decision_criteria",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "decision_process",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "paper_process",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "identified_pain",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "champion",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "competition",
+                "status": "unknown",
+                "gap_question": "x"
+              }
+            ],
+            "risk": "medium",
+            "risk_reasons": [
+              "No access to the CFO"
+            ],
+            "next_actions": [
+              "Ask Dana for a CFO meeting"
+            ]
+          },
+          {
+            "elements": [
+              {
+                "element": "metrics",
+                "status": "known",
+                "evidence": "ROI of 300% agreed with finance",
+                "gap_question": "x"
+              },
+              {
+                "element": "economic_buyer",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "decision_criteria",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "decision_process",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "paper_process",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "identified_pain",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "champion",
+                "status": "unknown",
+                "gap_question": "x"
+              },
+              {
+                "element": "competition",
+                "status": "unknown",
+                "gap_question": "x"
+              }
+            ],
+            "risk": "medium",
+            "risk_reasons": [
+              "No access to the CFO"
+            ],
+            "next_actions": [
+              "Ask Dana for a CFO meeting"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "evidence_quoted",
+      "question": "Every piece of evidence quotes the deal notes word for word."
+    },
+    {
+      "id": "each_element_once",
+      "question": "Each MEDDICC element is assessed once."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

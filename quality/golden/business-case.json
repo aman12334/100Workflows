@@ -1,0 +1,248 @@
+{
+  "workflowId": "business-case",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/business-case.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "proposal": "Hire a second support agent ($55k/yr) because response times doubled since January."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "problem",
+          "options",
+          "key_assumptions",
+          "recommendation",
+          "decision_needed"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "problem": "Slow support responses.",
+            "options": [
+              {
+                "id": "OPT1",
+                "option": "Do nothing",
+                "costs": "$0",
+                "benefits": "None",
+                "risks": [
+                  "More churn"
+                ]
+              },
+              {
+                "id": "OPT2",
+                "option": "Hire an agent",
+                "costs": "$55k/yr",
+                "benefits": "Faster responses",
+                "risks": []
+              },
+              {
+                "id": "OPT3",
+                "option": "Add macros",
+                "costs": "Time",
+                "benefits": "Some speed",
+                "risks": []
+              }
+            ],
+            "key_assumptions": [
+              {
+                "assumption": "Volume keeps growing",
+                "how_to_verify": "Ticket trend"
+              }
+            ],
+            "recommendation": {
+              "option_id": "OPT2",
+              "rationale": "Response time is driving churn.",
+              "conditions": []
+            },
+            "decision_needed": "Approve the hire this month."
+          }
+        ],
+        "review": 4
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"recommends_an_option\" must not be accepted.",
+      "inputs": {
+        "proposal": "Hire a second support agent ($55k/yr) because response times doubled since January."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "recommends_an_option"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "problem": "Slow support responses.",
+            "options": [
+              {
+                "id": "OPT1",
+                "option": "Do nothing",
+                "costs": "$0",
+                "benefits": "None",
+                "risks": [
+                  "More churn"
+                ]
+              },
+              {
+                "id": "OPT2",
+                "option": "Hire an agent",
+                "costs": "$55k/yr",
+                "benefits": "Faster responses",
+                "risks": []
+              },
+              {
+                "id": "OPT3",
+                "option": "Add macros",
+                "costs": "Time",
+                "benefits": "Some speed",
+                "risks": []
+              }
+            ],
+            "key_assumptions": [
+              {
+                "assumption": "Volume keeps growing",
+                "how_to_verify": "Ticket trend"
+              }
+            ],
+            "recommendation": {
+              "option_id": "OPT9",
+              "rationale": "x",
+              "conditions": []
+            },
+            "decision_needed": "Approve the hire this month."
+          },
+          {
+            "problem": "Slow support responses.",
+            "options": [
+              {
+                "id": "OPT1",
+                "option": "Do nothing",
+                "costs": "$0",
+                "benefits": "None",
+                "risks": [
+                  "More churn"
+                ]
+              },
+              {
+                "id": "OPT2",
+                "option": "Hire an agent",
+                "costs": "$55k/yr",
+                "benefits": "Faster responses",
+                "risks": []
+              },
+              {
+                "id": "OPT3",
+                "option": "Add macros",
+                "costs": "Time",
+                "benefits": "Some speed",
+                "risks": []
+              }
+            ],
+            "key_assumptions": [
+              {
+                "assumption": "Volume keeps growing",
+                "how_to_verify": "Ticket trend"
+              }
+            ],
+            "recommendation": {
+              "option_id": "OPT9",
+              "rationale": "x",
+              "conditions": []
+            },
+            "decision_needed": "Approve the hire this month."
+          },
+          {
+            "problem": "Slow support responses.",
+            "options": [
+              {
+                "id": "OPT1",
+                "option": "Do nothing",
+                "costs": "$0",
+                "benefits": "None",
+                "risks": [
+                  "More churn"
+                ]
+              },
+              {
+                "id": "OPT2",
+                "option": "Hire an agent",
+                "costs": "$55k/yr",
+                "benefits": "Faster responses",
+                "risks": []
+              },
+              {
+                "id": "OPT3",
+                "option": "Add macros",
+                "costs": "Time",
+                "benefits": "Some speed",
+                "risks": []
+              }
+            ],
+            "key_assumptions": [
+              {
+                "assumption": "Volume keeps growing",
+                "how_to_verify": "Ticket trend"
+              }
+            ],
+            "recommendation": {
+              "option_id": "OPT9",
+              "rationale": "x",
+              "conditions": []
+            },
+            "decision_needed": "Approve the hire this month."
+          }
+        ],
+        "review": 4
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "recommends_an_option",
+      "question": "The recommendation names one of the listed options."
+    },
+    {
+      "id": "distinct_options",
+      "question": "Options are distinct."
+    },
+    {
+      "id": "follows_from_analysis",
+      "question": "The recommendation follows from the costs, benefits and risks presented."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

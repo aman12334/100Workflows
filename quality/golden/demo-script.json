@@ -1,0 +1,158 @@
+{
+  "workflowId": "demo-script",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/demo-script.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "discovery_notes": "Dana: \"We re-key every expense into Xero.\" \"I never know which receipts are missing until month-end.\"",
+        "capabilities": "Xero sync; missing-receipt reminders"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "opening",
+          "segments",
+          "not_shown",
+          "close"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "opening": "You told us month-end means re-keying.",
+            "segments": [
+              {
+                "pain_quote": "We re-key every expense into Xero.",
+                "capability": "Xero sync",
+                "talk_track": "Watch an expense land in Xero.",
+                "check_in_question": "Is this the account you use?",
+                "minutes": 6
+              },
+              {
+                "pain_quote": "I never know which receipts are missing until month-end.",
+                "capability": "Missing-receipt reminders",
+                "talk_track": "Reminders go out daily.",
+                "check_in_question": "Who chases receipts today?",
+                "minutes": 5
+              }
+            ],
+            "not_shown": [
+              "Bulk approval"
+            ],
+            "close": "Propose a pilot."
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"pains_quoted\" must not be accepted.",
+      "inputs": {
+        "discovery_notes": "Dana: \"We re-key every expense into Xero.\" \"I never know which receipts are missing until month-end.\"",
+        "capabilities": "Xero sync; missing-receipt reminders"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "pains_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "opening": "You told us month-end means re-keying.",
+            "segments": [
+              {
+                "pain_quote": "Our reports are always late for the board",
+                "capability": "Reporting",
+                "talk_track": "x",
+                "check_in_question": "y",
+                "minutes": 5
+              }
+            ],
+            "not_shown": [
+              "Bulk approval"
+            ],
+            "close": "Propose a pilot."
+          },
+          {
+            "opening": "You told us month-end means re-keying.",
+            "segments": [
+              {
+                "pain_quote": "Our reports are always late for the board",
+                "capability": "Reporting",
+                "talk_track": "x",
+                "check_in_question": "y",
+                "minutes": 5
+              }
+            ],
+            "not_shown": [
+              "Bulk approval"
+            ],
+            "close": "Propose a pilot."
+          },
+          {
+            "opening": "You told us month-end means re-keying.",
+            "segments": [
+              {
+                "pain_quote": "Our reports are always late for the board",
+                "capability": "Reporting",
+                "talk_track": "x",
+                "check_in_question": "y",
+                "minutes": 5
+              }
+            ],
+            "not_shown": [
+              "Bulk approval"
+            ],
+            "close": "Propose a pilot."
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "pains_quoted",
+      "question": "Every segment starts from a pain quoted from the notes."
+    },
+    {
+      "id": "short_talk_tracks",
+      "question": "Talk tracks are 90 words or fewer."
+    },
+    {
+      "id": "distinct_pains",
+      "question": "No pain is demoed twice."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

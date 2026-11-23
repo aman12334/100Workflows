@@ -1,0 +1,163 @@
+{
+  "workflowId": "content-repurposer",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/content-repurposer.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "source": "Most agencies lose a day a month to reconciliation. The fix is not more discipline; it is fewer manual steps."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "core_ideas",
+          "posts"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "core_ideas": [
+              "Fewer steps beats discipline"
+            ],
+            "posts": [
+              {
+                "channel": "linkedin",
+                "hook": "Discipline will not fix your month-end.",
+                "body": "Short post.",
+                "source_passage": "The fix is not more discipline; it is fewer manual steps."
+              },
+              {
+                "channel": "x",
+                "hook": "A day a month, gone.",
+                "body": "Short.",
+                "source_passage": "Most agencies lose a day a month to reconciliation."
+              }
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"anchored\" must not be accepted.",
+      "inputs": {
+        "source": "Most agencies lose a day a month to reconciliation. The fix is not more discipline; it is fewer manual steps."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "anchored"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "core_ideas": [
+              "Fewer steps beats discipline"
+            ],
+            "posts": [
+              {
+                "channel": "linkedin",
+                "hook": "x",
+                "body": "y",
+                "source_passage": "Agencies that automate grow twice as fast"
+              },
+              {
+                "channel": "x",
+                "hook": "z",
+                "body": "y",
+                "source_passage": "Most agencies lose a day a month to reconciliation."
+              }
+            ]
+          },
+          {
+            "core_ideas": [
+              "Fewer steps beats discipline"
+            ],
+            "posts": [
+              {
+                "channel": "linkedin",
+                "hook": "x",
+                "body": "y",
+                "source_passage": "Agencies that automate grow twice as fast"
+              },
+              {
+                "channel": "x",
+                "hook": "z",
+                "body": "y",
+                "source_passage": "Most agencies lose a day a month to reconciliation."
+              }
+            ]
+          },
+          {
+            "core_ideas": [
+              "Fewer steps beats discipline"
+            ],
+            "posts": [
+              {
+                "channel": "linkedin",
+                "hook": "x",
+                "body": "y",
+                "source_passage": "Agencies that automate grow twice as fast"
+              },
+              {
+                "channel": "x",
+                "hook": "z",
+                "body": "y",
+                "source_passage": "Most agencies lose a day a month to reconciliation."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "anchored",
+      "question": "Every post is anchored to a passage copied from the source."
+    },
+    {
+      "id": "post_length",
+      "question": "Post bodies are 220 words or fewer."
+    },
+    {
+      "id": "short_hooks",
+      "question": "Hooks are 15 words or fewer."
+    },
+    {
+      "id": "distinct_hooks",
+      "question": "Hooks are unique."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

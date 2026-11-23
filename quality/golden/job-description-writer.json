@@ -1,0 +1,192 @@
+{
+  "workflowId": "job-description-writer",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/job-description-writer.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "company_name": "Acme",
+        "role_need": "We need someone to own customer support end to end; response times doubled."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "title",
+          "summary",
+          "outcomes",
+          "responsibilities",
+          "must_have",
+          "nice_to_have",
+          "details"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "title": "Head of Support",
+            "summary": "Own support end to end.",
+            "outcomes": [
+              "Median first response under 4 hours",
+              "Founders out of the queue"
+            ],
+            "responsibilities": [
+              "Answer tickets",
+              "Write macros",
+              "Report trends"
+            ],
+            "must_have": [
+              "Two years in SaaS support",
+              "Clear writing"
+            ],
+            "nice_to_have": [
+              "Accounting knowledge"
+            ],
+            "details": []
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"short_must_have\" must not be accepted.",
+      "inputs": {
+        "company_name": "Acme",
+        "role_need": "We need someone to own customer support end to end; response times doubled."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "short_must_have"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "title": "Head of Support",
+            "summary": "Own support end to end.",
+            "outcomes": [
+              "Median first response under 4 hours",
+              "Founders out of the queue"
+            ],
+            "responsibilities": [
+              "Answer tickets",
+              "Write macros",
+              "Report trends"
+            ],
+            "must_have": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f",
+              "g",
+              "h"
+            ],
+            "nice_to_have": [
+              "Accounting knowledge"
+            ],
+            "details": []
+          },
+          {
+            "title": "Head of Support",
+            "summary": "Own support end to end.",
+            "outcomes": [
+              "Median first response under 4 hours",
+              "Founders out of the queue"
+            ],
+            "responsibilities": [
+              "Answer tickets",
+              "Write macros",
+              "Report trends"
+            ],
+            "must_have": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f",
+              "g",
+              "h"
+            ],
+            "nice_to_have": [
+              "Accounting knowledge"
+            ],
+            "details": []
+          },
+          {
+            "title": "Head of Support",
+            "summary": "Own support end to end.",
+            "outcomes": [
+              "Median first response under 4 hours",
+              "Founders out of the queue"
+            ],
+            "responsibilities": [
+              "Answer tickets",
+              "Write macros",
+              "Report trends"
+            ],
+            "must_have": [
+              "a",
+              "b",
+              "c",
+              "d",
+              "e",
+              "f",
+              "g",
+              "h"
+            ],
+            "nice_to_have": [
+              "Accounting knowledge"
+            ],
+            "details": []
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "short_must_have",
+      "question": "There are six or fewer must-have requirements."
+    },
+    {
+      "id": "short_summary",
+      "question": "The role summary is 80 words or fewer."
+    },
+    {
+      "id": "distinct_requirements",
+      "question": "Requirements are not repeated."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

@@ -1,0 +1,198 @@
+{
+  "workflowId": "performance-review-writer",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/performance-review-writer.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "employee_role": "Senior support specialist",
+        "manager_notes": "Rewrote 40 macros in March; first-response time dropped from 9h to 5h. Missed two escalations in May because the SLA dashboard was ignored."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "summary",
+          "strengths",
+          "growth_areas",
+          "goal_progress",
+          "next_period_goals"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Strong quarter with one process gap.",
+            "strengths": [
+              {
+                "point": "Improved response time",
+                "example": "first-response time dropped from 9h to 5h",
+                "impact": "Faster support"
+              }
+            ],
+            "growth_areas": [
+              {
+                "point": "Escalation tracking",
+                "example": "Missed two escalations in May",
+                "support": "Weekly SLA review"
+              }
+            ],
+            "goal_progress": [
+              {
+                "goal": "Below 6h",
+                "status": "met",
+                "comment": "5h"
+              }
+            ],
+            "next_period_goals": [
+              "Zero missed escalations"
+            ]
+          }
+        ],
+        "review": 4
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"strengths_evidenced\" must not be accepted.",
+      "inputs": {
+        "employee_role": "Senior support specialist",
+        "manager_notes": "Rewrote 40 macros in March; first-response time dropped from 9h to 5h. Missed two escalations in May because the SLA dashboard was ignored."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "strengths_evidenced"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Strong quarter with one process gap.",
+            "strengths": [
+              {
+                "point": "Great attitude",
+                "example": "Always positive and a joy to work with",
+                "impact": "x"
+              }
+            ],
+            "growth_areas": [
+              {
+                "point": "Escalation tracking",
+                "example": "Missed two escalations in May",
+                "support": "Weekly SLA review"
+              }
+            ],
+            "goal_progress": [
+              {
+                "goal": "Below 6h",
+                "status": "met",
+                "comment": "5h"
+              }
+            ],
+            "next_period_goals": [
+              "Zero missed escalations"
+            ]
+          },
+          {
+            "summary": "Strong quarter with one process gap.",
+            "strengths": [
+              {
+                "point": "Great attitude",
+                "example": "Always positive and a joy to work with",
+                "impact": "x"
+              }
+            ],
+            "growth_areas": [
+              {
+                "point": "Escalation tracking",
+                "example": "Missed two escalations in May",
+                "support": "Weekly SLA review"
+              }
+            ],
+            "goal_progress": [
+              {
+                "goal": "Below 6h",
+                "status": "met",
+                "comment": "5h"
+              }
+            ],
+            "next_period_goals": [
+              "Zero missed escalations"
+            ]
+          },
+          {
+            "summary": "Strong quarter with one process gap.",
+            "strengths": [
+              {
+                "point": "Great attitude",
+                "example": "Always positive and a joy to work with",
+                "impact": "x"
+              }
+            ],
+            "growth_areas": [
+              {
+                "point": "Escalation tracking",
+                "example": "Missed two escalations in May",
+                "support": "Weekly SLA review"
+              }
+            ],
+            "goal_progress": [
+              {
+                "goal": "Below 6h",
+                "status": "met",
+                "comment": "5h"
+              }
+            ],
+            "next_period_goals": [
+              "Zero missed escalations"
+            ]
+          }
+        ],
+        "review": 4
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "strengths_evidenced",
+      "question": "Every strength is backed by an example copied from the notes."
+    },
+    {
+      "id": "growth_evidenced",
+      "question": "Every growth area is backed by an example copied from the notes."
+    },
+    {
+      "id": "fair_and_behavioral",
+      "question": "The review is balanced and describes behavior, not personality."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

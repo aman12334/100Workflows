@@ -1,0 +1,251 @@
+{
+  "workflowId": "research-plan",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/research-plan.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "research_question": "Why do trial users not convert?",
+        "decision": "Whether to build a mobile receipt app this year"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "objectives",
+          "methods",
+          "participant_criteria",
+          "screener_questions",
+          "guide_topics",
+          "timeline"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "objectives": [
+              {
+                "id": "O1",
+                "objective": "How receipts are captured today"
+              },
+              {
+                "id": "O2",
+                "objective": "How often users are away from a desk"
+              }
+            ],
+            "methods": [
+              {
+                "method": "interviews",
+                "objective_ids": [
+                  "O1",
+                  "O2"
+                ],
+                "participants": 8,
+                "why": "Context",
+                "limitations": "Stated behavior"
+              },
+              {
+                "method": "analytics_review",
+                "objective_ids": [
+                  "O1"
+                ],
+                "participants": 1,
+                "why": "Actual uploads",
+                "limitations": "No why"
+              }
+            ],
+            "participant_criteria": [
+              "Submits 10+ receipts a month"
+            ],
+            "screener_questions": [
+              "How do you submit receipts?",
+              "How many a month?"
+            ],
+            "guide_topics": [
+              "Last receipt submitted"
+            ],
+            "timeline": [
+              {
+                "week": 1,
+                "activity": "Recruit"
+              }
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"objectives_covered\" must not be accepted.",
+      "inputs": {
+        "research_question": "Why do trial users not convert?",
+        "decision": "Whether to build a mobile receipt app this year"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "objectives_covered"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "objectives": [
+              {
+                "id": "O1",
+                "objective": "How receipts are captured today"
+              },
+              {
+                "id": "O2",
+                "objective": "How often users are away from a desk"
+              }
+            ],
+            "methods": [
+              {
+                "method": "survey",
+                "objective_ids": [
+                  "O1"
+                ],
+                "participants": 50,
+                "why": "Scale",
+                "limitations": "Stated"
+              }
+            ],
+            "participant_criteria": [
+              "Submits 10+ receipts a month"
+            ],
+            "screener_questions": [
+              "How do you submit receipts?",
+              "How many a month?"
+            ],
+            "guide_topics": [
+              "Last receipt submitted"
+            ],
+            "timeline": [
+              {
+                "week": 1,
+                "activity": "Recruit"
+              }
+            ]
+          },
+          {
+            "objectives": [
+              {
+                "id": "O1",
+                "objective": "How receipts are captured today"
+              },
+              {
+                "id": "O2",
+                "objective": "How often users are away from a desk"
+              }
+            ],
+            "methods": [
+              {
+                "method": "survey",
+                "objective_ids": [
+                  "O1"
+                ],
+                "participants": 50,
+                "why": "Scale",
+                "limitations": "Stated"
+              }
+            ],
+            "participant_criteria": [
+              "Submits 10+ receipts a month"
+            ],
+            "screener_questions": [
+              "How do you submit receipts?",
+              "How many a month?"
+            ],
+            "guide_topics": [
+              "Last receipt submitted"
+            ],
+            "timeline": [
+              {
+                "week": 1,
+                "activity": "Recruit"
+              }
+            ]
+          },
+          {
+            "objectives": [
+              {
+                "id": "O1",
+                "objective": "How receipts are captured today"
+              },
+              {
+                "id": "O2",
+                "objective": "How often users are away from a desk"
+              }
+            ],
+            "methods": [
+              {
+                "method": "survey",
+                "objective_ids": [
+                  "O1"
+                ],
+                "participants": 50,
+                "why": "Scale",
+                "limitations": "Stated"
+              }
+            ],
+            "participant_criteria": [
+              "Submits 10+ receipts a month"
+            ],
+            "screener_questions": [
+              "How do you submit receipts?",
+              "How many a month?"
+            ],
+            "guide_topics": [
+              "Last receipt submitted"
+            ],
+            "timeline": [
+              {
+                "week": 1,
+                "activity": "Recruit"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "objectives_covered",
+      "question": "Methods map to declared objectives, and every objective is covered."
+    },
+    {
+      "id": "unique_objectives",
+      "question": "Objective ids are unique."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

@@ -1,0 +1,153 @@
+{
+  "workflowId": "objection-handling-guide",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/objection-handling-guide.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "product_description": "AI bookkeeping",
+        "objections": "It's too expensive for a team our size.\nWe already have a bookkeeper."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "objections",
+          "patterns"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "objections": [
+              {
+                "objection": "It's too expensive for a team our size.",
+                "category": "price",
+                "underlying_concern": "ROI unclear",
+                "response": "Fair. What does month-end cost you in hours today?",
+                "proof": "proof needed",
+                "follow_up_question": "Who closes the books now?"
+              },
+              {
+                "objection": "We already have a bookkeeper.",
+                "category": "status_quo",
+                "underlying_concern": "Replacement fear",
+                "response": "We make your bookkeeper faster, not redundant.",
+                "proof": "proof needed",
+                "follow_up_question": "What does your bookkeeper spend most time on?"
+              }
+            ],
+            "patterns": [
+              "Value not quantified"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"objections_supplied\" must not be accepted.",
+      "inputs": {
+        "product_description": "AI bookkeeping",
+        "objections": "It's too expensive for a team our size.\nWe already have a bookkeeper."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "objections_supplied"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "objections": [
+              {
+                "objection": "Your product lacks enterprise security",
+                "category": "trust",
+                "underlying_concern": "x",
+                "response": "y",
+                "proof": "proof needed",
+                "follow_up_question": "z"
+              }
+            ],
+            "patterns": [
+              "Value not quantified"
+            ]
+          },
+          {
+            "objections": [
+              {
+                "objection": "Your product lacks enterprise security",
+                "category": "trust",
+                "underlying_concern": "x",
+                "response": "y",
+                "proof": "proof needed",
+                "follow_up_question": "z"
+              }
+            ],
+            "patterns": [
+              "Value not quantified"
+            ]
+          },
+          {
+            "objections": [
+              {
+                "objection": "Your product lacks enterprise security",
+                "category": "trust",
+                "underlying_concern": "x",
+                "response": "y",
+                "proof": "proof needed",
+                "follow_up_question": "z"
+              }
+            ],
+            "patterns": [
+              "Value not quantified"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "objections_supplied",
+      "question": "Every objection is copied from your list word for word."
+    },
+    {
+      "id": "short_responses",
+      "question": "Each response is 60 words or fewer."
+    },
+    {
+      "id": "no_repeats",
+      "question": "No objection appears twice."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

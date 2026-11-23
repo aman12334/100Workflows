@@ -1,0 +1,247 @@
+{
+  "workflowId": "proposal-writer",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/proposal-writer.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "company_name": "Acme",
+        "discovery_notes": "Dana: \"We need month-end done in a day, across both entities.\" Wants to start in July.",
+        "offering": "Annual plan, 15 seats",
+        "pricing": "$14,400 per year; onboarding $1,500 one-off"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "title",
+          "situation",
+          "goals",
+          "deliverables",
+          "timeline",
+          "investment",
+          "assumptions",
+          "next_steps"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "title": "Month-end in a day for Brightline",
+            "situation": "Three-day close.",
+            "goals": [
+              {
+                "id": "G1",
+                "goal": "One-day close",
+                "quote": "We need month-end done in a day, across both entities."
+              }
+            ],
+            "deliverables": [
+              {
+                "deliverable": "Two entity setup",
+                "goal_ids": [
+                  "G1"
+                ],
+                "description": "x"
+              }
+            ],
+            "timeline": [
+              {
+                "phase": "Onboarding",
+                "duration": "2 weeks",
+                "outcome": "Live"
+              }
+            ],
+            "investment": [
+              {
+                "item": "Annual plan",
+                "price": "$14,400 per year"
+              },
+              {
+                "item": "Onboarding",
+                "price": "$1,500 one-off"
+              }
+            ],
+            "assumptions": [],
+            "next_steps": [
+              "Sign by June 30"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"prices_exact\" must not be accepted.",
+      "inputs": {
+        "company_name": "Acme",
+        "discovery_notes": "Dana: \"We need month-end done in a day, across both entities.\" Wants to start in July.",
+        "offering": "Annual plan, 15 seats",
+        "pricing": "$14,400 per year; onboarding $1,500 one-off"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "prices_exact"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "title": "Month-end in a day for Brightline",
+            "situation": "Three-day close.",
+            "goals": [
+              {
+                "id": "G1",
+                "goal": "One-day close",
+                "quote": "We need month-end done in a day, across both entities."
+              }
+            ],
+            "deliverables": [
+              {
+                "deliverable": "Two entity setup",
+                "goal_ids": [
+                  "G1"
+                ],
+                "description": "x"
+              }
+            ],
+            "timeline": [
+              {
+                "phase": "Onboarding",
+                "duration": "2 weeks",
+                "outcome": "Live"
+              }
+            ],
+            "investment": [
+              {
+                "item": "Annual plan",
+                "price": "$12,960 per year (10% off)"
+              }
+            ],
+            "assumptions": [],
+            "next_steps": [
+              "Sign by June 30"
+            ]
+          },
+          {
+            "title": "Month-end in a day for Brightline",
+            "situation": "Three-day close.",
+            "goals": [
+              {
+                "id": "G1",
+                "goal": "One-day close",
+                "quote": "We need month-end done in a day, across both entities."
+              }
+            ],
+            "deliverables": [
+              {
+                "deliverable": "Two entity setup",
+                "goal_ids": [
+                  "G1"
+                ],
+                "description": "x"
+              }
+            ],
+            "timeline": [
+              {
+                "phase": "Onboarding",
+                "duration": "2 weeks",
+                "outcome": "Live"
+              }
+            ],
+            "investment": [
+              {
+                "item": "Annual plan",
+                "price": "$12,960 per year (10% off)"
+              }
+            ],
+            "assumptions": [],
+            "next_steps": [
+              "Sign by June 30"
+            ]
+          },
+          {
+            "title": "Month-end in a day for Brightline",
+            "situation": "Three-day close.",
+            "goals": [
+              {
+                "id": "G1",
+                "goal": "One-day close",
+                "quote": "We need month-end done in a day, across both entities."
+              }
+            ],
+            "deliverables": [
+              {
+                "deliverable": "Two entity setup",
+                "goal_ids": [
+                  "G1"
+                ],
+                "description": "x"
+              }
+            ],
+            "timeline": [
+              {
+                "phase": "Onboarding",
+                "duration": "2 weeks",
+                "outcome": "Live"
+              }
+            ],
+            "investment": [
+              {
+                "item": "Annual plan",
+                "price": "$12,960 per year (10% off)"
+              }
+            ],
+            "assumptions": [],
+            "next_steps": [
+              "Sign by June 30"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "goals_quoted",
+      "question": "Every goal quotes the buyer word for word."
+    },
+    {
+      "id": "deliverables_serve_goals",
+      "question": "Every deliverable serves a stated goal, and every goal is served."
+    },
+    {
+      "id": "prices_exact",
+      "question": "Every price is copied exactly from the pricing supplied."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

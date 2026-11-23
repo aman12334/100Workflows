@@ -1,0 +1,406 @@
+{
+  "workflowId": "interview-kit",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/interview-kit.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "role": "Head of Support",
+        "role_outcomes": "Halve response times in 6 months; build the help center."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "competencies",
+          "questions",
+          "rating_guide"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "competencies": [
+              {
+                "id": "C1",
+                "competency": "Process design",
+                "why_it_matters": "x"
+              },
+              {
+                "id": "C2",
+                "competency": "Writing",
+                "why_it_matters": "y"
+              },
+              {
+                "id": "C3",
+                "competency": "Hiring",
+                "why_it_matters": "z"
+              }
+            ],
+            "questions": [
+              {
+                "question": "Tell me about a queue you fixed.",
+                "type": "behavioral",
+                "competency_ids": [
+                  "C1"
+                ],
+                "strong_signals": [
+                  "Metrics"
+                ],
+                "red_flags": [
+                  "Vague"
+                ],
+                "stage": "HM"
+              },
+              {
+                "question": "Rewrite this macro.",
+                "type": "work_sample",
+                "competency_ids": [
+                  "C2"
+                ],
+                "strong_signals": [
+                  "Clear"
+                ],
+                "red_flags": [
+                  "Jargon"
+                ],
+                "stage": "Work sample"
+              },
+              {
+                "question": "How would you hire your first agent?",
+                "type": "situational",
+                "competency_ids": [
+                  "C3"
+                ],
+                "strong_signals": [
+                  "Structure"
+                ],
+                "red_flags": [
+                  "Gut feel"
+                ],
+                "stage": "Founder"
+              }
+            ],
+            "rating_guide": [
+              {
+                "score": 1,
+                "meaning": "No evidence"
+              },
+              {
+                "score": 2,
+                "meaning": "Some"
+              },
+              {
+                "score": 3,
+                "meaning": "Solid"
+              },
+              {
+                "score": 4,
+                "meaning": "Exceptional"
+              }
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"competencies_covered\" must not be accepted.",
+      "inputs": {
+        "role": "Head of Support",
+        "role_outcomes": "Halve response times in 6 months; build the help center."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "competencies_covered"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "competencies": [
+              {
+                "id": "C1",
+                "competency": "Process design",
+                "why_it_matters": "x"
+              },
+              {
+                "id": "C2",
+                "competency": "Writing",
+                "why_it_matters": "y"
+              },
+              {
+                "id": "C3",
+                "competency": "Hiring",
+                "why_it_matters": "z"
+              }
+            ],
+            "questions": [
+              {
+                "question": "Tell me about a queue you fixed.",
+                "type": "behavioral",
+                "competency_ids": [
+                  "C1"
+                ],
+                "strong_signals": [
+                  "x"
+                ],
+                "red_flags": [
+                  "y"
+                ],
+                "stage": "HM"
+              },
+              {
+                "question": "Culture?",
+                "type": "behavioral",
+                "competency_ids": [
+                  "C2"
+                ],
+                "strong_signals": [
+                  "x"
+                ],
+                "red_flags": [
+                  "y"
+                ],
+                "stage": "HM"
+              },
+              {
+                "question": "More?",
+                "type": "behavioral",
+                "competency_ids": [
+                  "C2"
+                ],
+                "strong_signals": [
+                  "x"
+                ],
+                "red_flags": [
+                  "y"
+                ],
+                "stage": "HM"
+              }
+            ],
+            "rating_guide": [
+              {
+                "score": 1,
+                "meaning": "No evidence"
+              },
+              {
+                "score": 2,
+                "meaning": "Some"
+              },
+              {
+                "score": 3,
+                "meaning": "Solid"
+              },
+              {
+                "score": 4,
+                "meaning": "Exceptional"
+              }
+            ]
+          },
+          {
+            "competencies": [
+              {
+                "id": "C1",
+                "competency": "Process design",
+                "why_it_matters": "x"
+              },
+              {
+                "id": "C2",
+                "competency": "Writing",
+                "why_it_matters": "y"
+              },
+              {
+                "id": "C3",
+                "competency": "Hiring",
+                "why_it_matters": "z"
+              }
+            ],
+            "questions": [
+              {
+                "question": "Tell me about a queue you fixed.",
+                "type": "behavioral",
+                "competency_ids": [
+                  "C1"
+                ],
+                "strong_signals": [
+                  "x"
+                ],
+                "red_flags": [
+                  "y"
+                ],
+                "stage": "HM"
+              },
+              {
+                "question": "Culture?",
+                "type": "behavioral",
+                "competency_ids": [
+                  "C2"
+                ],
+                "strong_signals": [
+                  "x"
+                ],
+                "red_flags": [
+                  "y"
+                ],
+                "stage": "HM"
+              },
+              {
+                "question": "More?",
+                "type": "behavioral",
+                "competency_ids": [
+                  "C2"
+                ],
+                "strong_signals": [
+                  "x"
+                ],
+                "red_flags": [
+                  "y"
+                ],
+                "stage": "HM"
+              }
+            ],
+            "rating_guide": [
+              {
+                "score": 1,
+                "meaning": "No evidence"
+              },
+              {
+                "score": 2,
+                "meaning": "Some"
+              },
+              {
+                "score": 3,
+                "meaning": "Solid"
+              },
+              {
+                "score": 4,
+                "meaning": "Exceptional"
+              }
+            ]
+          },
+          {
+            "competencies": [
+              {
+                "id": "C1",
+                "competency": "Process design",
+                "why_it_matters": "x"
+              },
+              {
+                "id": "C2",
+                "competency": "Writing",
+                "why_it_matters": "y"
+              },
+              {
+                "id": "C3",
+                "competency": "Hiring",
+                "why_it_matters": "z"
+              }
+            ],
+            "questions": [
+              {
+                "question": "Tell me about a queue you fixed.",
+                "type": "behavioral",
+                "competency_ids": [
+                  "C1"
+                ],
+                "strong_signals": [
+                  "x"
+                ],
+                "red_flags": [
+                  "y"
+                ],
+                "stage": "HM"
+              },
+              {
+                "question": "Culture?",
+                "type": "behavioral",
+                "competency_ids": [
+                  "C2"
+                ],
+                "strong_signals": [
+                  "x"
+                ],
+                "red_flags": [
+                  "y"
+                ],
+                "stage": "HM"
+              },
+              {
+                "question": "More?",
+                "type": "behavioral",
+                "competency_ids": [
+                  "C2"
+                ],
+                "strong_signals": [
+                  "x"
+                ],
+                "red_flags": [
+                  "y"
+                ],
+                "stage": "HM"
+              }
+            ],
+            "rating_guide": [
+              {
+                "score": 1,
+                "meaning": "No evidence"
+              },
+              {
+                "score": 2,
+                "meaning": "Some"
+              },
+              {
+                "score": 3,
+                "meaning": "Solid"
+              },
+              {
+                "score": 4,
+                "meaning": "Exceptional"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "competencies_covered",
+      "question": "Questions map to defined competencies, and every competency is covered."
+    },
+    {
+      "id": "distinct_questions",
+      "question": "Questions are not repeated."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

@@ -1,0 +1,309 @@
+{
+  "workflowId": "journey-map",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/journey-map.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "journey": "From signing up to the first month-end close",
+        "research_notes": "P3: \"I gave up connecting the bank the first night, the 2FA kept timing out.\"\nP5: \"Month-end still took me a full day.\""
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "stages",
+          "pain_points",
+          "opportunities",
+          "research_gaps"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "stages": [
+              {
+                "id": "ST1",
+                "stage": "Sign up",
+                "user_goal": "Get started",
+                "touchpoints": [
+                  "Website"
+                ],
+                "feeling": "neutral",
+                "evidence_level": "none"
+              },
+              {
+                "id": "ST2",
+                "stage": "Connect bank",
+                "user_goal": "Import transactions",
+                "touchpoints": [
+                  "App"
+                ],
+                "feeling": "negative",
+                "evidence_level": "some"
+              },
+              {
+                "id": "ST3",
+                "stage": "Month-end",
+                "user_goal": "Close books",
+                "touchpoints": [
+                  "App"
+                ],
+                "feeling": "negative",
+                "evidence_level": "some"
+              }
+            ],
+            "pain_points": [
+              {
+                "id": "P1",
+                "stage_id": "ST2",
+                "pain": "2FA timeouts",
+                "quote": "the 2FA kept timing out"
+              },
+              {
+                "id": "P2",
+                "stage_id": "ST3",
+                "pain": "Slow close",
+                "quote": "Month-end still took me a full day."
+              }
+            ],
+            "opportunities": [
+              {
+                "opportunity": "Retry bank auth",
+                "pain_ids": [
+                  "P1"
+                ],
+                "impact": "high"
+              }
+            ],
+            "research_gaps": [
+              "Sign up"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"pains_quoted\" must not be accepted.",
+      "inputs": {
+        "journey": "From signing up to the first month-end close",
+        "research_notes": "P3: \"I gave up connecting the bank the first night, the 2FA kept timing out.\"\nP5: \"Month-end still took me a full day.\""
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "pains_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "stages": [
+              {
+                "id": "ST1",
+                "stage": "Sign up",
+                "user_goal": "Get started",
+                "touchpoints": [
+                  "Website"
+                ],
+                "feeling": "neutral",
+                "evidence_level": "none"
+              },
+              {
+                "id": "ST2",
+                "stage": "Connect bank",
+                "user_goal": "Import transactions",
+                "touchpoints": [
+                  "App"
+                ],
+                "feeling": "negative",
+                "evidence_level": "some"
+              },
+              {
+                "id": "ST3",
+                "stage": "Month-end",
+                "user_goal": "Close books",
+                "touchpoints": [
+                  "App"
+                ],
+                "feeling": "negative",
+                "evidence_level": "some"
+              }
+            ],
+            "pain_points": [
+              {
+                "id": "P1",
+                "stage_id": "ST2",
+                "pain": "Pricing",
+                "quote": "The pricing page was confusing to me"
+              }
+            ],
+            "opportunities": [
+              {
+                "opportunity": "Retry bank auth",
+                "pain_ids": [
+                  "P1"
+                ],
+                "impact": "high"
+              }
+            ],
+            "research_gaps": [
+              "Sign up"
+            ]
+          },
+          {
+            "stages": [
+              {
+                "id": "ST1",
+                "stage": "Sign up",
+                "user_goal": "Get started",
+                "touchpoints": [
+                  "Website"
+                ],
+                "feeling": "neutral",
+                "evidence_level": "none"
+              },
+              {
+                "id": "ST2",
+                "stage": "Connect bank",
+                "user_goal": "Import transactions",
+                "touchpoints": [
+                  "App"
+                ],
+                "feeling": "negative",
+                "evidence_level": "some"
+              },
+              {
+                "id": "ST3",
+                "stage": "Month-end",
+                "user_goal": "Close books",
+                "touchpoints": [
+                  "App"
+                ],
+                "feeling": "negative",
+                "evidence_level": "some"
+              }
+            ],
+            "pain_points": [
+              {
+                "id": "P1",
+                "stage_id": "ST2",
+                "pain": "Pricing",
+                "quote": "The pricing page was confusing to me"
+              }
+            ],
+            "opportunities": [
+              {
+                "opportunity": "Retry bank auth",
+                "pain_ids": [
+                  "P1"
+                ],
+                "impact": "high"
+              }
+            ],
+            "research_gaps": [
+              "Sign up"
+            ]
+          },
+          {
+            "stages": [
+              {
+                "id": "ST1",
+                "stage": "Sign up",
+                "user_goal": "Get started",
+                "touchpoints": [
+                  "Website"
+                ],
+                "feeling": "neutral",
+                "evidence_level": "none"
+              },
+              {
+                "id": "ST2",
+                "stage": "Connect bank",
+                "user_goal": "Import transactions",
+                "touchpoints": [
+                  "App"
+                ],
+                "feeling": "negative",
+                "evidence_level": "some"
+              },
+              {
+                "id": "ST3",
+                "stage": "Month-end",
+                "user_goal": "Close books",
+                "touchpoints": [
+                  "App"
+                ],
+                "feeling": "negative",
+                "evidence_level": "some"
+              }
+            ],
+            "pain_points": [
+              {
+                "id": "P1",
+                "stage_id": "ST2",
+                "pain": "Pricing",
+                "quote": "The pricing page was confusing to me"
+              }
+            ],
+            "opportunities": [
+              {
+                "opportunity": "Retry bank auth",
+                "pain_ids": [
+                  "P1"
+                ],
+                "impact": "high"
+              }
+            ],
+            "research_gaps": [
+              "Sign up"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "pains_quoted",
+      "question": "Every pain point quotes the research notes word for word."
+    },
+    {
+      "id": "pains_in_stages",
+      "question": "Every pain point belongs to a stage in the map."
+    },
+    {
+      "id": "opportunities_address_pains",
+      "question": "Every opportunity addresses a pain point in the map."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

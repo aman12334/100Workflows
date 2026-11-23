@@ -1,0 +1,198 @@
+{
+  "workflowId": "win-loss-analysis",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/win-loss-analysis.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "deal_notes": "LOST Brightline: \"Too expensive for 12 seats compared to a part-time bookkeeper.\"\nWON Northpeak: \"The Xero sync was the deciding factor.\""
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "reasons",
+          "actions",
+          "data_quality_notes"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "reasons": [
+              {
+                "id": "R1",
+                "outcome": "lost",
+                "reason": "Seat price vs bookkeeper",
+                "category": "price",
+                "deals_mentioning": 1,
+                "quotes": [
+                  "Too expensive for 12 seats compared to a part-time bookkeeper."
+                ]
+              },
+              {
+                "id": "R2",
+                "outcome": "won",
+                "reason": "Xero sync",
+                "category": "product",
+                "deals_mentioning": 1,
+                "quotes": [
+                  "The Xero sync was the deciding factor."
+                ]
+              }
+            ],
+            "actions": [
+              {
+                "action": "Test a team plan",
+                "owner": "pricing",
+                "reason_ids": [
+                  "R1"
+                ]
+              }
+            ],
+            "data_quality_notes": [
+              "Two deals only"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"quotes_exact\" must not be accepted.",
+      "inputs": {
+        "deal_notes": "LOST Brightline: \"Too expensive for 12 seats compared to a part-time bookkeeper.\"\nWON Northpeak: \"The Xero sync was the deciding factor.\""
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "quotes_exact"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "reasons": [
+              {
+                "id": "R1",
+                "outcome": "lost",
+                "reason": "Missing SSO",
+                "category": "product",
+                "deals_mentioning": 3,
+                "quotes": [
+                  "We needed single sign-on for security"
+                ]
+              }
+            ],
+            "actions": [
+              {
+                "action": "Test a team plan",
+                "owner": "pricing",
+                "reason_ids": [
+                  "R1"
+                ]
+              }
+            ],
+            "data_quality_notes": [
+              "Two deals only"
+            ]
+          },
+          {
+            "reasons": [
+              {
+                "id": "R1",
+                "outcome": "lost",
+                "reason": "Missing SSO",
+                "category": "product",
+                "deals_mentioning": 3,
+                "quotes": [
+                  "We needed single sign-on for security"
+                ]
+              }
+            ],
+            "actions": [
+              {
+                "action": "Test a team plan",
+                "owner": "pricing",
+                "reason_ids": [
+                  "R1"
+                ]
+              }
+            ],
+            "data_quality_notes": [
+              "Two deals only"
+            ]
+          },
+          {
+            "reasons": [
+              {
+                "id": "R1",
+                "outcome": "lost",
+                "reason": "Missing SSO",
+                "category": "product",
+                "deals_mentioning": 3,
+                "quotes": [
+                  "We needed single sign-on for security"
+                ]
+              }
+            ],
+            "actions": [
+              {
+                "action": "Test a team plan",
+                "owner": "pricing",
+                "reason_ids": [
+                  "R1"
+                ]
+              }
+            ],
+            "data_quality_notes": [
+              "Two deals only"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "quotes_exact",
+      "question": "Every quote is copied word for word from the deal notes."
+    },
+    {
+      "id": "actions_address_reasons",
+      "question": "Every action addresses a reason in the analysis."
+    },
+    {
+      "id": "unique_reasons",
+      "question": "Reasons are not repeated."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

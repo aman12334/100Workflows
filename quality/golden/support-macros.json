@@ -1,0 +1,159 @@
+{
+  "workflowId": "support-macros",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/support-macros.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "common_questions": "How do I change my billing email?",
+        "product_facts": "Billing email is changed under Settings > Billing. Bank connections must be re-authorised every 90 days."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "macros",
+          "gaps"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "macros": [
+              {
+                "title": "Change billing email",
+                "use_when": "Billing email question",
+                "reply": "Hi {name}, go to Settings > Billing.",
+                "facts_used": [
+                  "Billing email is changed under Settings > Billing."
+                ],
+                "slots": [
+                  "name"
+                ],
+                "internal_note": ""
+              },
+              {
+                "title": "Bank sync stopped",
+                "use_when": "Sync stopped",
+                "reply": "Hi {name}, please re-authorise your bank.",
+                "facts_used": [
+                  "Bank connections must be re-authorised every 90 days."
+                ],
+                "slots": [
+                  "name"
+                ],
+                "internal_note": ""
+              }
+            ],
+            "gaps": []
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"facts_approved\" must not be accepted.",
+      "inputs": {
+        "common_questions": "How do I change my billing email?",
+        "product_facts": "Billing email is changed under Settings > Billing. Bank connections must be re-authorised every 90 days."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "facts_approved"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "macros": [
+              {
+                "title": "Refunds",
+                "use_when": "x",
+                "reply": "y",
+                "facts_used": [
+                  "Refunds are available within 60 days"
+                ],
+                "slots": [],
+                "internal_note": ""
+              }
+            ],
+            "gaps": []
+          },
+          {
+            "macros": [
+              {
+                "title": "Refunds",
+                "use_when": "x",
+                "reply": "y",
+                "facts_used": [
+                  "Refunds are available within 60 days"
+                ],
+                "slots": [],
+                "internal_note": ""
+              }
+            ],
+            "gaps": []
+          },
+          {
+            "macros": [
+              {
+                "title": "Refunds",
+                "use_when": "x",
+                "reply": "y",
+                "facts_used": [
+                  "Refunds are available within 60 days"
+                ],
+                "slots": [],
+                "internal_note": ""
+              }
+            ],
+            "gaps": []
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "facts_approved",
+      "question": "Every fact used is copied from the approved facts."
+    },
+    {
+      "id": "short_replies",
+      "question": "Replies are 120 words or fewer."
+    },
+    {
+      "id": "unique_titles",
+      "question": "Macro titles are unique."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

@@ -1,0 +1,208 @@
+{
+  "workflowId": "qbr-prep",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/qbr-prep.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "account": "Brightline",
+        "goals": "Close month-end in one day.",
+        "results_data": "Month-end close: 3 days in Q1, 1.5 days in Q2. 2,140 expenses auto-matched."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "headline",
+          "goals",
+          "results",
+          "issues",
+          "next_quarter",
+          "asks",
+          "talking_points"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "headline": "Close time halved.",
+            "goals": [
+              {
+                "id": "G1",
+                "goal": "One-day close",
+                "status": "on_track"
+              }
+            ],
+            "results": [
+              {
+                "goal_id": "G1",
+                "result": "Close halved",
+                "data": "Month-end close: 3 days in Q1, 1.5 days in Q2."
+              }
+            ],
+            "issues": [],
+            "next_quarter": [
+              {
+                "initiative": "Receipt reminders",
+                "goal_id": "G1",
+                "owner": "CSM"
+              }
+            ],
+            "asks": [
+              "Case study"
+            ],
+            "talking_points": []
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"results_from_data\" must not be accepted.",
+      "inputs": {
+        "account": "Brightline",
+        "goals": "Close month-end in one day.",
+        "results_data": "Month-end close: 3 days in Q1, 1.5 days in Q2. 2,140 expenses auto-matched."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "results_from_data"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "headline": "Close time halved.",
+            "goals": [
+              {
+                "id": "G1",
+                "goal": "One-day close",
+                "status": "on_track"
+              }
+            ],
+            "results": [
+              {
+                "goal_id": "G1",
+                "result": "ROI",
+                "data": "Saved $80,000 in bookkeeping costs"
+              }
+            ],
+            "issues": [],
+            "next_quarter": [
+              {
+                "initiative": "Receipt reminders",
+                "goal_id": "G1",
+                "owner": "CSM"
+              }
+            ],
+            "asks": [
+              "Case study"
+            ],
+            "talking_points": []
+          },
+          {
+            "headline": "Close time halved.",
+            "goals": [
+              {
+                "id": "G1",
+                "goal": "One-day close",
+                "status": "on_track"
+              }
+            ],
+            "results": [
+              {
+                "goal_id": "G1",
+                "result": "ROI",
+                "data": "Saved $80,000 in bookkeeping costs"
+              }
+            ],
+            "issues": [],
+            "next_quarter": [
+              {
+                "initiative": "Receipt reminders",
+                "goal_id": "G1",
+                "owner": "CSM"
+              }
+            ],
+            "asks": [
+              "Case study"
+            ],
+            "talking_points": []
+          },
+          {
+            "headline": "Close time halved.",
+            "goals": [
+              {
+                "id": "G1",
+                "goal": "One-day close",
+                "status": "on_track"
+              }
+            ],
+            "results": [
+              {
+                "goal_id": "G1",
+                "result": "ROI",
+                "data": "Saved $80,000 in bookkeeping costs"
+              }
+            ],
+            "issues": [],
+            "next_quarter": [
+              {
+                "initiative": "Receipt reminders",
+                "goal_id": "G1",
+                "owner": "CSM"
+              }
+            ],
+            "asks": [
+              "Case study"
+            ],
+            "talking_points": []
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "results_from_data",
+      "question": "Every result quotes your data word for word."
+    },
+    {
+      "id": "results_tied_to_goals",
+      "question": "Every result shows progress on a stated goal."
+    },
+    {
+      "id": "plan_tied_to_goals",
+      "question": "Every next-quarter initiative serves a stated goal."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

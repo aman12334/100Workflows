@@ -1,0 +1,266 @@
+{
+  "workflowId": "prd-writer",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/prd-writer.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "feature_idea": "Let agency admins approve expenses in bulk from the weekly digest email."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "problem",
+          "goals",
+          "non_goals",
+          "user_stories",
+          "requirements",
+          "open_questions",
+          "assumptions"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "problem": "Admins approve expenses one at a time.",
+            "goals": [
+              "Cut weekly approval time"
+            ],
+            "non_goals": [
+              "Mobile app support"
+            ],
+            "user_stories": [
+              {
+                "id": "US1",
+                "story": "As an admin, I want to select many expenses so that I can approve them at once.",
+                "acceptance_criteria": [
+                  "Selecting 20 expenses and approving marks all 20 approved"
+                ]
+              },
+              {
+                "id": "US2",
+                "story": "As an admin, I want to approve from the digest email so that I skip logging in.",
+                "acceptance_criteria": [
+                  "The digest has an Approve all link"
+                ]
+              }
+            ],
+            "requirements": [
+              {
+                "id": "R1",
+                "requirement": "Multi-select on the expenses list",
+                "priority": "must",
+                "story_ids": [
+                  "US1"
+                ]
+              },
+              {
+                "id": "R2",
+                "requirement": "Signed approval link in the digest",
+                "priority": "should",
+                "story_ids": [
+                  "US2"
+                ]
+              }
+            ],
+            "open_questions": [
+              "Is there an approval limit per batch?"
+            ],
+            "assumptions": [
+              "Admins already receive the digest."
+            ]
+          }
+        ],
+        "review": 4
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"requirements_traced\" must not be accepted.",
+      "inputs": {
+        "feature_idea": "Let agency admins approve expenses in bulk from the weekly digest email."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "requirements_traced"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "problem": "Admins approve expenses one at a time.",
+            "goals": [
+              "Cut weekly approval time"
+            ],
+            "non_goals": [
+              "Mobile app support"
+            ],
+            "user_stories": [
+              {
+                "id": "US1",
+                "story": "As an admin, I want to select many expenses so that I can approve them at once.",
+                "acceptance_criteria": [
+                  "Selecting 20 expenses and approving marks all 20 approved"
+                ]
+              },
+              {
+                "id": "US2",
+                "story": "As an admin, I want to approve from the digest email so that I skip logging in.",
+                "acceptance_criteria": [
+                  "The digest has an Approve all link"
+                ]
+              }
+            ],
+            "requirements": [
+              {
+                "id": "R1",
+                "requirement": "Multi-select",
+                "priority": "must",
+                "story_ids": [
+                  "US9"
+                ]
+              }
+            ],
+            "open_questions": [
+              "Is there an approval limit per batch?"
+            ],
+            "assumptions": [
+              "Admins already receive the digest."
+            ]
+          },
+          {
+            "problem": "Admins approve expenses one at a time.",
+            "goals": [
+              "Cut weekly approval time"
+            ],
+            "non_goals": [
+              "Mobile app support"
+            ],
+            "user_stories": [
+              {
+                "id": "US1",
+                "story": "As an admin, I want to select many expenses so that I can approve them at once.",
+                "acceptance_criteria": [
+                  "Selecting 20 expenses and approving marks all 20 approved"
+                ]
+              },
+              {
+                "id": "US2",
+                "story": "As an admin, I want to approve from the digest email so that I skip logging in.",
+                "acceptance_criteria": [
+                  "The digest has an Approve all link"
+                ]
+              }
+            ],
+            "requirements": [
+              {
+                "id": "R1",
+                "requirement": "Multi-select",
+                "priority": "must",
+                "story_ids": [
+                  "US9"
+                ]
+              }
+            ],
+            "open_questions": [
+              "Is there an approval limit per batch?"
+            ],
+            "assumptions": [
+              "Admins already receive the digest."
+            ]
+          },
+          {
+            "problem": "Admins approve expenses one at a time.",
+            "goals": [
+              "Cut weekly approval time"
+            ],
+            "non_goals": [
+              "Mobile app support"
+            ],
+            "user_stories": [
+              {
+                "id": "US1",
+                "story": "As an admin, I want to select many expenses so that I can approve them at once.",
+                "acceptance_criteria": [
+                  "Selecting 20 expenses and approving marks all 20 approved"
+                ]
+              },
+              {
+                "id": "US2",
+                "story": "As an admin, I want to approve from the digest email so that I skip logging in.",
+                "acceptance_criteria": [
+                  "The digest has an Approve all link"
+                ]
+              }
+            ],
+            "requirements": [
+              {
+                "id": "R1",
+                "requirement": "Multi-select",
+                "priority": "must",
+                "story_ids": [
+                  "US9"
+                ]
+              }
+            ],
+            "open_questions": [
+              "Is there an approval limit per batch?"
+            ],
+            "assumptions": [
+              "Admins already receive the digest."
+            ]
+          }
+        ],
+        "review": 4
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "requirements_traced",
+      "question": "Every requirement serves a declared story, and every story has a requirement."
+    },
+    {
+      "id": "unique_story_ids",
+      "question": "Story ids are unique."
+    },
+    {
+      "id": "unique_requirement_ids",
+      "question": "Requirement ids are unique."
+    },
+    {
+      "id": "testable_criteria",
+      "question": "Acceptance criteria are specific and testable."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

@@ -1,0 +1,200 @@
+{
+  "workflowId": "churn-risk-review",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/churn-risk-review.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "account": "Northpeak, renews 30 Sept",
+        "signals": "Weekly active users fell from 12 to 4 since July. Champion Lee left in August."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "risk",
+          "risk_summary",
+          "signals",
+          "save_plan",
+          "missing_data"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "risk": "high",
+            "risk_summary": "Lost champion and falling usage.",
+            "signals": [
+              {
+                "id": "SG1",
+                "signal": "Usage down",
+                "evidence": "Weekly active users fell from 12 to 4 since July.",
+                "type": "usage",
+                "weight": "high",
+                "kind": "symptom"
+              },
+              {
+                "id": "SG2",
+                "signal": "Champion left",
+                "evidence": "Champion Lee left in August.",
+                "type": "relationship",
+                "weight": "high",
+                "kind": "cause"
+              }
+            ],
+            "save_plan": [
+              {
+                "action": "Find a new sponsor",
+                "signal_ids": [
+                  "SG2"
+                ],
+                "owner": "CSM",
+                "by_when": "Two weeks"
+              }
+            ],
+            "missing_data": [
+              "Login data by user"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"signals_quoted\" must not be accepted.",
+      "inputs": {
+        "account": "Northpeak, renews 30 Sept",
+        "signals": "Weekly active users fell from 12 to 4 since July. Champion Lee left in August."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "signals_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "risk": "high",
+            "risk_summary": "Lost champion and falling usage.",
+            "signals": [
+              {
+                "id": "SG1",
+                "signal": "Budget cut",
+                "evidence": "They announced a 30% budget cut",
+                "type": "commercial",
+                "weight": "high",
+                "kind": "cause"
+              }
+            ],
+            "save_plan": [
+              {
+                "action": "x",
+                "signal_ids": [
+                  "SG1"
+                ],
+                "owner": "y",
+                "by_when": "z"
+              }
+            ],
+            "missing_data": [
+              "Login data by user"
+            ]
+          },
+          {
+            "risk": "high",
+            "risk_summary": "Lost champion and falling usage.",
+            "signals": [
+              {
+                "id": "SG1",
+                "signal": "Budget cut",
+                "evidence": "They announced a 30% budget cut",
+                "type": "commercial",
+                "weight": "high",
+                "kind": "cause"
+              }
+            ],
+            "save_plan": [
+              {
+                "action": "x",
+                "signal_ids": [
+                  "SG1"
+                ],
+                "owner": "y",
+                "by_when": "z"
+              }
+            ],
+            "missing_data": [
+              "Login data by user"
+            ]
+          },
+          {
+            "risk": "high",
+            "risk_summary": "Lost champion and falling usage.",
+            "signals": [
+              {
+                "id": "SG1",
+                "signal": "Budget cut",
+                "evidence": "They announced a 30% budget cut",
+                "type": "commercial",
+                "weight": "high",
+                "kind": "cause"
+              }
+            ],
+            "save_plan": [
+              {
+                "action": "x",
+                "signal_ids": [
+                  "SG1"
+                ],
+                "owner": "y",
+                "by_when": "z"
+              }
+            ],
+            "missing_data": [
+              "Login data by user"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "signals_quoted",
+      "question": "Every signal quotes the notes word for word."
+    },
+    {
+      "id": "actions_target_signals",
+      "question": "Every save-plan action targets a listed signal."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

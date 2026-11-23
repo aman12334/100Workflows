@@ -1,0 +1,196 @@
+{
+  "workflowId": "usability-test-plan",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/usability-test-plan.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "flow": "New bulk-approval screen: select expenses, approve, undo.",
+        "learning_goals": "Can admins find bulk approve?"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "participant_profile",
+          "warm_up_questions",
+          "tasks",
+          "debrief_questions",
+          "metrics"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "participant_profile": "Agency admins who approve 20+ expenses a week.",
+            "warm_up_questions": [
+              "How do you approve expenses today?"
+            ],
+            "tasks": [
+              {
+                "id": "T1",
+                "scenario": "It is Friday and twenty expenses are waiting. Approve them all.",
+                "success_criterion": "All 20 approved",
+                "learning_goal": "Findability",
+                "observe": [
+                  "Path taken"
+                ]
+              },
+              {
+                "id": "T2",
+                "scenario": "You approved one by mistake. Fix it.",
+                "success_criterion": "Expense back to pending",
+                "learning_goal": "Undo trust",
+                "observe": [
+                  "Hesitation"
+                ]
+              },
+              {
+                "id": "T3",
+                "scenario": "Approve only the travel expenses.",
+                "success_criterion": "Only travel approved",
+                "learning_goal": "Filtering",
+                "observe": [
+                  "Errors"
+                ]
+              }
+            ],
+            "debrief_questions": [
+              "What was hardest?",
+              "Would you trust it?"
+            ],
+            "metrics": [
+              "task_success"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"task_count\" must not be accepted.",
+      "inputs": {
+        "flow": "New bulk-approval screen: select expenses, approve, undo.",
+        "learning_goals": "Can admins find bulk approve?"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "task_count"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "participant_profile": "Agency admins who approve 20+ expenses a week.",
+            "warm_up_questions": [
+              "How do you approve expenses today?"
+            ],
+            "tasks": [
+              {
+                "id": "T1",
+                "scenario": "Approve everything.",
+                "success_criterion": "Done",
+                "learning_goal": "x",
+                "observe": []
+              }
+            ],
+            "debrief_questions": [
+              "What was hardest?",
+              "Would you trust it?"
+            ],
+            "metrics": [
+              "task_success"
+            ]
+          },
+          {
+            "participant_profile": "Agency admins who approve 20+ expenses a week.",
+            "warm_up_questions": [
+              "How do you approve expenses today?"
+            ],
+            "tasks": [
+              {
+                "id": "T1",
+                "scenario": "Approve everything.",
+                "success_criterion": "Done",
+                "learning_goal": "x",
+                "observe": []
+              }
+            ],
+            "debrief_questions": [
+              "What was hardest?",
+              "Would you trust it?"
+            ],
+            "metrics": [
+              "task_success"
+            ]
+          },
+          {
+            "participant_profile": "Agency admins who approve 20+ expenses a week.",
+            "warm_up_questions": [
+              "How do you approve expenses today?"
+            ],
+            "tasks": [
+              {
+                "id": "T1",
+                "scenario": "Approve everything.",
+                "success_criterion": "Done",
+                "learning_goal": "x",
+                "observe": []
+              }
+            ],
+            "debrief_questions": [
+              "What was hardest?",
+              "Would you trust it?"
+            ],
+            "metrics": [
+              "task_success"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "task_count",
+      "question": "The plan has 3-8 tasks, within the maximum if given."
+    },
+    {
+      "id": "short_scenarios",
+      "question": "Each scenario is 45 words or fewer."
+    },
+    {
+      "id": "distinct_scenarios",
+      "question": "No scenario is repeated."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

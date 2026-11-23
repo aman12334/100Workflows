@@ -1,0 +1,259 @@
+{
+  "workflowId": "metric-tree-builder",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/metric-tree-builder.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "business_model": "Per-seat SaaS subscription"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "north_star_rationale",
+          "metrics",
+          "existing_metrics_review",
+          "instrumentation_gaps"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "north_star_rationale": "Reconciled expenses are the value customers pay for.",
+            "metrics": [
+              {
+                "id": "NS",
+                "name": "Reconciled expenses per week",
+                "definition": "Count of expenses reconciled, weekly",
+                "type": "north_star",
+                "direction": "increase",
+                "suggested_owner": "CPO"
+              },
+              {
+                "id": "M1",
+                "name": "Connected accounts",
+                "definition": "Active bank connections",
+                "parent_id": "NS",
+                "type": "leading",
+                "direction": "increase",
+                "suggested_owner": "Integrations"
+              },
+              {
+                "id": "M2",
+                "name": "Auto-match rate",
+                "definition": "Share matched without edits",
+                "parent_id": "NS",
+                "type": "leading",
+                "direction": "increase",
+                "suggested_owner": "ML"
+              },
+              {
+                "id": "M3",
+                "name": "Rules created",
+                "definition": "Rules per workspace",
+                "parent_id": "M2",
+                "type": "leading",
+                "direction": "increase",
+                "suggested_owner": "Product"
+              }
+            ],
+            "existing_metrics_review": [],
+            "instrumentation_gaps": [
+              "Track rule creation"
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"parents_exist\" must not be accepted.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "business_model": "Per-seat SaaS subscription"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "parents_exist"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "north_star_rationale": "Reconciled expenses are the value customers pay for.",
+            "metrics": [
+              {
+                "id": "NS",
+                "name": "Reconciled expenses",
+                "definition": "x",
+                "type": "north_star",
+                "direction": "increase",
+                "suggested_owner": "x"
+              },
+              {
+                "id": "M1",
+                "name": "Connected accounts",
+                "definition": "x",
+                "parent_id": "M9",
+                "type": "leading",
+                "direction": "increase",
+                "suggested_owner": "x"
+              },
+              {
+                "id": "M2",
+                "name": "Auto-match rate",
+                "definition": "x",
+                "parent_id": "M1",
+                "type": "leading",
+                "direction": "increase",
+                "suggested_owner": "x"
+              },
+              {
+                "id": "M3",
+                "name": "Rules",
+                "definition": "x",
+                "parent_id": "M1",
+                "type": "leading",
+                "direction": "increase",
+                "suggested_owner": "x"
+              }
+            ],
+            "existing_metrics_review": [],
+            "instrumentation_gaps": [
+              "Track rule creation"
+            ]
+          },
+          {
+            "north_star_rationale": "Reconciled expenses are the value customers pay for.",
+            "metrics": [
+              {
+                "id": "NS",
+                "name": "Reconciled expenses",
+                "definition": "x",
+                "type": "north_star",
+                "direction": "increase",
+                "suggested_owner": "x"
+              },
+              {
+                "id": "M1",
+                "name": "Connected accounts",
+                "definition": "x",
+                "parent_id": "M9",
+                "type": "leading",
+                "direction": "increase",
+                "suggested_owner": "x"
+              },
+              {
+                "id": "M2",
+                "name": "Auto-match rate",
+                "definition": "x",
+                "parent_id": "M1",
+                "type": "leading",
+                "direction": "increase",
+                "suggested_owner": "x"
+              },
+              {
+                "id": "M3",
+                "name": "Rules",
+                "definition": "x",
+                "parent_id": "M1",
+                "type": "leading",
+                "direction": "increase",
+                "suggested_owner": "x"
+              }
+            ],
+            "existing_metrics_review": [],
+            "instrumentation_gaps": [
+              "Track rule creation"
+            ]
+          },
+          {
+            "north_star_rationale": "Reconciled expenses are the value customers pay for.",
+            "metrics": [
+              {
+                "id": "NS",
+                "name": "Reconciled expenses",
+                "definition": "x",
+                "type": "north_star",
+                "direction": "increase",
+                "suggested_owner": "x"
+              },
+              {
+                "id": "M1",
+                "name": "Connected accounts",
+                "definition": "x",
+                "parent_id": "M9",
+                "type": "leading",
+                "direction": "increase",
+                "suggested_owner": "x"
+              },
+              {
+                "id": "M2",
+                "name": "Auto-match rate",
+                "definition": "x",
+                "parent_id": "M1",
+                "type": "leading",
+                "direction": "increase",
+                "suggested_owner": "x"
+              },
+              {
+                "id": "M3",
+                "name": "Rules",
+                "definition": "x",
+                "parent_id": "M1",
+                "type": "leading",
+                "direction": "increase",
+                "suggested_owner": "x"
+              }
+            ],
+            "existing_metrics_review": [],
+            "instrumentation_gaps": [
+              "Track rule creation"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "parents_exist",
+      "question": "Every parent named in the tree exists in the tree."
+    },
+    {
+      "id": "unique_names",
+      "question": "Metric names are unique."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

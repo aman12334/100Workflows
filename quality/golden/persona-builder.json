@@ -1,0 +1,232 @@
+{
+  "workflowId": "persona-builder",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/persona-builder.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "research_notes": "P1 (office manager): \"I chase receipts on Slack every Friday.\"\nP2 (founder): \"I only look at the numbers once a quarter.\""
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "personas",
+          "unclustered_participants",
+          "open_questions"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "personas": [
+              {
+                "label": "The Friday receipt chaser",
+                "based_on": [
+                  "P1"
+                ],
+                "traits": [
+                  {
+                    "kind": "behavior",
+                    "trait": "Chases receipts weekly",
+                    "quote": "I chase receipts on Slack every Friday."
+                  },
+                  {
+                    "kind": "frustration",
+                    "trait": "Manual chasing",
+                    "quote": "I chase receipts on Slack"
+                  },
+                  {
+                    "kind": "goal",
+                    "trait": "Finish by Friday",
+                    "quote": "receipts on Slack every Friday"
+                  }
+                ],
+                "design_implications": [
+                  "Automate reminders"
+                ]
+              },
+              {
+                "label": "The quarterly founder",
+                "based_on": [
+                  "P2"
+                ],
+                "traits": [
+                  {
+                    "kind": "behavior",
+                    "trait": "Rarely checks numbers",
+                    "quote": "I only look at the numbers once a quarter."
+                  },
+                  {
+                    "kind": "goal",
+                    "trait": "Quarterly view",
+                    "quote": "look at the numbers once a quarter"
+                  },
+                  {
+                    "kind": "motivation",
+                    "trait": "Low time",
+                    "quote": "I only look at the numbers"
+                  }
+                ],
+                "design_implications": [
+                  "Quarterly summary"
+                ]
+              }
+            ],
+            "unclustered_participants": [],
+            "open_questions": []
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"traits_quoted\" must not be accepted.",
+      "inputs": {
+        "research_notes": "P1 (office manager): \"I chase receipts on Slack every Friday.\"\nP2 (founder): \"I only look at the numbers once a quarter.\""
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "traits_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "personas": [
+              {
+                "label": "Busy Brenda",
+                "based_on": [
+                  "P1"
+                ],
+                "traits": [
+                  {
+                    "kind": "goal",
+                    "trait": "Wants mobile app",
+                    "quote": "I wish there was a mobile app for this"
+                  },
+                  {
+                    "kind": "behavior",
+                    "trait": "x",
+                    "quote": "I chase receipts on Slack every Friday."
+                  },
+                  {
+                    "kind": "frustration",
+                    "trait": "y",
+                    "quote": "I chase receipts on Slack"
+                  }
+                ],
+                "design_implications": []
+              }
+            ],
+            "unclustered_participants": [],
+            "open_questions": []
+          },
+          {
+            "personas": [
+              {
+                "label": "Busy Brenda",
+                "based_on": [
+                  "P1"
+                ],
+                "traits": [
+                  {
+                    "kind": "goal",
+                    "trait": "Wants mobile app",
+                    "quote": "I wish there was a mobile app for this"
+                  },
+                  {
+                    "kind": "behavior",
+                    "trait": "x",
+                    "quote": "I chase receipts on Slack every Friday."
+                  },
+                  {
+                    "kind": "frustration",
+                    "trait": "y",
+                    "quote": "I chase receipts on Slack"
+                  }
+                ],
+                "design_implications": []
+              }
+            ],
+            "unclustered_participants": [],
+            "open_questions": []
+          },
+          {
+            "personas": [
+              {
+                "label": "Busy Brenda",
+                "based_on": [
+                  "P1"
+                ],
+                "traits": [
+                  {
+                    "kind": "goal",
+                    "trait": "Wants mobile app",
+                    "quote": "I wish there was a mobile app for this"
+                  },
+                  {
+                    "kind": "behavior",
+                    "trait": "x",
+                    "quote": "I chase receipts on Slack every Friday."
+                  },
+                  {
+                    "kind": "frustration",
+                    "trait": "y",
+                    "quote": "I chase receipts on Slack"
+                  }
+                ],
+                "design_implications": []
+              }
+            ],
+            "unclustered_participants": [],
+            "open_questions": []
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "traits_quoted",
+      "question": "Every persona trait quotes the notes word for word."
+    },
+    {
+      "id": "persona_count",
+      "question": "There are 1-4 personas, within the maximum if given."
+    },
+    {
+      "id": "distinct_labels",
+      "question": "Persona labels are unique."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

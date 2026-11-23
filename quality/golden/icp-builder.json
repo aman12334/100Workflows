@@ -1,0 +1,130 @@
+{
+  "workflowId": "icp-builder",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/run-service-generic.test.ts",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the Phase 0 run-service tests.",
+      "inputs": {
+        "company_name": "Acme",
+        "product_description": "AI bookkeeping for agencies",
+        "target_market": "US agencies"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "icp.segments",
+          "icp.personas",
+          "icp.evidence"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "s",
+            "segments": [
+              {
+                "name": "Agencies",
+                "rationale": "r"
+              }
+            ],
+            "firmographics": {
+              "industries": [
+                "Agencies"
+              ],
+              "company_size": "10-50",
+              "geography": "US",
+              "revenue_range": "$1M-$10M"
+            },
+            "buying_triggers": [
+              "t"
+            ],
+            "pains": [
+              "Manual reconciliation eats the first week of every month"
+            ],
+            "disqualifiers": [
+              "a",
+              "b"
+            ],
+            "personas": [
+              {
+                "role": "Founder",
+                "type": "economic_buyer",
+                "goals": [
+                  "g"
+                ],
+                "objections": [
+                  "o"
+                ]
+              },
+              {
+                "role": "Ops",
+                "type": "champion",
+                "goals": [
+                  "g"
+                ],
+                "objections": [
+                  "o"
+                ]
+              }
+            ],
+            "evidence": [
+              {
+                "statement": "Agencies reconcile by hand",
+                "source_ids": [
+                  "input"
+                ]
+              }
+            ]
+          }
+        ],
+        "review": 4
+      },
+      "live": true
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "has_disqualifiers",
+      "question": "Profile lists at least two disqualifiers."
+    },
+    {
+      "id": "firmographics_specific",
+      "question": "Firmographics use numeric ranges and the economic buyer and champion are defined."
+    },
+    {
+      "id": "evidence_traceable",
+      "question": "Every evidence item cites a market research source or your input."
+    },
+    {
+      "id": "specific",
+      "question": "Specific enough to qualify accounts from public information."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Hand-written executor: no known-bad scenario yet."
+  ]
+}

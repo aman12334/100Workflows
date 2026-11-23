@@ -1,0 +1,288 @@
+{
+  "workflowId": "vendor-evaluation",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/vendor-evaluation.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "need": "Payroll provider for UK and Ireland; must integrate with Xero.",
+        "vendor_notes": "PayFlow: \"Native Xero sync\", £6/employee/month, no Irish payroll.\nStaffPay: Ireland and UK supported, £9/employee/month, Xero via CSV export only."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "criteria",
+          "vendors",
+          "recommendation"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "criteria": [
+              {
+                "id": "K1",
+                "criterion": "Country coverage",
+                "weight": "must_have"
+              },
+              {
+                "id": "K2",
+                "criterion": "Xero integration",
+                "weight": "high"
+              }
+            ],
+            "vendors": [
+              {
+                "vendor": "PayFlow",
+                "scores": [
+                  {
+                    "criterion_id": "K1",
+                    "score": 1,
+                    "evidence": "no Irish payroll"
+                  },
+                  {
+                    "criterion_id": "K2",
+                    "score": 5,
+                    "evidence": "Native Xero sync"
+                  }
+                ],
+                "deal_breakers": [
+                  "No Irish payroll"
+                ],
+                "questions_to_ask": []
+              },
+              {
+                "vendor": "StaffPay",
+                "scores": [
+                  {
+                    "criterion_id": "K1",
+                    "score": 5,
+                    "evidence": "Ireland and UK supported"
+                  },
+                  {
+                    "criterion_id": "K2",
+                    "score": 2,
+                    "evidence": "Xero via CSV export only"
+                  }
+                ],
+                "deal_breakers": [],
+                "questions_to_ask": [
+                  "Is a Xero API on the roadmap?"
+                ]
+              }
+            ],
+            "recommendation": {
+              "vendor": "StaffPay",
+              "rationale": "Only one covering Ireland.",
+              "risks": [
+                "Manual Xero export"
+              ]
+            }
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"evidence_quoted\" must not be accepted.",
+      "inputs": {
+        "need": "Payroll provider for UK and Ireland; must integrate with Xero.",
+        "vendor_notes": "PayFlow: \"Native Xero sync\", £6/employee/month, no Irish payroll.\nStaffPay: Ireland and UK supported, £9/employee/month, Xero via CSV export only."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "evidence_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "criteria": [
+              {
+                "id": "K1",
+                "criterion": "Country coverage",
+                "weight": "must_have"
+              },
+              {
+                "id": "K2",
+                "criterion": "Xero integration",
+                "weight": "high"
+              }
+            ],
+            "vendors": [
+              {
+                "vendor": "PayFlow",
+                "scores": [
+                  {
+                    "criterion_id": "K1",
+                    "score": 4,
+                    "evidence": "Irish payroll launching next month"
+                  }
+                ],
+                "deal_breakers": [],
+                "questions_to_ask": []
+              },
+              {
+                "vendor": "StaffPay",
+                "scores": [
+                  {
+                    "criterion_id": "K1",
+                    "score": 5,
+                    "evidence": "Ireland and UK supported"
+                  }
+                ],
+                "deal_breakers": [],
+                "questions_to_ask": []
+              }
+            ],
+            "recommendation": {
+              "vendor": "StaffPay",
+              "rationale": "Only one covering Ireland.",
+              "risks": [
+                "Manual Xero export"
+              ]
+            }
+          },
+          {
+            "criteria": [
+              {
+                "id": "K1",
+                "criterion": "Country coverage",
+                "weight": "must_have"
+              },
+              {
+                "id": "K2",
+                "criterion": "Xero integration",
+                "weight": "high"
+              }
+            ],
+            "vendors": [
+              {
+                "vendor": "PayFlow",
+                "scores": [
+                  {
+                    "criterion_id": "K1",
+                    "score": 4,
+                    "evidence": "Irish payroll launching next month"
+                  }
+                ],
+                "deal_breakers": [],
+                "questions_to_ask": []
+              },
+              {
+                "vendor": "StaffPay",
+                "scores": [
+                  {
+                    "criterion_id": "K1",
+                    "score": 5,
+                    "evidence": "Ireland and UK supported"
+                  }
+                ],
+                "deal_breakers": [],
+                "questions_to_ask": []
+              }
+            ],
+            "recommendation": {
+              "vendor": "StaffPay",
+              "rationale": "Only one covering Ireland.",
+              "risks": [
+                "Manual Xero export"
+              ]
+            }
+          },
+          {
+            "criteria": [
+              {
+                "id": "K1",
+                "criterion": "Country coverage",
+                "weight": "must_have"
+              },
+              {
+                "id": "K2",
+                "criterion": "Xero integration",
+                "weight": "high"
+              }
+            ],
+            "vendors": [
+              {
+                "vendor": "PayFlow",
+                "scores": [
+                  {
+                    "criterion_id": "K1",
+                    "score": 4,
+                    "evidence": "Irish payroll launching next month"
+                  }
+                ],
+                "deal_breakers": [],
+                "questions_to_ask": []
+              },
+              {
+                "vendor": "StaffPay",
+                "scores": [
+                  {
+                    "criterion_id": "K1",
+                    "score": 5,
+                    "evidence": "Ireland and UK supported"
+                  }
+                ],
+                "deal_breakers": [],
+                "questions_to_ask": []
+              }
+            ],
+            "recommendation": {
+              "vendor": "StaffPay",
+              "rationale": "Only one covering Ireland.",
+              "risks": [
+                "Manual Xero export"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "evidence_quoted",
+      "question": "Every score quotes the vendor notes word for word."
+    },
+    {
+      "id": "criteria_declared",
+      "question": "Every score is for a declared criterion."
+    },
+    {
+      "id": "distinct_vendors",
+      "question": "Each vendor appears once."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}

@@ -1,0 +1,170 @@
+{
+  "workflowId": "meeting-notes-to-actions",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase1/meeting-notes-to-actions.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "notes": "Agreed to move launch to 19 June. Priya to update the help center by Friday. Still unclear who owns the Xero partnership."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "recap",
+          "decisions",
+          "action_items",
+          "open_questions",
+          "parked"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "recap": "Launch moves to 19 June.",
+            "decisions": [
+              {
+                "decision": "Launch on 19 June",
+                "quote": "Agreed to move launch to 19 June."
+              }
+            ],
+            "action_items": [
+              {
+                "action": "Update help center",
+                "owner": "Priya",
+                "due": "Friday",
+                "quote": "Priya to update the help center by Friday."
+              }
+            ],
+            "open_questions": [
+              "Who owns the Xero partnership?"
+            ],
+            "parked": []
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"decisions_quoted\" must not be accepted.",
+      "inputs": {
+        "notes": "Agreed to move launch to 19 June. Priya to update the help center by Friday. Still unclear who owns the Xero partnership."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "decisions_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "recap": "Launch moves to 19 June.",
+            "decisions": [
+              {
+                "decision": "Hire a partner manager",
+                "quote": "We agreed to hire a partner manager"
+              }
+            ],
+            "action_items": [
+              {
+                "action": "Update help center",
+                "owner": "Priya",
+                "due": "Friday",
+                "quote": "Priya to update the help center by Friday."
+              }
+            ],
+            "open_questions": [
+              "Who owns the Xero partnership?"
+            ],
+            "parked": []
+          },
+          {
+            "recap": "Launch moves to 19 June.",
+            "decisions": [
+              {
+                "decision": "Hire a partner manager",
+                "quote": "We agreed to hire a partner manager"
+              }
+            ],
+            "action_items": [
+              {
+                "action": "Update help center",
+                "owner": "Priya",
+                "due": "Friday",
+                "quote": "Priya to update the help center by Friday."
+              }
+            ],
+            "open_questions": [
+              "Who owns the Xero partnership?"
+            ],
+            "parked": []
+          },
+          {
+            "recap": "Launch moves to 19 June.",
+            "decisions": [
+              {
+                "decision": "Hire a partner manager",
+                "quote": "We agreed to hire a partner manager"
+              }
+            ],
+            "action_items": [
+              {
+                "action": "Update help center",
+                "owner": "Priya",
+                "due": "Friday",
+                "quote": "Priya to update the help center by Friday."
+              }
+            ],
+            "open_questions": [
+              "Who owns the Xero partnership?"
+            ],
+            "parked": []
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "decisions_quoted",
+      "question": "Every decision quotes the notes word for word."
+    },
+    {
+      "id": "actions_quoted",
+      "question": "Every action item quotes the notes word for word."
+    },
+    {
+      "id": "short_recap",
+      "question": "The recap is 70 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "A model failure ends the run as failed with the reason; nothing is invented.",
+    "Invalid replies are retried within the call budget, then kept as needs review."
+  ],
+  "knownGaps": [
+    "Live output quality is unknown until a live run is reviewed."
+  ]
+}
