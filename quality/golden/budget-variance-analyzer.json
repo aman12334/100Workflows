@@ -1,0 +1,196 @@
+{
+  "workflowId": "budget-variance-analyzer",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase3/budget-variance-analyzer.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "lines": "Subscriptions (revenue): budget 50,000, actual 55,000\nSoftware (expense): budget 8,000, actual 11,200\nContractors (expense): budget 20,000, actual 14,500"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "calculation.output",
+          "explanation"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "values": {
+          "calculation.output.lines.1.variance": 3200,
+          "calculation.output.lines.1.variance_pct": 40,
+          "calculation.output.lines.1.assessment": "unfavorable",
+          "calculation.output.lines.2.assessment": "favorable",
+          "calculation.output.totals.1.variance": -2300,
+          "calculation.output.totals.1.variance_pct": -8.21,
+          "calculation.output.totals.2.variance": 7300,
+          "calculation.output.totals.2.variance_pct": 33.18,
+          "calculation.output.largest_unfavorable": "Software"
+        }
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Net is 7,300 better than budget (33.18%). Expenses came in 2,300 under budget, but Software is 3,200 over (40%).",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Contractors were 5,500 under budget."
+              },
+              {
+                "kind": "action",
+                "text": "Ask the Software owner what drove the 40% overrun."
+              }
+            ]
+          }
+        ],
+        "extracted": {
+          "lines": [
+            {
+              "name": "Subscriptions",
+              "type": "revenue",
+              "budget": 50000,
+              "actual": 55000
+            },
+            {
+              "name": "Software",
+              "type": "expense",
+              "budget": 8000,
+              "actual": 11200
+            },
+            {
+              "name": "Contractors",
+              "type": "expense",
+              "budget": 20000,
+              "actual": 14500
+            }
+          ]
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"summary_numbers\" must not be accepted.",
+      "inputs": {
+        "lines": "Subscriptions (revenue): budget 50,000, actual 55,000\nSoftware (expense): budget 8,000, actual 11,200\nContractors (expense): budget 20,000, actual 14,500"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Net is 9,000 better than budget.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "action",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "Net is 9,000 better than budget.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "action",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "Net is 9,000 better than budget.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "action",
+                "text": "y"
+              }
+            ]
+          }
+        ],
+        "extracted": {
+          "lines": [
+            {
+              "name": "Subscriptions",
+              "type": "revenue",
+              "budget": 50000,
+              "actual": 55000
+            },
+            {
+              "name": "Software",
+              "type": "expense",
+              "budget": 8000,
+              "actual": 11200
+            },
+            {
+              "name": "Contractors",
+              "type": "expense",
+              "budget": 20000,
+              "actual": 14500
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "explanation_faithful",
+      "question": "Does the explanation describe the calculated results correctly, without new numbers?"
+    },
+    {
+      "id": "summary_numbers",
+      "question": "Every number in the summary comes from the calculation or your inputs."
+    },
+    {
+      "id": "point_numbers",
+      "question": "Every number in the key points comes from the calculation or your inputs."
+    },
+    {
+      "id": "enough_points",
+      "question": "Gives 2 to 8 key points."
+    },
+    {
+      "id": "short_summary",
+      "question": "The summary is 90 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Inputs that can't be read as numbers stop the run before calculating.",
+    "If the explanation fails, the calculated results are still returned."
+  ],
+  "knownGaps": []
+}

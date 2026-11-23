@@ -1,0 +1,237 @@
+{
+  "workflowId": "unit-economics-calculator",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase3/unit-economics-calculator.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "revenue_per_customer_month": 100,
+        "variable_cost_per_customer_month": 30,
+        "cac": 420,
+        "monthly_churn_pct": 2.5,
+        "currency": "USD"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "calculation.output",
+          "explanation"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "values": {
+          "calculation.output.results.contribution_per_customer_month": 70,
+          "calculation.output.results.gross_margin_pct": 70,
+          "calculation.output.results.customer_lifetime_months": 40,
+          "calculation.output.results.ltv": 2800,
+          "calculation.output.results.ltv_to_cac": 6.67,
+          "calculation.output.results.cac_payback_months": 6,
+          "calculation.output.results.lifetime_profit_per_customer": 2380
+        }
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Each customer contributes 70 USD a month at a 70% margin. At 2.5% churn LTV is 2,800, which is 6.67x CAC, and CAC pays back in 6 months.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "A lifetime of 40 months drives most of the LTV."
+              },
+              {
+                "kind": "action",
+                "text": "Acquisition spend can grow while payback stays near 6 months."
+              },
+              {
+                "kind": "caveat",
+                "text": "Churn is assumed constant."
+              }
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"summary_numbers\" must not be accepted.",
+      "inputs": {
+        "revenue_per_customer_month": 100,
+        "variable_cost_per_customer_month": 30,
+        "cac": 420,
+        "monthly_churn_pct": 2.5,
+        "currency": "USD"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "LTV is 3,500 and LTV:CAC is 8.3x.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Strong economics."
+              },
+              {
+                "kind": "action",
+                "text": "Spend more."
+              }
+            ]
+          },
+          {
+            "summary": "LTV is 3,500 and LTV:CAC is 8.3x.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Strong economics."
+              },
+              {
+                "kind": "action",
+                "text": "Spend more."
+              }
+            ]
+          },
+          {
+            "summary": "LTV is 3,500 and LTV:CAC is 8.3x.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Strong economics."
+              },
+              {
+                "kind": "action",
+                "text": "Spend more."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "required-only",
+      "kind": "edge",
+      "description": "Only the required inputs (without monthly_churn_pct, currency). The typical reply quotes details from those optional inputs, so the grounding checks must reject it.",
+      "inputs": {
+        "revenue_per_customer_month": 100,
+        "variable_cost_per_customer_month": 30,
+        "cac": 420
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers",
+          "point_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Each customer contributes 70 USD a month at a 70% margin. At 2.5% churn LTV is 2,800, which is 6.67x CAC, and CAC pays back in 6 months.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "A lifetime of 40 months drives most of the LTV."
+              },
+              {
+                "kind": "action",
+                "text": "Acquisition spend can grow while payback stays near 6 months."
+              },
+              {
+                "kind": "caveat",
+                "text": "Churn is assumed constant."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "unreadable-number",
+      "kind": "edge",
+      "description": "Text in the number field \"revenue_per_customer_month\" stops the run before calculating.",
+      "inputs": {
+        "revenue_per_customer_month": "about a thousand",
+        "variable_cost_per_customer_month": 30,
+        "cac": 420,
+        "monthly_churn_pct": 2.5,
+        "currency": "USD"
+      },
+      "expect": {
+        "status": "failed",
+        "reasonIncludes": "couldn't be read as numbers"
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Each customer contributes 70 USD a month at a 70% margin. At 2.5% churn LTV is 2,800, which is 6.67x CAC, and CAC pays back in 6 months.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "A lifetime of 40 months drives most of the LTV."
+              },
+              {
+                "kind": "action",
+                "text": "Acquisition spend can grow while payback stays near 6 months."
+              },
+              {
+                "kind": "caveat",
+                "text": "Churn is assumed constant."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "explanation_faithful",
+      "question": "Does the explanation describe the calculated results correctly, without new numbers?"
+    },
+    {
+      "id": "summary_numbers",
+      "question": "Every number in the summary comes from the calculation or your inputs."
+    },
+    {
+      "id": "point_numbers",
+      "question": "Every number in the key points comes from the calculation or your inputs."
+    },
+    {
+      "id": "enough_points",
+      "question": "Gives 2 to 8 key points."
+    },
+    {
+      "id": "short_summary",
+      "question": "The summary is 90 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Inputs that can't be read as numbers stop the run before calculating.",
+    "If the explanation fails, the calculated results are still returned."
+  ],
+  "knownGaps": []
+}

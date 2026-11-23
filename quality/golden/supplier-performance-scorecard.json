@@ -1,0 +1,307 @@
+{
+  "workflowId": "supplier-performance-scorecard",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase3/supplier-performance-scorecard.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "metrics": "On-time delivery % (higher is better), weight 50\nDefect rate % (lower is better), weight 30\nCost index (lower is better), weight 20",
+        "supplier_data": "Alpha: on-time 98, defects 1.0, cost index 100\nBeta: on-time 90, defects 0.5, cost index 90\nGamma: on-time 94, defects 2.0, cost index not known"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "calculation.output",
+          "explanation"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "values": {
+          "calculation.output.suppliers.0.score": 70,
+          "calculation.output.suppliers.0.rank": 1,
+          "calculation.output.suppliers.1.score": 50,
+          "calculation.output.suppliers.2.score": 31.25,
+          "calculation.output.suppliers.2.coverage_pct": 80,
+          "calculation.output.weights.0.weight_pct": 50
+        }
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Alpha ranks first with 70 points, ahead of Beta at 50. Gamma scores 31.25 but was judged on only 80% of the weight because its cost index is missing.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Alpha leads on on-time delivery, which carries 50% of the weight."
+              },
+              {
+                "kind": "caveat",
+                "text": "Scores are relative to these three suppliers."
+              }
+            ]
+          }
+        ],
+        "extracted": {
+          "metrics": [
+            {
+              "id": "on_time_pct",
+              "name": "On-time delivery",
+              "weight": 50,
+              "direction": "higher_is_better",
+              "unit": "%"
+            },
+            {
+              "id": "defect_pct",
+              "name": "Defect rate",
+              "weight": 30,
+              "direction": "lower_is_better",
+              "unit": "%"
+            },
+            {
+              "id": "cost_index",
+              "name": "Cost index",
+              "weight": 20,
+              "direction": "lower_is_better",
+              "unit": "index"
+            }
+          ],
+          "suppliers": [
+            {
+              "name": "Alpha",
+              "values": [
+                {
+                  "metric_id": "on_time_pct",
+                  "value": 98
+                },
+                {
+                  "metric_id": "defect_pct",
+                  "value": 1.0
+                },
+                {
+                  "metric_id": "cost_index",
+                  "value": 100
+                }
+              ]
+            },
+            {
+              "name": "Beta",
+              "values": [
+                {
+                  "metric_id": "on_time_pct",
+                  "value": 90
+                },
+                {
+                  "metric_id": "defect_pct",
+                  "value": 0.5
+                },
+                {
+                  "metric_id": "cost_index",
+                  "value": 90
+                }
+              ]
+            },
+            {
+              "name": "Gamma",
+              "values": [
+                {
+                  "metric_id": "on_time_pct",
+                  "value": 94
+                },
+                {
+                  "metric_id": "defect_pct",
+                  "value": 2.0
+                },
+                {
+                  "metric_id": "cost_index",
+                  "value": null
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"summary_numbers\" must not be accepted.",
+      "inputs": {
+        "metrics": "On-time delivery % (higher is better), weight 50\nDefect rate % (lower is better), weight 30\nCost index (lower is better), weight 20",
+        "supplier_data": "Alpha: on-time 98, defects 1.0, cost index 100\nBeta: on-time 90, defects 0.5, cost index 90\nGamma: on-time 94, defects 2.0, cost index not known"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Alpha scores 85 points.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "caveat",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "Alpha scores 85 points.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "caveat",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "Alpha scores 85 points.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "caveat",
+                "text": "y"
+              }
+            ]
+          }
+        ],
+        "extracted": {
+          "metrics": [
+            {
+              "id": "on_time_pct",
+              "name": "On-time delivery",
+              "weight": 50,
+              "direction": "higher_is_better",
+              "unit": "%"
+            },
+            {
+              "id": "defect_pct",
+              "name": "Defect rate",
+              "weight": 30,
+              "direction": "lower_is_better",
+              "unit": "%"
+            },
+            {
+              "id": "cost_index",
+              "name": "Cost index",
+              "weight": 20,
+              "direction": "lower_is_better",
+              "unit": "index"
+            }
+          ],
+          "suppliers": [
+            {
+              "name": "Alpha",
+              "values": [
+                {
+                  "metric_id": "on_time_pct",
+                  "value": 98
+                },
+                {
+                  "metric_id": "defect_pct",
+                  "value": 1.0
+                },
+                {
+                  "metric_id": "cost_index",
+                  "value": 100
+                }
+              ]
+            },
+            {
+              "name": "Beta",
+              "values": [
+                {
+                  "metric_id": "on_time_pct",
+                  "value": 90
+                },
+                {
+                  "metric_id": "defect_pct",
+                  "value": 0.5
+                },
+                {
+                  "metric_id": "cost_index",
+                  "value": 90
+                }
+              ]
+            },
+            {
+              "name": "Gamma",
+              "values": [
+                {
+                  "metric_id": "on_time_pct",
+                  "value": 94
+                },
+                {
+                  "metric_id": "defect_pct",
+                  "value": 2.0
+                },
+                {
+                  "metric_id": "cost_index",
+                  "value": null
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "explanation_faithful",
+      "question": "Does the explanation describe the calculated results correctly, without new numbers?"
+    },
+    {
+      "id": "summary_numbers",
+      "question": "Every number in the summary comes from the calculation or your inputs."
+    },
+    {
+      "id": "point_numbers",
+      "question": "Every number in the key points comes from the calculation or your inputs."
+    },
+    {
+      "id": "enough_points",
+      "question": "Gives 2 to 8 key points."
+    },
+    {
+      "id": "short_summary",
+      "question": "The summary is 90 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Inputs that can't be read as numbers stop the run before calculating.",
+    "If the explanation fails, the calculated results are still returned."
+  ],
+  "knownGaps": []
+}

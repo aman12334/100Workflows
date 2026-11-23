@@ -1,0 +1,220 @@
+{
+  "workflowId": "break-even-analysis",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase3/break-even-analysis.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "fixed_costs": 10000,
+        "price_per_unit": 50,
+        "variable_cost_per_unit": 30,
+        "target_profit": 5000
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "calculation.output",
+          "explanation"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "values": {
+          "calculation.output.results.contribution_per_unit": 20,
+          "calculation.output.results.contribution_margin_pct": 40,
+          "calculation.output.results.break_even_units": 500,
+          "calculation.output.results.break_even_revenue": 25000,
+          "calculation.output.results.units_for_target_profit": 750,
+          "calculation.output.results.revenue_for_target_profit": 37500
+        }
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Each unit contributes 20 at a 40% margin, so you break even at 500 units or 25,000 in revenue. Reaching a 5,000 profit needs 750 units.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Fixed costs of 10,000 set the break-even point."
+              },
+              {
+                "kind": "action",
+                "text": "Cutting variable cost below 30 lowers the volume needed."
+              }
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"summary_numbers\" must not be accepted.",
+      "inputs": {
+        "fixed_costs": 10000,
+        "price_per_unit": 50,
+        "variable_cost_per_unit": 30,
+        "target_profit": 5000
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "You break even at 400 units.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "action",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "You break even at 400 units.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "action",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "You break even at 400 units.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "action",
+                "text": "y"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "required-only",
+      "kind": "edge",
+      "description": "Only the required inputs (without target_profit). The typical reply quotes details from those optional inputs, so the grounding checks must reject it.",
+      "inputs": {
+        "fixed_costs": 10000,
+        "price_per_unit": 50,
+        "variable_cost_per_unit": 30
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Each unit contributes 20 at a 40% margin, so you break even at 500 units or 25,000 in revenue. Reaching a 5,000 profit needs 750 units.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Fixed costs of 10,000 set the break-even point."
+              },
+              {
+                "kind": "action",
+                "text": "Cutting variable cost below 30 lowers the volume needed."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "unreadable-number",
+      "kind": "edge",
+      "description": "Text in the number field \"fixed_costs\" stops the run before calculating.",
+      "inputs": {
+        "fixed_costs": "about a thousand",
+        "price_per_unit": 50,
+        "variable_cost_per_unit": 30,
+        "target_profit": 5000
+      },
+      "expect": {
+        "status": "failed",
+        "reasonIncludes": "couldn't be read as numbers"
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Each unit contributes 20 at a 40% margin, so you break even at 500 units or 25,000 in revenue. Reaching a 5,000 profit needs 750 units.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Fixed costs of 10,000 set the break-even point."
+              },
+              {
+                "kind": "action",
+                "text": "Cutting variable cost below 30 lowers the volume needed."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "explanation_faithful",
+      "question": "Does the explanation describe the calculated results correctly, without new numbers?"
+    },
+    {
+      "id": "summary_numbers",
+      "question": "Every number in the summary comes from the calculation or your inputs."
+    },
+    {
+      "id": "point_numbers",
+      "question": "Every number in the key points comes from the calculation or your inputs."
+    },
+    {
+      "id": "enough_points",
+      "question": "Gives 2 to 8 key points."
+    },
+    {
+      "id": "short_summary",
+      "question": "The summary is 90 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Inputs that can't be read as numbers stop the run before calculating.",
+    "If the explanation fails, the calculated results are still returned."
+  ],
+  "knownGaps": []
+}

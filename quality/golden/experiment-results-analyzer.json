@@ -1,0 +1,193 @@
+{
+  "workflowId": "experiment-results-analyzer",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase3/experiment-results-analyzer.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "control_visitors": 10000,
+        "control_conversions": 500,
+        "treatment_visitors": 10000,
+        "treatment_conversions": 600,
+        "confidence_level": "95"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "calculation.output",
+          "explanation"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "values": {
+          "calculation.output.results.control_rate_pct": 5,
+          "calculation.output.results.treatment_rate_pct": 6,
+          "calculation.output.results.absolute_lift_pp": 1,
+          "calculation.output.results.relative_lift_pct": 20,
+          "calculation.output.results.ci_low_pp": 0.37,
+          "calculation.output.results.ci_high_pp": 1.63,
+          "calculation.output.results.z_score": 3.102,
+          "calculation.output.results.p_value": 0.0019,
+          "calculation.output.results.significance": "significant"
+        }
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "The variant converted at 6% against 5%, a lift of 1 percentage point (20% relative). The 95% interval runs from 0.37 to 1.63 points and p = 0.0019, so the lift is statistically significant.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "The whole interval is above zero."
+              },
+              {
+                "kind": "caveat",
+                "text": "This assumes one analysis at the planned end."
+              }
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"summary_numbers\" must not be accepted.",
+      "inputs": {
+        "control_visitors": 10000,
+        "control_conversions": 500,
+        "treatment_visitors": 10000,
+        "treatment_conversions": 600,
+        "confidence_level": "95"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "The lift is 1.5 percentage points and significant.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "caveat",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "The lift is 1.5 percentage points and significant.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "caveat",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "The lift is 1.5 percentage points and significant.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "caveat",
+                "text": "y"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "unreadable-number",
+      "kind": "edge",
+      "description": "Text in the number field \"control_visitors\" stops the run before calculating.",
+      "inputs": {
+        "control_visitors": "about a thousand",
+        "control_conversions": 500,
+        "treatment_visitors": 10000,
+        "treatment_conversions": 600,
+        "confidence_level": "95"
+      },
+      "expect": {
+        "status": "failed",
+        "reasonIncludes": "couldn't be read as numbers"
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "The variant converted at 6% against 5%, a lift of 1 percentage point (20% relative). The 95% interval runs from 0.37 to 1.63 points and p = 0.0019, so the lift is statistically significant.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "The whole interval is above zero."
+              },
+              {
+                "kind": "caveat",
+                "text": "This assumes one analysis at the planned end."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "explanation_faithful",
+      "question": "Does the explanation describe the calculated results correctly, without new numbers?"
+    },
+    {
+      "id": "summary_numbers",
+      "question": "Every number in the summary comes from the calculation or your inputs."
+    },
+    {
+      "id": "point_numbers",
+      "question": "Every number in the key points comes from the calculation or your inputs."
+    },
+    {
+      "id": "enough_points",
+      "question": "Gives 2 to 8 key points."
+    },
+    {
+      "id": "short_summary",
+      "question": "The summary is 90 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Inputs that can't be read as numbers stop the run before calculating.",
+    "If the explanation fails, the calculated results are still returned."
+  ],
+  "knownGaps": []
+}

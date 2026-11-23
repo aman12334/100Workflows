@@ -1,0 +1,221 @@
+{
+  "workflowId": "investment-return-calculator",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase3/investment-return-calculator.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "initial_investment": 100000,
+        "ending_value": 150000,
+        "cash_received": 10000,
+        "holding_period_years": 5,
+        "annual_pre_tax_cash_flow": 8000
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "calculation.output",
+          "explanation"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "values": {
+          "calculation.output.results.total_gain": 60000,
+          "calculation.output.results.roi_pct": 60,
+          "calculation.output.results.annualized_return_pct": 9.86,
+          "calculation.output.results.cash_on_cash_pct": 8
+        }
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "The investment gained 60,000, a 60% ROI over 5 years, or 9.86% a year annualised. Cash-on-cash return is 8%.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "The annualised figure spreads the 60% gain over 5 years."
+              },
+              {
+                "kind": "caveat",
+                "text": "Cash received is treated as arriving at the end, so this is not an IRR."
+              }
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"summary_numbers\" must not be accepted.",
+      "inputs": {
+        "initial_investment": 100000,
+        "ending_value": 150000,
+        "cash_received": 10000,
+        "holding_period_years": 5,
+        "annual_pre_tax_cash_flow": 8000
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "ROI is 60%, about 14.2% a year.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "caveat",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "ROI is 60%, about 14.2% a year.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "caveat",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "ROI is 60%, about 14.2% a year.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "caveat",
+                "text": "y"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "required-only",
+      "kind": "edge",
+      "description": "Only the required inputs (without cash_received, holding_period_years, annual_pre_tax_cash_flow). The typical reply quotes details from those optional inputs, so the grounding checks must reject it.",
+      "inputs": {
+        "initial_investment": 100000,
+        "ending_value": 150000
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers",
+          "point_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "The investment gained 60,000, a 60% ROI over 5 years, or 9.86% a year annualised. Cash-on-cash return is 8%.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "The annualised figure spreads the 60% gain over 5 years."
+              },
+              {
+                "kind": "caveat",
+                "text": "Cash received is treated as arriving at the end, so this is not an IRR."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "unreadable-number",
+      "kind": "edge",
+      "description": "Text in the number field \"initial_investment\" stops the run before calculating.",
+      "inputs": {
+        "initial_investment": "about a thousand",
+        "ending_value": 150000,
+        "cash_received": 10000,
+        "holding_period_years": 5,
+        "annual_pre_tax_cash_flow": 8000
+      },
+      "expect": {
+        "status": "failed",
+        "reasonIncludes": "couldn't be read as numbers"
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "The investment gained 60,000, a 60% ROI over 5 years, or 9.86% a year annualised. Cash-on-cash return is 8%.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "The annualised figure spreads the 60% gain over 5 years."
+              },
+              {
+                "kind": "caveat",
+                "text": "Cash received is treated as arriving at the end, so this is not an IRR."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "explanation_faithful",
+      "question": "Does the explanation describe the calculated results correctly, without new numbers?"
+    },
+    {
+      "id": "summary_numbers",
+      "question": "Every number in the summary comes from the calculation or your inputs."
+    },
+    {
+      "id": "point_numbers",
+      "question": "Every number in the key points comes from the calculation or your inputs."
+    },
+    {
+      "id": "enough_points",
+      "question": "Gives 2 to 8 key points."
+    },
+    {
+      "id": "short_summary",
+      "question": "The summary is 90 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Inputs that can't be read as numbers stop the run before calculating.",
+    "If the explanation fails, the calculated results are still returned."
+  ],
+  "knownGaps": []
+}

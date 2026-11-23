@@ -1,0 +1,212 @@
+{
+  "workflowId": "cohort-retention-calculator",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase3/cohort-retention-calculator.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "cohort_data": "Jan: 100 customers, then 60, 45, 40\nFeb: 200, then 100, 70, n/a\nMar: 50, then 20, n/a, n/a",
+        "period_unit": "month"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "calculation.output",
+          "explanation"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "values": {
+          "calculation.output.by_period.0.weighted_retention_pct": 51.43,
+          "calculation.output.by_period.1.weighted_retention_pct": 38.33,
+          "calculation.output.by_period.1.observed_cohorts": 2,
+          "calculation.output.by_period.2.weighted_retention_pct": 40,
+          "calculation.output.cohorts.1.retention_pct.2": null
+        }
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Across cohorts, 51.43% are still active after 1 month and 38.33% after 2 months. The month-3 figure of 40% comes from the Jan cohort alone.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Mar retained 40% in its first month, below Jan at 60%."
+              },
+              {
+                "kind": "caveat",
+                "text": "Later periods average fewer cohorts."
+              }
+            ]
+          }
+        ],
+        "extracted": {
+          "cohorts": [
+            {
+              "name": "Jan",
+              "size": 100,
+              "retained": [
+                60,
+                45,
+                40
+              ]
+            },
+            {
+              "name": "Feb",
+              "size": 200,
+              "retained": [
+                100,
+                70,
+                null
+              ]
+            },
+            {
+              "name": "Mar",
+              "size": 50,
+              "retained": [
+                20,
+                null,
+                null
+              ]
+            }
+          ]
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"summary_numbers\" must not be accepted.",
+      "inputs": {
+        "cohort_data": "Jan: 100 customers, then 60, 45, 40\nFeb: 200, then 100, 70, n/a\nMar: 50, then 20, n/a, n/a",
+        "period_unit": "month"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "About 55% are still active after 1 month.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "caveat",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "About 55% are still active after 1 month.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "caveat",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "About 55% are still active after 1 month.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "caveat",
+                "text": "y"
+              }
+            ]
+          }
+        ],
+        "extracted": {
+          "cohorts": [
+            {
+              "name": "Jan",
+              "size": 100,
+              "retained": [
+                60,
+                45,
+                40
+              ]
+            },
+            {
+              "name": "Feb",
+              "size": 200,
+              "retained": [
+                100,
+                70,
+                null
+              ]
+            },
+            {
+              "name": "Mar",
+              "size": 50,
+              "retained": [
+                20,
+                null,
+                null
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "explanation_faithful",
+      "question": "Does the explanation describe the calculated results correctly, without new numbers?"
+    },
+    {
+      "id": "summary_numbers",
+      "question": "Every number in the summary comes from the calculation or your inputs."
+    },
+    {
+      "id": "point_numbers",
+      "question": "Every number in the key points comes from the calculation or your inputs."
+    },
+    {
+      "id": "enough_points",
+      "question": "Gives 2 to 8 key points."
+    },
+    {
+      "id": "short_summary",
+      "question": "The summary is 90 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Inputs that can't be read as numbers stop the run before calculating.",
+    "If the explanation fails, the calculated results are still returned."
+  ],
+  "knownGaps": []
+}

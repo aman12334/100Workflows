@@ -1,0 +1,232 @@
+{
+  "workflowId": "inventory-replenishment-calculator",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase3/inventory-replenishment-calculator.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "average_demand": 20,
+        "demand_std_dev": 5,
+        "demand_period": "day",
+        "lead_time": 2,
+        "lead_time_unit": "week",
+        "service_level_pct": "95",
+        "current_stock": 300
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "calculation.output",
+          "explanation"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "values": {
+          "calculation.output.results.lead_time_days": 14,
+          "calculation.output.results.demand_during_lead_time": 280,
+          "calculation.output.results.safety_stock": 31,
+          "calculation.output.results.reorder_point": 311,
+          "calculation.output.results.days_of_cover": 15,
+          "calculation.output.results.reorder_now": true
+        }
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Reorder when stock falls to 311 units, which includes 31 units of safety stock for a 95% service level. Demand over the 14-day lead time is 280 units.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Current stock of 300 covers 15 days."
+              },
+              {
+                "kind": "action",
+                "text": "Stock is below the reorder point, so order now."
+              }
+            ]
+          }
+        ]
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"summary_numbers\" must not be accepted.",
+      "inputs": {
+        "average_demand": 20,
+        "demand_std_dev": 5,
+        "demand_period": "day",
+        "lead_time": 2,
+        "lead_time_unit": "week",
+        "service_level_pct": "95",
+        "current_stock": 300
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Reorder at 350 units.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "action",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "Reorder at 350 units.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "action",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "Reorder at 350 units.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "action",
+                "text": "y"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "required-only",
+      "kind": "edge",
+      "description": "Only the required inputs (without current_stock). The typical reply quotes details from those optional inputs, so the grounding checks must reject it.",
+      "inputs": {
+        "average_demand": 20,
+        "demand_std_dev": 5,
+        "demand_period": "day",
+        "lead_time": 2,
+        "lead_time_unit": "week",
+        "service_level_pct": "95"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "point_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Reorder when stock falls to 311 units, which includes 31 units of safety stock for a 95% service level. Demand over the 14-day lead time is 280 units.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Current stock of 300 covers 15 days."
+              },
+              {
+                "kind": "action",
+                "text": "Stock is below the reorder point, so order now."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "unreadable-number",
+      "kind": "edge",
+      "description": "Text in the number field \"average_demand\" stops the run before calculating.",
+      "inputs": {
+        "average_demand": "about a thousand",
+        "demand_std_dev": 5,
+        "demand_period": "day",
+        "lead_time": 2,
+        "lead_time_unit": "week",
+        "service_level_pct": "95",
+        "current_stock": 300
+      },
+      "expect": {
+        "status": "failed",
+        "reasonIncludes": "couldn't be read as numbers"
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "Reorder when stock falls to 311 units, which includes 31 units of safety stock for a 95% service level. Demand over the 14-day lead time is 280 units.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Current stock of 300 covers 15 days."
+              },
+              {
+                "kind": "action",
+                "text": "Stock is below the reorder point, so order now."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "explanation_faithful",
+      "question": "Does the explanation describe the calculated results correctly, without new numbers?"
+    },
+    {
+      "id": "summary_numbers",
+      "question": "Every number in the summary comes from the calculation or your inputs."
+    },
+    {
+      "id": "point_numbers",
+      "question": "Every number in the key points comes from the calculation or your inputs."
+    },
+    {
+      "id": "enough_points",
+      "question": "Gives 2 to 8 key points."
+    },
+    {
+      "id": "short_summary",
+      "question": "The summary is 90 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Inputs that can't be read as numbers stop the run before calculating.",
+    "If the explanation fails, the calculated results are still returned."
+  ],
+  "knownGaps": []
+}

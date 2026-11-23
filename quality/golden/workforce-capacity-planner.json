@@ -1,0 +1,239 @@
+{
+  "workflowId": "workforce-capacity-planner",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase3/workforce-capacity-planner.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "team_fte": 5,
+        "hours_per_week": 40,
+        "weeks": 4,
+        "productive_time_pct": 80,
+        "absence_pct": 10,
+        "target_utilization_pct": 85,
+        "tasks": "Tickets: 2000 at 6 minutes each\nCalls: 300 at 20 minutes each"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "calculation.output",
+          "explanation"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "values": {
+          "calculation.output.results.available_hours": 576,
+          "calculation.output.results.required_hours": 300,
+          "calculation.output.results.utilization_pct": 52.08,
+          "calculation.output.results.gap_hours": -189.6,
+          "calculation.output.results.required_fte": 3.06,
+          "calculation.output.results.required_headcount": 4,
+          "calculation.output.tasks.0.share_pct": 66.67
+        }
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "The team has 576 productive hours and the work needs 300, so utilisation is 52.08%. At an 85% target the work needs 3.06 FTE, fewer than the 5 you have.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Tickets make up 66.67% of the workload."
+              },
+              {
+                "kind": "action",
+                "text": "There is room to take on more work."
+              }
+            ]
+          }
+        ],
+        "extracted": {
+          "tasks": [
+            {
+              "name": "Tickets",
+              "volume": 2000,
+              "minutes_per_task": 6
+            },
+            {
+              "name": "Calls",
+              "volume": 300,
+              "minutes_per_task": 20
+            }
+          ]
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"summary_numbers\" must not be accepted.",
+      "inputs": {
+        "team_fte": 5,
+        "hours_per_week": 40,
+        "weeks": 4,
+        "productive_time_pct": 80,
+        "absence_pct": 10,
+        "target_utilization_pct": 85,
+        "tasks": "Tickets: 2000 at 6 minutes each\nCalls: 300 at 20 minutes each"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "The work needs 4.5 FTE.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "action",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "The work needs 4.5 FTE.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "action",
+                "text": "y"
+              }
+            ]
+          },
+          {
+            "summary": "The work needs 4.5 FTE.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "x"
+              },
+              {
+                "kind": "action",
+                "text": "y"
+              }
+            ]
+          }
+        ],
+        "extracted": {
+          "tasks": [
+            {
+              "name": "Tickets",
+              "volume": 2000,
+              "minutes_per_task": 6
+            },
+            {
+              "name": "Calls",
+              "volume": 300,
+              "minutes_per_task": 20
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "required-only",
+      "kind": "edge",
+      "description": "Only the required inputs (without absence_pct, target_utilization_pct). The typical reply quotes details from those optional inputs, so the grounding checks must reject it.",
+      "inputs": {
+        "team_fte": 5,
+        "hours_per_week": 40,
+        "weeks": 4,
+        "productive_time_pct": 80,
+        "tasks": "Tickets: 2000 at 6 minutes each\nCalls: 300 at 20 minutes each"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "summary_numbers"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "summary": "The team has 576 productive hours and the work needs 300, so utilisation is 52.08%. At an 85% target the work needs 3.06 FTE, fewer than the 5 you have.",
+            "points": [
+              {
+                "kind": "insight",
+                "text": "Tickets make up 66.67% of the workload."
+              },
+              {
+                "kind": "action",
+                "text": "There is room to take on more work."
+              }
+            ]
+          }
+        ],
+        "extracted": {
+          "tasks": [
+            {
+              "name": "Tickets",
+              "volume": 2000,
+              "minutes_per_task": 6
+            },
+            {
+              "name": "Calls",
+              "volume": 300,
+              "minutes_per_task": 20
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "explanation_faithful",
+      "question": "Does the explanation describe the calculated results correctly, without new numbers?"
+    },
+    {
+      "id": "summary_numbers",
+      "question": "Every number in the summary comes from the calculation or your inputs."
+    },
+    {
+      "id": "point_numbers",
+      "question": "Every number in the key points comes from the calculation or your inputs."
+    },
+    {
+      "id": "enough_points",
+      "question": "Gives 2 to 8 key points."
+    },
+    {
+      "id": "short_summary",
+      "question": "The summary is 90 words or fewer."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Inputs that can't be read as numbers stop the run before calculating.",
+    "If the explanation fails, the calculated results are still returned."
+  ],
+  "knownGaps": []
+}
