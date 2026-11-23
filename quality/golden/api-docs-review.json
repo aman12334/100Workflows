@@ -1,0 +1,194 @@
+{
+  "workflowId": "api-docs-review",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase2/api-docs-review.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "docs_urls": [
+          "https://docs.ledgerhub.example.com/api/auth",
+          "https://docs.ledgerhub.example.com/api/limits"
+        ],
+        "requirements": "Read invoices\nWebhook when an invoice is paid"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "requirements",
+          "auth",
+          "limits_and_risks",
+          "verdict"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minSources": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "requirements": [
+              {
+                "requirement": "Read invoices",
+                "status": "supported",
+                "evidence": [
+                  {
+                    "source_id": "S1",
+                    "quote": "OAuth 2.0 with the invoices.read scope"
+                  }
+                ],
+                "notes": ""
+              },
+              {
+                "requirement": "Webhook when an invoice is paid",
+                "status": "supported",
+                "evidence": [
+                  {
+                    "source_id": "S1",
+                    "quote": "Webhooks are available for invoice.paid events."
+                  }
+                ],
+                "notes": ""
+              }
+            ],
+            "auth": "OAuth 2.0",
+            "limits_and_risks": [
+              "60 requests per minute per tenant"
+            ],
+            "verdict": "feasible"
+          }
+        ],
+        "pages": {
+          "https://docs.ledgerhub.example.com/api/auth": "<html><head><title>Authentication</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Authentication</h1><p>All requests use OAuth 2.0 with the invoices.read scope.</p><p>Webhooks are available for invoice.paid events.</p></main></body></html>",
+          "https://docs.ledgerhub.example.com/api/limits": "<html><head><title>Rate limits</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Rate limits</h1><p>Each app may make 60 requests per minute per tenant.</p><p>Exceeding the limit returns HTTP 429.</p></main></body></html>"
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"docs_quoted\" must not be accepted.",
+      "inputs": {
+        "docs_urls": [
+          "https://docs.ledgerhub.example.com/api/auth",
+          "https://docs.ledgerhub.example.com/api/limits"
+        ],
+        "requirements": "Read invoices\nWebhook when an invoice is paid"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "docs_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "requirements": [
+              {
+                "requirement": "Read invoices",
+                "status": "supported",
+                "evidence": [
+                  {
+                    "source_id": "S2",
+                    "quote": "Unlimited requests on all plans"
+                  }
+                ],
+                "notes": ""
+              }
+            ],
+            "auth": "OAuth 2.0",
+            "limits_and_risks": [
+              "60 requests per minute per tenant"
+            ],
+            "verdict": "feasible"
+          },
+          {
+            "requirements": [
+              {
+                "requirement": "Read invoices",
+                "status": "supported",
+                "evidence": [
+                  {
+                    "source_id": "S2",
+                    "quote": "Unlimited requests on all plans"
+                  }
+                ],
+                "notes": ""
+              }
+            ],
+            "auth": "OAuth 2.0",
+            "limits_and_risks": [
+              "60 requests per minute per tenant"
+            ],
+            "verdict": "feasible"
+          },
+          {
+            "requirements": [
+              {
+                "requirement": "Read invoices",
+                "status": "supported",
+                "evidence": [
+                  {
+                    "source_id": "S2",
+                    "quote": "Unlimited requests on all plans"
+                  }
+                ],
+                "notes": ""
+              }
+            ],
+            "auth": "OAuth 2.0",
+            "limits_and_risks": [
+              "60 requests per minute per tenant"
+            ],
+            "verdict": "feasible"
+          }
+        ],
+        "pages": {
+          "https://docs.ledgerhub.example.com/api/auth": "<html><head><title>Authentication</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Authentication</h1><p>All requests use OAuth 2.0 with the invoices.read scope.</p><p>Webhooks are available for invoice.paid events.</p></main></body></html>",
+          "https://docs.ledgerhub.example.com/api/limits": "<html><head><title>Rate limits</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Rate limits</h1><p>Each app may make 60 requests per minute per tenant.</p><p>Exceeding the limit returns HTTP 429.</p></main></body></html>"
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "sources_support_claims",
+      "question": "Does each cited source actually support the claim it is attached to?"
+    },
+    {
+      "id": "docs_quoted",
+      "question": "All evidence quotes the documentation it cites."
+    },
+    {
+      "id": "requirements_from_user",
+      "question": "Every requirement is one you listed."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Unreadable pages are listed as unavailable and never cited.",
+    "With no usable sources nothing is written.",
+    "Links to private or local addresses are refused."
+  ],
+  "knownGaps": [
+    "Canned pages stand in for the web; real search coverage varies day to day."
+  ]
+}

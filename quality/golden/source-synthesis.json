@@ -1,0 +1,228 @@
+{
+  "workflowId": "source-synthesis",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase2/source-synthesis.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "source_urls": [
+          "https://research.example.org/remote-work-productivity",
+          "https://journal.example.com/hybrid-teams-study"
+        ],
+        "question": "Does remote work reduce productivity?"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "answer",
+          "findings",
+          "agreements",
+          "contradictions",
+          "gaps"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minSources": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "answer": "Hybrid shows no loss; fully remote may.",
+            "findings": [
+              {
+                "finding": "Fully remote slightly less output",
+                "source_id": "S1",
+                "quote": "Fully remote teams completed 8% fewer tasks per week",
+                "evidence_strength": "moderate"
+              },
+              {
+                "finding": "Hybrid equal",
+                "source_id": "S2",
+                "quote": "Hybrid teams were as productive as office teams over 12 months.",
+                "evidence_strength": "strong"
+              }
+            ],
+            "agreements": [
+              {
+                "point": "Some in-person time removes the gap",
+                "source_ids": [
+                  "S1",
+                  "S2"
+                ]
+              }
+            ],
+            "contradictions": [],
+            "gaps": [
+              "Teams under 10 people"
+            ]
+          }
+        ],
+        "pages": {
+          "https://research.example.org/remote-work-productivity": "<html><head><title>Remote work productivity</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Remote work productivity</h1><p>Fully remote teams completed 8% fewer tasks per week in our sample of 40 companies.</p><p>Teams with weekly in-person days showed no drop.</p></main></body></html>",
+          "https://journal.example.com/hybrid-teams-study": "<html><head><title>Hybrid teams study</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Hybrid teams study</h1><p>Hybrid teams were as productive as office teams over 12 months.</p><p>The randomised trial covered 1,600 employees.</p></main></body></html>"
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"two_sources\" must not be accepted.",
+      "inputs": {
+        "source_urls": [
+          "https://research.example.org/remote-work-productivity",
+          "https://journal.example.com/hybrid-teams-study"
+        ],
+        "question": "Does remote work reduce productivity?"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "two_sources"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "answer": "Hybrid shows no loss; fully remote may.",
+            "findings": [
+              {
+                "finding": "x",
+                "source_id": "S1",
+                "quote": "Fully remote teams completed 8% fewer tasks per week",
+                "evidence_strength": "moderate"
+              },
+              {
+                "finding": "y",
+                "source_id": "S1",
+                "quote": "Teams with weekly in-person days showed no drop.",
+                "evidence_strength": "weak"
+              }
+            ],
+            "agreements": [
+              {
+                "point": "Some in-person time removes the gap",
+                "source_ids": [
+                  "S1",
+                  "S2"
+                ]
+              }
+            ],
+            "contradictions": [],
+            "gaps": [
+              "Teams under 10 people"
+            ]
+          },
+          {
+            "answer": "Hybrid shows no loss; fully remote may.",
+            "findings": [
+              {
+                "finding": "x",
+                "source_id": "S1",
+                "quote": "Fully remote teams completed 8% fewer tasks per week",
+                "evidence_strength": "moderate"
+              },
+              {
+                "finding": "y",
+                "source_id": "S1",
+                "quote": "Teams with weekly in-person days showed no drop.",
+                "evidence_strength": "weak"
+              }
+            ],
+            "agreements": [
+              {
+                "point": "Some in-person time removes the gap",
+                "source_ids": [
+                  "S1",
+                  "S2"
+                ]
+              }
+            ],
+            "contradictions": [],
+            "gaps": [
+              "Teams under 10 people"
+            ]
+          },
+          {
+            "answer": "Hybrid shows no loss; fully remote may.",
+            "findings": [
+              {
+                "finding": "x",
+                "source_id": "S1",
+                "quote": "Fully remote teams completed 8% fewer tasks per week",
+                "evidence_strength": "moderate"
+              },
+              {
+                "finding": "y",
+                "source_id": "S1",
+                "quote": "Teams with weekly in-person days showed no drop.",
+                "evidence_strength": "weak"
+              }
+            ],
+            "agreements": [
+              {
+                "point": "Some in-person time removes the gap",
+                "source_ids": [
+                  "S1",
+                  "S2"
+                ]
+              }
+            ],
+            "contradictions": [],
+            "gaps": [
+              "Teams under 10 people"
+            ]
+          }
+        ],
+        "pages": {
+          "https://research.example.org/remote-work-productivity": "<html><head><title>Remote work productivity</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Remote work productivity</h1><p>Fully remote teams completed 8% fewer tasks per week in our sample of 40 companies.</p><p>Teams with weekly in-person days showed no drop.</p></main></body></html>",
+          "https://journal.example.com/hybrid-teams-study": "<html><head><title>Hybrid teams study</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Hybrid teams study</h1><p>Hybrid teams were as productive as office teams over 12 months.</p><p>The randomised trial covered 1,600 employees.</p></main></body></html>"
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "sources_support_claims",
+      "question": "Does each cited source actually support the claim it is attached to?"
+    },
+    {
+      "id": "findings_quoted",
+      "question": "Every finding quotes a source read in full."
+    },
+    {
+      "id": "two_sources",
+      "question": "Findings draw on at least two sources."
+    },
+    {
+      "id": "contradictions_cited",
+      "question": "Contradictions cite retrieved sources."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Unreadable pages are listed as unavailable and never cited.",
+    "With no usable sources nothing is written.",
+    "Links to private or local addresses are refused."
+  ],
+  "knownGaps": [
+    "Canned pages stand in for the web; real search coverage varies day to day."
+  ]
+}

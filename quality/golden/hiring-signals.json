@@ -1,0 +1,234 @@
+{
+  "workflowId": "hiring-signals",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase2/hiring-signals.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "careers_urls": [
+          "https://careers.northpeak.example.com/jobs",
+          "https://boards.example.com/ledgerloop"
+        ],
+        "purpose": "sales prospecting"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "roles",
+          "inferences",
+          "actions"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minSources": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "roles": [
+              {
+                "company": "Northpeak",
+                "role": "Head of Finance",
+                "team": "Finance",
+                "location": "Berlin",
+                "source_id": "S1",
+                "quote": "Head of Finance, Berlin (new office)."
+              },
+              {
+                "company": "LedgerLoop",
+                "role": "Enterprise AE",
+                "team": "Sales",
+                "location": "New York",
+                "source_id": "S2",
+                "quote": "Enterprise Account Executive, New York."
+              }
+            ],
+            "inferences": [
+              {
+                "signal": "Northpeak is building finance in Germany",
+                "confidence": "medium",
+                "based_on_sources": [
+                  "S1"
+                ]
+              }
+            ],
+            "actions": [
+              "Reach out to Northpeak about German entity setup"
+            ]
+          }
+        ],
+        "pages": {
+          "https://careers.northpeak.example.com/jobs": "<html><head><title>Northpeak careers</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Northpeak careers</h1><p>Head of Finance, Berlin (new office).</p><p>Senior Payroll Specialist, Berlin.</p></main></body></html>",
+          "https://boards.example.com/ledgerloop": "<html><head><title>LedgerLoop jobs</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>LedgerLoop jobs</h1><p>Enterprise Account Executive, New York.</p><p>Solutions Engineer, New York.</p></main></body></html>"
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"inferences_sourced\" must not be accepted.",
+      "inputs": {
+        "careers_urls": [
+          "https://careers.northpeak.example.com/jobs",
+          "https://boards.example.com/ledgerloop"
+        ],
+        "purpose": "sales prospecting"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "inferences_sourced"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "roles": [
+              {
+                "company": "Northpeak",
+                "role": "Head of Finance",
+                "team": "Finance",
+                "location": "Berlin",
+                "source_id": "S1",
+                "quote": "Head of Finance, Berlin (new office)."
+              },
+              {
+                "company": "LedgerLoop",
+                "role": "Enterprise AE",
+                "team": "Sales",
+                "location": "New York",
+                "source_id": "S2",
+                "quote": "Enterprise Account Executive, New York."
+              }
+            ],
+            "inferences": [
+              {
+                "signal": "x",
+                "confidence": "high",
+                "based_on_sources": [
+                  "S5"
+                ]
+              }
+            ],
+            "actions": [
+              "Reach out to Northpeak about German entity setup"
+            ]
+          },
+          {
+            "roles": [
+              {
+                "company": "Northpeak",
+                "role": "Head of Finance",
+                "team": "Finance",
+                "location": "Berlin",
+                "source_id": "S1",
+                "quote": "Head of Finance, Berlin (new office)."
+              },
+              {
+                "company": "LedgerLoop",
+                "role": "Enterprise AE",
+                "team": "Sales",
+                "location": "New York",
+                "source_id": "S2",
+                "quote": "Enterprise Account Executive, New York."
+              }
+            ],
+            "inferences": [
+              {
+                "signal": "x",
+                "confidence": "high",
+                "based_on_sources": [
+                  "S5"
+                ]
+              }
+            ],
+            "actions": [
+              "Reach out to Northpeak about German entity setup"
+            ]
+          },
+          {
+            "roles": [
+              {
+                "company": "Northpeak",
+                "role": "Head of Finance",
+                "team": "Finance",
+                "location": "Berlin",
+                "source_id": "S1",
+                "quote": "Head of Finance, Berlin (new office)."
+              },
+              {
+                "company": "LedgerLoop",
+                "role": "Enterprise AE",
+                "team": "Sales",
+                "location": "New York",
+                "source_id": "S2",
+                "quote": "Enterprise Account Executive, New York."
+              }
+            ],
+            "inferences": [
+              {
+                "signal": "x",
+                "confidence": "high",
+                "based_on_sources": [
+                  "S5"
+                ]
+              }
+            ],
+            "actions": [
+              "Reach out to Northpeak about German entity setup"
+            ]
+          }
+        ],
+        "pages": {
+          "https://careers.northpeak.example.com/jobs": "<html><head><title>Northpeak careers</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Northpeak careers</h1><p>Head of Finance, Berlin (new office).</p><p>Senior Payroll Specialist, Berlin.</p></main></body></html>",
+          "https://boards.example.com/ledgerloop": "<html><head><title>LedgerLoop jobs</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>LedgerLoop jobs</h1><p>Enterprise Account Executive, New York.</p><p>Solutions Engineer, New York.</p></main></body></html>"
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "sources_support_claims",
+      "question": "Does each cited source actually support the claim it is attached to?"
+    },
+    {
+      "id": "roles_quoted",
+      "question": "Every role quotes the listing it cites."
+    },
+    {
+      "id": "inferences_sourced",
+      "question": "Every inference names retrieved sources."
+    },
+    {
+      "id": "distinct_roles",
+      "question": "No listing appears twice."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Unreadable pages are listed as unavailable and never cited.",
+    "With no usable sources nothing is written.",
+    "Links to private or local addresses are refused."
+  ],
+  "knownGaps": [
+    "Canned pages stand in for the web; real search coverage varies day to day."
+  ]
+}

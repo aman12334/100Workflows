@@ -1,0 +1,198 @@
+{
+  "workflowId": "fact-checker",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase2/fact-checker.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "claims": "There are 5.5 million small businesses in the UK. Fintech funding fell 20% in 2026."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "claims",
+          "summary"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minSources": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "claims": [
+              {
+                "claim": "There are 5.5 million small businesses in the UK.",
+                "verdict": "partly_supported",
+                "evidence": [
+                  {
+                    "source_id": "S1",
+                    "quote": "There were 5.5 million private sector businesses in the UK"
+                  }
+                ],
+                "correction": "Say private sector businesses."
+              },
+              {
+                "claim": "Fintech funding fell 20% in 2026.",
+                "verdict": "contradicted",
+                "evidence": [
+                  {
+                    "source_id": "S2",
+                    "quote": "Global fintech funding fell 12% in the first half of 2026."
+                  }
+                ],
+                "correction": "Fell 12% in H1 2026."
+              }
+            ],
+            "summary": "One claim needs correction."
+          }
+        ],
+        "pages": {
+          "https://www.stats.example.gov/business-counts-2026": "<html><head><title>Business population 2026</title><meta property=\"og:site_name\" content=\"Example Statistics Office\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Business population 2026</h1><p>There were 5.5 million private sector businesses in the UK at the start of 2026.</p><p>Most were micro businesses.</p></main></body></html>",
+          "https://news.example.org/fintech-funding-2026": "<html><head><title>Fintech funding 2026</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Fintech funding 2026</h1><p>Global fintech funding fell 12% in the first half of 2026.</p><p>Deal counts were flat.</p></main></body></html>"
+        },
+        "search": {
+          "results": [
+            {
+              "url": "https://www.stats.example.gov/business-counts-2026",
+              "title": "Business population 2026"
+            },
+            {
+              "url": "https://news.example.org/fintech-funding-2026",
+              "title": "Fintech funding 2026"
+            }
+          ],
+          "cited": []
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"evidence_quoted\" must not be accepted.",
+      "inputs": {
+        "claims": "There are 5.5 million small businesses in the UK. Fintech funding fell 20% in 2026."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "evidence_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "claims": [
+              {
+                "claim": "Fintech funding fell 20% in 2026.",
+                "verdict": "supported",
+                "evidence": [
+                  {
+                    "source_id": "S2",
+                    "quote": "fintech funding fell 20% in 2026"
+                  }
+                ],
+                "correction": "none"
+              }
+            ],
+            "summary": "One claim needs correction."
+          },
+          {
+            "claims": [
+              {
+                "claim": "Fintech funding fell 20% in 2026.",
+                "verdict": "supported",
+                "evidence": [
+                  {
+                    "source_id": "S2",
+                    "quote": "fintech funding fell 20% in 2026"
+                  }
+                ],
+                "correction": "none"
+              }
+            ],
+            "summary": "One claim needs correction."
+          },
+          {
+            "claims": [
+              {
+                "claim": "Fintech funding fell 20% in 2026.",
+                "verdict": "supported",
+                "evidence": [
+                  {
+                    "source_id": "S2",
+                    "quote": "fintech funding fell 20% in 2026"
+                  }
+                ],
+                "correction": "none"
+              }
+            ],
+            "summary": "One claim needs correction."
+          }
+        ],
+        "pages": {
+          "https://www.stats.example.gov/business-counts-2026": "<html><head><title>Business population 2026</title><meta property=\"og:site_name\" content=\"Example Statistics Office\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Business population 2026</h1><p>There were 5.5 million private sector businesses in the UK at the start of 2026.</p><p>Most were micro businesses.</p></main></body></html>",
+          "https://news.example.org/fintech-funding-2026": "<html><head><title>Fintech funding 2026</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Fintech funding 2026</h1><p>Global fintech funding fell 12% in the first half of 2026.</p><p>Deal counts were flat.</p></main></body></html>"
+        },
+        "search": {
+          "results": [
+            {
+              "url": "https://www.stats.example.gov/business-counts-2026",
+              "title": "Business population 2026"
+            },
+            {
+              "url": "https://news.example.org/fintech-funding-2026",
+              "title": "Fintech funding 2026"
+            }
+          ],
+          "cited": []
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "sources_support_claims",
+      "question": "Does each cited source actually support the claim it is attached to?"
+    },
+    {
+      "id": "claims_from_draft",
+      "question": "Every claim is copied from the draft."
+    },
+    {
+      "id": "evidence_quoted",
+      "question": "Every piece of evidence quotes the source it cites."
+    },
+    {
+      "id": "evidence_read",
+      "question": "Evidence rests on pages read in full."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Unreadable pages are listed as unavailable and never cited.",
+    "With no usable sources nothing is written.",
+    "Links to private or local addresses are refused."
+  ],
+  "knownGaps": [
+    "Canned pages stand in for the web; real search coverage varies day to day."
+  ]
+}

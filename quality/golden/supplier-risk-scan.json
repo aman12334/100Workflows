@@ -1,0 +1,207 @@
+{
+  "workflowId": "supplier-risk-scan",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase2/supplier-risk-scan.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "suppliers": [
+          "Castella Plastics (Italy)",
+          "Nordic Box AB (Sweden)"
+        ]
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "suppliers",
+          "unverified"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minSources": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "suppliers": [
+              {
+                "supplier": "Castella Plastics (Italy)",
+                "status": "signals_found",
+                "signals": [
+                  {
+                    "type": "financial",
+                    "severity": "high",
+                    "date": "September 2026",
+                    "source_id": "S1",
+                    "quote": "filed for insolvency protection in September 2026"
+                  }
+                ],
+                "action": "Qualify a second supplier"
+              },
+              {
+                "supplier": "Nordic Box AB (Sweden)",
+                "status": "no_signals_found",
+                "signals": [],
+                "action": "Monitor"
+              }
+            ],
+            "unverified": []
+          }
+        ],
+        "pages": {
+          "https://news.example.com/castella-plastics-insolvency": "<html><head><title>Castella Plastics insolvency</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Castella Plastics insolvency</h1><p>Castella Plastics filed for insolvency protection in September 2026.</p><p>Deliveries continue for now.</p></main></body></html>",
+          "https://news.example.org/port-strike-rotterdam": "<html><head><title>Port strike</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Port strike</h1><p>A strike at Rotterdam port delayed container traffic for two weeks.</p><p>Unions plan further action.</p></main></body></html>"
+        },
+        "search": {
+          "results": [
+            {
+              "url": "https://news.example.com/castella-plastics-insolvency",
+              "title": "Castella Plastics files for insolvency"
+            },
+            {
+              "url": "https://news.example.org/port-strike-rotterdam",
+              "title": "Port strike in Rotterdam"
+            }
+          ],
+          "cited": []
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"signals_quoted\" must not be accepted.",
+      "inputs": {
+        "suppliers": [
+          "Castella Plastics (Italy)",
+          "Nordic Box AB (Sweden)"
+        ]
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "signals_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "suppliers": [
+              {
+                "supplier": "Nordic Box AB (Sweden)",
+                "status": "signals_found",
+                "signals": [
+                  {
+                    "type": "legal",
+                    "severity": "high",
+                    "date": "2026",
+                    "source_id": "S2",
+                    "quote": "Nordic Box was fined for safety violations"
+                  }
+                ],
+                "action": "x"
+              }
+            ],
+            "unverified": []
+          },
+          {
+            "suppliers": [
+              {
+                "supplier": "Nordic Box AB (Sweden)",
+                "status": "signals_found",
+                "signals": [
+                  {
+                    "type": "legal",
+                    "severity": "high",
+                    "date": "2026",
+                    "source_id": "S2",
+                    "quote": "Nordic Box was fined for safety violations"
+                  }
+                ],
+                "action": "x"
+              }
+            ],
+            "unverified": []
+          },
+          {
+            "suppliers": [
+              {
+                "supplier": "Nordic Box AB (Sweden)",
+                "status": "signals_found",
+                "signals": [
+                  {
+                    "type": "legal",
+                    "severity": "high",
+                    "date": "2026",
+                    "source_id": "S2",
+                    "quote": "Nordic Box was fined for safety violations"
+                  }
+                ],
+                "action": "x"
+              }
+            ],
+            "unverified": []
+          }
+        ],
+        "pages": {
+          "https://news.example.com/castella-plastics-insolvency": "<html><head><title>Castella Plastics insolvency</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Castella Plastics insolvency</h1><p>Castella Plastics filed for insolvency protection in September 2026.</p><p>Deliveries continue for now.</p></main></body></html>",
+          "https://news.example.org/port-strike-rotterdam": "<html><head><title>Port strike</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Port strike</h1><p>A strike at Rotterdam port delayed container traffic for two weeks.</p><p>Unions plan further action.</p></main></body></html>"
+        },
+        "search": {
+          "results": [
+            {
+              "url": "https://news.example.com/castella-plastics-insolvency",
+              "title": "Castella Plastics files for insolvency"
+            },
+            {
+              "url": "https://news.example.org/port-strike-rotterdam",
+              "title": "Port strike in Rotterdam"
+            }
+          ],
+          "cited": []
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "sources_support_claims",
+      "question": "Does each cited source actually support the claim it is attached to?"
+    },
+    {
+      "id": "signals_quoted",
+      "question": "Every risk signal quotes the source it cites."
+    },
+    {
+      "id": "suppliers_from_list",
+      "question": "Every supplier is one you listed."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Unreadable pages are listed as unavailable and never cited.",
+    "With no usable sources nothing is written.",
+    "Links to private or local addresses are refused."
+  ],
+  "knownGaps": [
+    "Canned pages stand in for the web; real search coverage varies day to day."
+  ]
+}

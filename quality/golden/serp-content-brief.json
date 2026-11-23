@@ -1,0 +1,285 @@
+{
+  "workflowId": "serp-content-brief",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase2/serp-content-brief.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "keyword": "month-end close checklist"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "search_intent",
+          "intent_notes",
+          "competitor_coverage",
+          "gaps",
+          "title",
+          "outline",
+          "faq"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minSources": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "search_intent": "informational",
+            "intent_notes": "Searchers want a step list.",
+            "competitor_coverage": [
+              {
+                "source_id": "S1",
+                "covers": "Bank reconciliation",
+                "quote": "Reconcile every bank account before you close the period."
+              },
+              {
+                "source_id": "S2",
+                "covers": "Close calendar",
+                "quote": "A close calendar assigns each task to an owner and a day."
+              }
+            ],
+            "gaps": [
+              "Agency-specific steps"
+            ],
+            "title": "The agency month-end close checklist",
+            "outline": [
+              {
+                "heading": "Before close",
+                "points": [
+                  "x"
+                ]
+              },
+              {
+                "heading": "Close week",
+                "points": [
+                  "y"
+                ]
+              },
+              {
+                "heading": "After close",
+                "points": [
+                  "z"
+                ]
+              }
+            ],
+            "faq": [
+              "How long should a close take?"
+            ]
+          }
+        ],
+        "pages": {
+          "https://blog.example.com/month-end-close-checklist": "<html><head><title>Month-end close checklist</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Month-end close checklist</h1><p>Reconcile every bank account before you close the period.</p><p>Download our 10-step checklist.</p></main></body></html>",
+          "https://www.example.org/guides/close-process": "<html><head><title>Close process guide</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Close process guide</h1><p>A close calendar assigns each task to an owner and a day.</p><p>Most teams close in five to ten days.</p></main></body></html>"
+        },
+        "search": {
+          "results": [
+            {
+              "url": "https://blog.example.com/month-end-close-checklist",
+              "title": "Month-end close checklist"
+            },
+            {
+              "url": "https://www.example.org/guides/close-process",
+              "title": "Close process guide"
+            }
+          ],
+          "cited": []
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"two_pages\" must not be accepted.",
+      "inputs": {
+        "keyword": "month-end close checklist"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "two_pages"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "search_intent": "informational",
+            "intent_notes": "Searchers want a step list.",
+            "competitor_coverage": [
+              {
+                "source_id": "S1",
+                "covers": "x",
+                "quote": "Reconcile every bank account before you close the period."
+              }
+            ],
+            "gaps": [
+              "Agency-specific steps"
+            ],
+            "title": "The agency month-end close checklist",
+            "outline": [
+              {
+                "heading": "Before close",
+                "points": [
+                  "x"
+                ]
+              },
+              {
+                "heading": "Close week",
+                "points": [
+                  "y"
+                ]
+              },
+              {
+                "heading": "After close",
+                "points": [
+                  "z"
+                ]
+              }
+            ],
+            "faq": [
+              "How long should a close take?"
+            ]
+          },
+          {
+            "search_intent": "informational",
+            "intent_notes": "Searchers want a step list.",
+            "competitor_coverage": [
+              {
+                "source_id": "S1",
+                "covers": "x",
+                "quote": "Reconcile every bank account before you close the period."
+              }
+            ],
+            "gaps": [
+              "Agency-specific steps"
+            ],
+            "title": "The agency month-end close checklist",
+            "outline": [
+              {
+                "heading": "Before close",
+                "points": [
+                  "x"
+                ]
+              },
+              {
+                "heading": "Close week",
+                "points": [
+                  "y"
+                ]
+              },
+              {
+                "heading": "After close",
+                "points": [
+                  "z"
+                ]
+              }
+            ],
+            "faq": [
+              "How long should a close take?"
+            ]
+          },
+          {
+            "search_intent": "informational",
+            "intent_notes": "Searchers want a step list.",
+            "competitor_coverage": [
+              {
+                "source_id": "S1",
+                "covers": "x",
+                "quote": "Reconcile every bank account before you close the period."
+              }
+            ],
+            "gaps": [
+              "Agency-specific steps"
+            ],
+            "title": "The agency month-end close checklist",
+            "outline": [
+              {
+                "heading": "Before close",
+                "points": [
+                  "x"
+                ]
+              },
+              {
+                "heading": "Close week",
+                "points": [
+                  "y"
+                ]
+              },
+              {
+                "heading": "After close",
+                "points": [
+                  "z"
+                ]
+              }
+            ],
+            "faq": [
+              "How long should a close take?"
+            ]
+          }
+        ],
+        "pages": {
+          "https://blog.example.com/month-end-close-checklist": "<html><head><title>Month-end close checklist</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Month-end close checklist</h1><p>Reconcile every bank account before you close the period.</p><p>Download our 10-step checklist.</p></main></body></html>",
+          "https://www.example.org/guides/close-process": "<html><head><title>Close process guide</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Close process guide</h1><p>A close calendar assigns each task to an owner and a day.</p><p>Most teams close in five to ten days.</p></main></body></html>"
+        },
+        "search": {
+          "results": [
+            {
+              "url": "https://blog.example.com/month-end-close-checklist",
+              "title": "Month-end close checklist"
+            },
+            {
+              "url": "https://www.example.org/guides/close-process",
+              "title": "Close process guide"
+            }
+          ],
+          "cited": []
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "sources_support_claims",
+      "question": "Does each cited source actually support the claim it is attached to?"
+    },
+    {
+      "id": "coverage_quoted",
+      "question": "Competitor coverage quotes pages read in full."
+    },
+    {
+      "id": "two_pages",
+      "question": "At least two different pages were analysed."
+    },
+    {
+      "id": "distinct_headings",
+      "question": "Outline headings are unique."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Unreadable pages are listed as unavailable and never cited.",
+    "With no usable sources nothing is written.",
+    "Links to private or local addresses are refused."
+  ],
+  "knownGaps": [
+    "Canned pages stand in for the web; real search coverage varies day to day."
+  ]
+}

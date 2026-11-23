@@ -1,0 +1,186 @@
+{
+  "workflowId": "partner-prospect-research",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase2/partner-prospect-research.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "partner_type": "integration"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "candidates",
+          "unverified"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minSources": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "candidates": [
+              {
+                "company": "LedgerHub",
+                "what_they_do": "Accounting platform",
+                "partner_evidence": "Join the LedgerHub partner program to list your app",
+                "source_id": "S1",
+                "fit": "strong",
+                "why": "Marketplace",
+                "first_step": "Apply"
+              },
+              {
+                "company": "PayRoute",
+                "what_they_do": "Payments",
+                "partner_evidence": "open API for accounting integrations",
+                "source_id": "S2",
+                "fit": "moderate",
+                "why": "API",
+                "first_step": "Email partnerships"
+              }
+            ],
+            "unverified": []
+          }
+        ],
+        "pages": {
+          "https://www.ledgerhub.example.com/partners": "<html><head><title>LedgerHub partner program</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>LedgerHub partner program</h1><p>Join the LedgerHub partner program to list your app in our marketplace.</p><p>Over 200 apps integrate with LedgerHub.</p></main></body></html>",
+          "https://www.payroute.example.com/integrations": "<html><head><title>PayRoute integrations</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>PayRoute integrations</h1><p>PayRoute offers an open API for accounting integrations.</p><p>Contact partnerships@ for access.</p></main></body></html>"
+        },
+        "search": {
+          "results": [
+            {
+              "url": "https://www.ledgerhub.example.com/partners",
+              "title": "LedgerHub partners"
+            },
+            {
+              "url": "https://www.payroute.example.com/integrations",
+              "title": "PayRoute integrations"
+            }
+          ],
+          "cited": []
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"evidence_quoted\" must not be accepted.",
+      "inputs": {
+        "product_description": "AI bookkeeping for agencies",
+        "partner_type": "integration"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "evidence_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "candidates": [
+              {
+                "company": "LedgerHub",
+                "what_they_do": "x",
+                "partner_evidence": "LedgerHub pays 30% revenue share to partners",
+                "source_id": "S1",
+                "fit": "strong",
+                "why": "y",
+                "first_step": "z"
+              }
+            ],
+            "unverified": []
+          },
+          {
+            "candidates": [
+              {
+                "company": "LedgerHub",
+                "what_they_do": "x",
+                "partner_evidence": "LedgerHub pays 30% revenue share to partners",
+                "source_id": "S1",
+                "fit": "strong",
+                "why": "y",
+                "first_step": "z"
+              }
+            ],
+            "unverified": []
+          },
+          {
+            "candidates": [
+              {
+                "company": "LedgerHub",
+                "what_they_do": "x",
+                "partner_evidence": "LedgerHub pays 30% revenue share to partners",
+                "source_id": "S1",
+                "fit": "strong",
+                "why": "y",
+                "first_step": "z"
+              }
+            ],
+            "unverified": []
+          }
+        ],
+        "pages": {
+          "https://www.ledgerhub.example.com/partners": "<html><head><title>LedgerHub partner program</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>LedgerHub partner program</h1><p>Join the LedgerHub partner program to list your app in our marketplace.</p><p>Over 200 apps integrate with LedgerHub.</p></main></body></html>",
+          "https://www.payroute.example.com/integrations": "<html><head><title>PayRoute integrations</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>PayRoute integrations</h1><p>PayRoute offers an open API for accounting integrations.</p><p>Contact partnerships@ for access.</p></main></body></html>"
+        },
+        "search": {
+          "results": [
+            {
+              "url": "https://www.ledgerhub.example.com/partners",
+              "title": "LedgerHub partners"
+            },
+            {
+              "url": "https://www.payroute.example.com/integrations",
+              "title": "PayRoute integrations"
+            }
+          ],
+          "cited": []
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "sources_support_claims",
+      "question": "Does each cited source actually support the claim it is attached to?"
+    },
+    {
+      "id": "evidence_quoted",
+      "question": "Partner evidence quotes the source it cites."
+    },
+    {
+      "id": "distinct_candidates",
+      "question": "Each company appears once."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Unreadable pages are listed as unavailable and never cited.",
+    "With no usable sources nothing is written.",
+    "Links to private or local addresses are refused."
+  ],
+  "knownGaps": [
+    "Canned pages stand in for the web; real search coverage varies day to day."
+  ]
+}

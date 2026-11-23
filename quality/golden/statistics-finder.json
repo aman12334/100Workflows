@@ -1,0 +1,197 @@
+{
+  "workflowId": "statistics-finder",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase2/statistics-finder.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "topic": "Time small businesses spend on bookkeeping"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "statistics",
+          "cautions",
+          "unverified"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minSources": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "statistics": [
+              {
+                "statistic": "5.2 hours a week on bookkeeping",
+                "source_id": "S1",
+                "quote": "Small business owners spend an average of 5.2 hours a week on bookkeeping.",
+                "publisher": "Example Survey Institute",
+                "date": "2026-10-01",
+                "methodology": "Survey of 1,200 owners",
+                "credibility": "original_research"
+              },
+              {
+                "statistic": "Over 5 hours a week",
+                "source_id": "S2",
+                "quote": "owners spend over 5 hours a week on books",
+                "publisher": "Example",
+                "date": "undated",
+                "methodology": "not stated",
+                "credibility": "weak_secondary"
+              }
+            ],
+            "cautions": [
+              "S2 repeats S1"
+            ],
+            "unverified": []
+          }
+        ],
+        "pages": {
+          "https://www.survey.example.org/smb-finance-report-2026": "<html><head><title>SMB finance report 2026</title><meta property=\"og:site_name\" content=\"Example Survey Institute\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>SMB finance report 2026</h1><p>Small business owners spend an average of 5.2 hours a week on bookkeeping.</p><p>Survey of 1,200 owners in March 2026.</p></main></body></html>",
+          "https://blog.example.net/bookkeeping-stats": "<html><head><title>Bookkeeping stats</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Bookkeeping stats</h1><p>According to one report, owners spend over 5 hours a week on books.</p><p>Read more on our blog.</p></main></body></html>"
+        },
+        "search": {
+          "results": [
+            {
+              "url": "https://www.survey.example.org/smb-finance-report-2026",
+              "title": "SMB finance report 2026"
+            },
+            {
+              "url": "https://blog.example.net/bookkeeping-stats",
+              "title": "Bookkeeping stats"
+            }
+          ],
+          "cited": []
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"numbers_quoted\" must not be accepted.",
+      "inputs": {
+        "topic": "Time small businesses spend on bookkeeping"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "numbers_quoted"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "statistics": [
+              {
+                "statistic": "9 hours",
+                "source_id": "S1",
+                "quote": "owners spend an average of 9 hours a week on bookkeeping",
+                "publisher": "x",
+                "date": "x",
+                "methodology": "x",
+                "credibility": "original_research"
+              }
+            ],
+            "cautions": [
+              "S2 repeats S1"
+            ],
+            "unverified": []
+          },
+          {
+            "statistics": [
+              {
+                "statistic": "9 hours",
+                "source_id": "S1",
+                "quote": "owners spend an average of 9 hours a week on bookkeeping",
+                "publisher": "x",
+                "date": "x",
+                "methodology": "x",
+                "credibility": "original_research"
+              }
+            ],
+            "cautions": [
+              "S2 repeats S1"
+            ],
+            "unverified": []
+          },
+          {
+            "statistics": [
+              {
+                "statistic": "9 hours",
+                "source_id": "S1",
+                "quote": "owners spend an average of 9 hours a week on bookkeeping",
+                "publisher": "x",
+                "date": "x",
+                "methodology": "x",
+                "credibility": "original_research"
+              }
+            ],
+            "cautions": [
+              "S2 repeats S1"
+            ],
+            "unverified": []
+          }
+        ],
+        "pages": {
+          "https://www.survey.example.org/smb-finance-report-2026": "<html><head><title>SMB finance report 2026</title><meta property=\"og:site_name\" content=\"Example Survey Institute\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>SMB finance report 2026</h1><p>Small business owners spend an average of 5.2 hours a week on bookkeeping.</p><p>Survey of 1,200 owners in March 2026.</p></main></body></html>",
+          "https://blog.example.net/bookkeeping-stats": "<html><head><title>Bookkeeping stats</title><meta property=\"og:site_name\" content=\"Example\"><meta property=\"article:published_time\" content=\"2026-10-01\"></head><body><main><h1>Bookkeeping stats</h1><p>According to one report, owners spend over 5 hours a week on books.</p><p>Read more on our blog.</p></main></body></html>"
+        },
+        "search": {
+          "results": [
+            {
+              "url": "https://www.survey.example.org/smb-finance-report-2026",
+              "title": "SMB finance report 2026"
+            },
+            {
+              "url": "https://blog.example.net/bookkeeping-stats",
+              "title": "Bookkeeping stats"
+            }
+          ],
+          "cited": []
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "sources_support_claims",
+      "question": "Does each cited source actually support the claim it is attached to?"
+    },
+    {
+      "id": "numbers_quoted",
+      "question": "Every statistic quotes a page read in full."
+    },
+    {
+      "id": "distinct_statistics",
+      "question": "No statistic is listed twice."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Unreadable pages are listed as unavailable and never cited.",
+    "With no usable sources nothing is written.",
+    "Links to private or local addresses are refused."
+  ],
+  "knownGaps": [
+    "Canned pages stand in for the web; real search coverage varies day to day."
+  ]
+}
