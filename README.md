@@ -128,6 +128,14 @@ See [docs/integrations.md](docs/integrations.md).
 
 See [docs/api.md](docs/api.md), [docs/security.md](docs/security.md) and [docs/deployment.md](docs/deployment.md).
 
+**Workflow quality and readiness** (`/quality`, [docs/quality.md](docs/quality.md)). Every workflow has a scorecard built only from recorded evidence: static checks, a mocked automated harness, live executions and human reviews. It covers eight weighted quality dimensions and three readiness levels (Implemented, Verified, Production-ready), with release gates and automatic invalidation when definitions or code change.
+
+- `npm run quality:verify` runs the harness (free, no network).
+- `npm run quality:release` is the release gate.
+- `npm run quality:live` runs one live verification, and only with `--confirm`, because it spends credits.
+
+**Today no workflow is verified or production-ready**: none has run against a real model yet.
+
 **Web search is opt-in.** Market Research uses Anthropic's server-side web search tool with the same API key, so you don't need another account. Anthropic bills searches separately from tokens, so the tool is off until you add `WORKFLOWS_WEB_SEARCH=on` to `.env.local` and restart. While it is off, Market Research is skipped with that explanation, and it never produces a report without sources. Your Anthropic organization must also allow web search (an admin enables it in the Anthropic Console). If it doesn't, the run fails and shows Anthropic's own error message.
 
 ### How results are judged

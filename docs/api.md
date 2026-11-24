@@ -58,6 +58,14 @@ Errors look like `{ "error": { "code": "...", "message": "..." } }`.
 | `POST /api/builder/workflows` `{ spec, replace? }` | Save it to `data/custom-workflows/<category>/<id>.json` |
 | `DELETE /api/builder/workflows/:id` | Delete a builder workflow. Packages that pinned it keep their snapshot. |
 
+## Quality and readiness
+
+| Method and path | What it does |
+| --- | --- |
+| `GET /api/quality` | Every workflow's scorecard (level, release status, criteria with their evidence) and the level-3 release report |
+| `GET /api/quality/:id` | One workflow's scorecard, full evidence history and live outputs awaiting review |
+| `POST /api/quality/reviews` `{ outputId, scores, verdict, severity, notes? }` | Record a human review of a stored live output. Every rubric item needs a score of 1-5, and an output with a major or critical issue can't be accepted. |
+
 ## Chat, configuration and operations
 
 | Method and path | What it does |

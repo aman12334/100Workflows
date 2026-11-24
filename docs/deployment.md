@@ -60,6 +60,9 @@ See `.env.example`. The settings that change behaviour the most:
 
 ## Readiness
 
+Per-workflow readiness is tracked on `/quality` and checked with `npm run quality:release` (see [quality.md](quality.md)). Day-to-day operations: [operations.md](operations.md).
+
+
 The evidence supports **local, single-user use**:
 - the test suite passes (mocked model and providers);
 - the production build passes;

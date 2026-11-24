@@ -27,6 +27,7 @@
 | Model client | `src/lib/providers.ts`, `src/lib/server/model-client.ts`, `claude.ts`, `openai.ts`, `src/lib/runtime/openai-translate.ts` | Picks the provider from the environment; one file per provider SDK; a translator so OpenAI serves the same request shape |
 | Config | `src/lib/server/config.ts` | Reads env at call time and reports `configured`/`model`/`problem`, never the key |
 | Request guard and sign-in | `src/lib/request-guard.ts`, `src/lib/auth.ts`, `src/proxy.ts`, `app/api/auth/*`, `app/login` | Host allowlist, same-origin and JSON checks on `/api/*`; optional token sign-in (HMAC session cookie) for every page and API |
+| Quality and readiness | `src/lib/quality/*`, `src/lib/server/quality/*`, `quality/golden/*`, `app/quality`, `app/api/quality/*`, `scripts/quality-*.ts` | Evidence-based readiness: criteria by workflow type, scorecards, levels, release gates, stale-evidence fingerprints, the mocked harness, golden datasets, guarded live verification and human review. See [quality.md](quality.md) |
 | Audit and health | `db/audit.ts`, `app/api/health` | Security events (sign-ins, uploads, deletions, builder saves); a public, secret-free readiness check |
 | Logging | `src/lib/server/log.ts` | JSON lines with recursive secret redaction |
 | UI | `src/app/*`, `src/components/*` | Chat, library, workflow detail, settings |
@@ -116,6 +117,7 @@
 | `evaluations` | One row per attempt: score, pass/fail, decision (`accept`, `retry`, `escalate`) and each criterion's result |
 | `tool_calls` | One row per tool call (migration `005`): tool id and version, status and error kind, attempts, target URL or search request, timing and sizes |
 | `action_requests`, `action_events` | Proposed external actions (migration `006`): action and version, side effect, target, exact payload and its hash, status, idempotency key, approver, provider id or error; plus an append-only event trail |
+| `quality_runs`, `quality_evidence`, `quality_outputs` | Readiness evidence (migration `008`): append-only records of static, mocked, live and human checks with fingerprints; live outputs kept for human review |
 | `context_items`, `files`, `audit_events` | Workspace-scoped memory and security audit (migration `007`); `files` keeps extracted text only. `workflow_runs.inputs_hash` and `reused_from` and `runs.retry_of` support retry with reuse |
 
 Secrets never go into the database.
