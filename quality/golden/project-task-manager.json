@@ -1,0 +1,221 @@
+{
+  "workflowId": "project-task-manager",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase4/project-task-manager.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "project": "Launch bulk approvals by 2026-12-15: build API, build UI; UI needs the API."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "issues",
+          "blockers",
+          "risks",
+          "proposed_actions"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minProposals": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "issues": [
+              {
+                "key": "task_1",
+                "title": "Build bulk approval API",
+                "due_date": "2026-12-05",
+                "priority": 2
+              },
+              {
+                "key": "task_2",
+                "title": "Build bulk approval UI",
+                "due_date": "2026-12-12",
+                "priority": 2
+              }
+            ],
+            "blockers": [
+              {
+                "blocker_key": "task_1",
+                "blocked_key": "task_2"
+              }
+            ],
+            "risks": []
+          }
+        ],
+        "http": {
+          "POST https://api.linear.app/graphql": {
+            "status": 200,
+            "body": {
+              "data": {
+                "team": {
+                  "issues": {
+                    "nodes": []
+                  }
+                }
+              }
+            },
+            "then": {
+              "status": 200,
+              "body": {
+                "data": {
+                  "issueCreate": {
+                    "success": true,
+                    "issue": {
+                      "id": "lin-9",
+                      "identifier": "ENG-9",
+                      "url": "https://linear.app/x/issue/ENG-9"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"blocked_known\" must not be accepted.",
+      "inputs": {
+        "project": "Launch bulk approvals by 2026-12-15: build API, build UI; UI needs the API."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "blocked_known"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "issues": [
+              {
+                "key": "task_1",
+                "title": "Build API"
+              }
+            ],
+            "blockers": [
+              {
+                "blocker_key": "task_1",
+                "blocked_key": "task_9"
+              }
+            ],
+            "risks": []
+          },
+          {
+            "issues": [
+              {
+                "key": "task_1",
+                "title": "Build API"
+              }
+            ],
+            "blockers": [
+              {
+                "blocker_key": "task_1",
+                "blocked_key": "task_9"
+              }
+            ],
+            "risks": []
+          },
+          {
+            "issues": [
+              {
+                "key": "task_1",
+                "title": "Build API"
+              }
+            ],
+            "blockers": [
+              {
+                "blocker_key": "task_1",
+                "blocked_key": "task_9"
+              }
+            ],
+            "risks": []
+          }
+        ],
+        "http": {
+          "POST https://api.linear.app/graphql": {
+            "status": 200,
+            "body": {
+              "data": {
+                "team": {
+                  "issues": {
+                    "nodes": []
+                  }
+                }
+              }
+            },
+            "then": {
+              "status": 200,
+              "body": {
+                "data": {
+                  "issueCreate": {
+                    "success": true,
+                    "issue": {
+                      "id": "lin-9",
+                      "identifier": "ENG-9",
+                      "url": "https://linear.app/x/issue/ENG-9"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "actions_correct",
+      "question": "Is every proposed action exactly what you would approve (right recipient or record, right content)?"
+    },
+    {
+      "id": "issues_valid",
+      "question": "Every task is a valid issue."
+    },
+    {
+      "id": "blockers_valid",
+      "question": "Every dependency is valid."
+    },
+    {
+      "id": "blockers_known",
+      "question": "Dependencies refer to tasks in this plan."
+    },
+    {
+      "id": "blocked_known",
+      "question": "Blocked tasks are in this plan."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Nothing is sent or changed during the run; every action waits for approval of its exact payload.",
+    "A provider error during reads fails the run without drafting.",
+    "An approval can be used once; unclear outcomes are recorded as unconfirmed."
+  ],
+  "knownGaps": [
+    "Provider responses are canned; no real provider has been called."
+  ]
+}

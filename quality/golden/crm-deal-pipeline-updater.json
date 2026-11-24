@@ -1,0 +1,210 @@
+{
+  "workflowId": "crm-deal-pipeline-updater",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase4/crm-deal-pipeline-updater.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "deal_ids": [
+          "9001"
+        ],
+        "pipeline_id": "default",
+        "changes": "Brightline (9001) signed the contract."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "updates",
+          "unclear",
+          "proposed_actions"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minProposals": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "updates": [
+              {
+                "deal_id": "9001",
+                "dealstage": "closedwon"
+              }
+            ],
+            "unclear": []
+          }
+        ],
+        "http": {
+          "GET https://api.hubapi.com/crm/objects/2026-09/0-3/9001": {
+            "status": 200,
+            "body": {
+              "id": "9001",
+              "properties": {
+                "dealname": "Brightline",
+                "dealstage": "contractsent",
+                "amount": "14400",
+                "pipeline": "default"
+              }
+            }
+          },
+          "GET https://api.hubapi.com/crm/pipelines/2026-09/0-3/default/stages": {
+            "status": 200,
+            "body": {
+              "results": [
+                {
+                  "id": "contractsent",
+                  "label": "Contract sent",
+                  "metadata": {
+                    "isClosed": "false"
+                  }
+                },
+                {
+                  "id": "closedwon",
+                  "label": "Closed won",
+                  "metadata": {
+                    "isClosed": "true"
+                  }
+                }
+              ]
+            }
+          },
+          "PATCH https://api.hubapi.com/crm/objects/2026-09/0-3/9001": {
+            "status": 200,
+            "body": {
+              "id": "9001",
+              "properties": {}
+            }
+          }
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"updates_valid\" must not be accepted.",
+      "inputs": {
+        "deal_ids": [
+          "9001"
+        ],
+        "pipeline_id": "default",
+        "changes": "Brightline (9001) signed the contract."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "updates_valid"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "updates": [
+              {
+                "deal_id": "9001",
+                "dealstage": "signed"
+              }
+            ],
+            "unclear": []
+          },
+          {
+            "updates": [
+              {
+                "deal_id": "9001",
+                "dealstage": "signed"
+              }
+            ],
+            "unclear": []
+          },
+          {
+            "updates": [
+              {
+                "deal_id": "9001",
+                "dealstage": "signed"
+              }
+            ],
+            "unclear": []
+          }
+        ],
+        "http": {
+          "GET https://api.hubapi.com/crm/objects/2026-09/0-3/9001": {
+            "status": 200,
+            "body": {
+              "id": "9001",
+              "properties": {
+                "dealname": "Brightline",
+                "dealstage": "contractsent",
+                "amount": "14400",
+                "pipeline": "default"
+              }
+            }
+          },
+          "GET https://api.hubapi.com/crm/pipelines/2026-09/0-3/default/stages": {
+            "status": 200,
+            "body": {
+              "results": [
+                {
+                  "id": "contractsent",
+                  "label": "Contract sent",
+                  "metadata": {
+                    "isClosed": "false"
+                  }
+                },
+                {
+                  "id": "closedwon",
+                  "label": "Closed won",
+                  "metadata": {
+                    "isClosed": "true"
+                  }
+                }
+              ]
+            }
+          },
+          "PATCH https://api.hubapi.com/crm/objects/2026-09/0-3/9001": {
+            "status": 200,
+            "body": {
+              "id": "9001",
+              "properties": {}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "actions_correct",
+      "question": "Is every proposed action exactly what you would approve (right recipient or record, right content)?"
+    },
+    {
+      "id": "updates_valid",
+      "question": "Every update uses a real stage, doesn't move a closed deal and changes something."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Nothing is sent or changed during the run; every action waits for approval of its exact payload.",
+    "A provider error during reads fails the run without drafting.",
+    "An approval can be used once; unclear outcomes are recorded as unconfirmed."
+  ],
+  "knownGaps": [
+    "Provider responses are canned; no real provider has been called."
+  ]
+}

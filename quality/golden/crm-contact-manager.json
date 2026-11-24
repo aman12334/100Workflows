@@ -1,0 +1,212 @@
+{
+  "workflowId": "crm-contact-manager",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase4/crm-contact-manager.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "people": "Dana Lee, dana@brightline.example, COO at Brightline\nSam Ortiz, sam@northpeak.example, CFO at Northpeak (northpeak.example)"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "creates",
+          "updates",
+          "companies",
+          "skipped",
+          "proposed_actions"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minProposals": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "creates": [
+              {
+                "email": "sam@northpeak.example",
+                "firstname": "Sam",
+                "lastname": "Ortiz",
+                "company": "Northpeak",
+                "jobtitle": "CFO"
+              }
+            ],
+            "updates": [
+              {
+                "contact_id": "101",
+                "properties": {
+                  "jobtitle": "COO"
+                }
+              }
+            ],
+            "companies": [],
+            "skipped": []
+          }
+        ],
+        "http": {
+          "POST https://api.hubapi.com/crm/objects/2026-09/contacts/search": {
+            "status": 200,
+            "body": {
+              "results": [
+                {
+                  "id": "101",
+                  "properties": {
+                    "email": "dana@brightline.example",
+                    "firstname": "Dana",
+                    "lastname": "Lee",
+                    "company": "Brightline"
+                  }
+                }
+              ]
+            },
+            "then": {
+              "status": 200,
+              "body": {
+                "results": []
+              }
+            }
+          },
+          "POST https://api.hubapi.com/crm/objects/2026-09/contacts": {
+            "status": 201,
+            "body": {
+              "id": "202",
+              "properties": {}
+            }
+          }
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"creates_valid\" must not be accepted.",
+      "inputs": {
+        "people": "Dana Lee, dana@brightline.example, COO at Brightline\nSam Ortiz, sam@northpeak.example, CFO at Northpeak (northpeak.example)"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "creates_valid"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "creates": [
+              {
+                "email": "dana@brightline.example",
+                "firstname": "Dana"
+              }
+            ],
+            "updates": [],
+            "companies": [],
+            "skipped": []
+          },
+          {
+            "creates": [
+              {
+                "email": "dana@brightline.example",
+                "firstname": "Dana"
+              }
+            ],
+            "updates": [],
+            "companies": [],
+            "skipped": []
+          },
+          {
+            "creates": [
+              {
+                "email": "dana@brightline.example",
+                "firstname": "Dana"
+              }
+            ],
+            "updates": [],
+            "companies": [],
+            "skipped": []
+          }
+        ],
+        "http": {
+          "POST https://api.hubapi.com/crm/objects/2026-09/contacts/search": {
+            "status": 200,
+            "body": {
+              "results": [
+                {
+                  "id": "101",
+                  "properties": {
+                    "email": "dana@brightline.example",
+                    "firstname": "Dana",
+                    "lastname": "Lee",
+                    "company": "Brightline"
+                  }
+                }
+              ]
+            },
+            "then": {
+              "status": 200,
+              "body": {
+                "results": []
+              }
+            }
+          },
+          "POST https://api.hubapi.com/crm/objects/2026-09/contacts": {
+            "status": 201,
+            "body": {
+              "id": "202",
+              "properties": {}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "actions_correct",
+      "question": "Is every proposed action exactly what you would approve (right recipient or record, right content)?"
+    },
+    {
+      "id": "creates_valid",
+      "question": "New contacts are valid and not already in HubSpot."
+    },
+    {
+      "id": "updates_valid",
+      "question": "Updates target contacts found in the lookup."
+    },
+    {
+      "id": "companies_valid",
+      "question": "New companies are valid."
+    },
+    {
+      "id": "emails_supplied",
+      "question": "Every new contact's email is one you gave."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Nothing is sent or changed during the run; every action waits for approval of its exact payload.",
+    "A provider error during reads fails the run without drafting.",
+    "An approval can be used once; unclear outcomes are recorded as unconfirmed."
+  ],
+  "knownGaps": [
+    "Provider responses are canned; no real provider has been called."
+  ]
+}

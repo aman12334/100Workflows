@@ -1,0 +1,208 @@
+{
+  "workflowId": "social-media-publisher",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase4/social-media-publisher.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "brief": "Bulk approvals are live.",
+        "schedule": "2030-01-08T15:00:00Z",
+        "visibility": "public"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "posts",
+          "proposed_actions"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minProposals": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "posts": [
+              {
+                "status": "Bulk approvals are live: approve a week of expenses in one click.",
+                "visibility": "public",
+                "scheduled_at": "2030-01-08T15:00:00Z"
+              }
+            ]
+          }
+        ],
+        "http": {
+          "GET https://social.example.org/api/v2/instance": {
+            "status": 200,
+            "body": {
+              "configuration": {
+                "statuses": {
+                  "max_characters": 500
+                }
+              }
+            }
+          },
+          "POST https://social.example.org/api/v1/statuses": {
+            "status": 200,
+            "body": {
+              "id": "sched_1",
+              "scheduled_at": "2030-01-08T15:00:00.000Z"
+            }
+          }
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"posts_valid\" must not be accepted.",
+      "inputs": {
+        "brief": "Bulk approvals are live.",
+        "schedule": "2030-01-08T15:00:00Z",
+        "visibility": "public"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "posts_valid"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "posts": [
+              {
+                "status": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                "visibility": "public"
+              }
+            ]
+          },
+          {
+            "posts": [
+              {
+                "status": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                "visibility": "public"
+              }
+            ]
+          },
+          {
+            "posts": [
+              {
+                "status": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                "visibility": "public"
+              }
+            ]
+          }
+        ],
+        "http": {
+          "GET https://social.example.org/api/v2/instance": {
+            "status": 200,
+            "body": {
+              "configuration": {
+                "statuses": {
+                  "max_characters": 500
+                }
+              }
+            }
+          },
+          "POST https://social.example.org/api/v1/statuses": {
+            "status": 200,
+            "body": {
+              "id": "sched_1",
+              "scheduled_at": "2030-01-08T15:00:00.000Z"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "required-only",
+      "kind": "edge",
+      "description": "Only the required inputs (without schedule).",
+      "inputs": {
+        "brief": "Bulk approvals are live.",
+        "visibility": "public"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "posts",
+          "proposed_actions"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "posts": [
+              {
+                "status": "Bulk approvals are live: approve a week of expenses in one click.",
+                "visibility": "public",
+                "scheduled_at": "2030-01-08T15:00:00Z"
+              }
+            ]
+          }
+        ],
+        "http": {
+          "GET https://social.example.org/api/v2/instance": {
+            "status": 200,
+            "body": {
+              "configuration": {
+                "statuses": {
+                  "max_characters": 500
+                }
+              }
+            }
+          },
+          "POST https://social.example.org/api/v1/statuses": {
+            "status": 200,
+            "body": {
+              "id": "sched_1",
+              "scheduled_at": "2030-01-08T15:00:00.000Z"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "actions_correct",
+      "question": "Is every proposed action exactly what you would approve (right recipient or record, right content)?"
+    },
+    {
+      "id": "posts_valid",
+      "question": "Posts fit the server's limit and any schedule is at least 5 minutes ahead."
+    },
+    {
+      "id": "few_posts",
+      "question": "One or two posts."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Nothing is sent or changed during the run; every action waits for approval of its exact payload.",
+    "A provider error during reads fails the run without drafting.",
+    "An approval can be used once; unclear outcomes are recorded as unconfirmed."
+  ],
+  "knownGaps": [
+    "Provider responses are canned; no real provider has been called."
+  ]
+}

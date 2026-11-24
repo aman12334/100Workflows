@@ -1,0 +1,261 @@
+{
+  "workflowId": "support-ticket-manager",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase4/support-ticket-manager.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "open_stage_ids": [
+          "1"
+        ],
+        "allowed_stage_ids": [
+          "2"
+        ],
+        "guidance": "Be warm."
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "triage",
+          "stage_changes",
+          "proposed_actions"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minProposals": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "triage": [
+              {
+                "ticket_id": "7001",
+                "category": "bug",
+                "urgency": "high",
+                "draft_reply": "Sorry about the export; we are on it."
+              }
+            ],
+            "stage_changes": [
+              {
+                "ticket_id": "7001",
+                "stage_id": "2"
+              }
+            ]
+          }
+        ],
+        "http": {
+          "POST https://api.hubapi.com/crm/objects/2026-09/tickets/search": {
+            "status": 200,
+            "body": {
+              "results": [
+                {
+                  "id": "7001",
+                  "properties": {
+                    "subject": "Export broken",
+                    "content": "CSV export fails",
+                    "hs_pipeline_stage": "1",
+                    "hs_ticket_priority": "HIGH"
+                  }
+                }
+              ]
+            }
+          },
+          "PATCH https://api.hubapi.com/crm/objects/2026-09/tickets/7001": {
+            "status": 200,
+            "body": {
+              "id": "7001",
+              "properties": {}
+            }
+          }
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"changes_valid\" must not be accepted.",
+      "inputs": {
+        "open_stage_ids": [
+          "1"
+        ],
+        "allowed_stage_ids": [
+          "2"
+        ],
+        "guidance": "Be warm."
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "changes_valid"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "triage": [],
+            "stage_changes": [
+              {
+                "ticket_id": "9999",
+                "stage_id": "2"
+              }
+            ]
+          },
+          {
+            "triage": [],
+            "stage_changes": [
+              {
+                "ticket_id": "9999",
+                "stage_id": "2"
+              }
+            ]
+          },
+          {
+            "triage": [],
+            "stage_changes": [
+              {
+                "ticket_id": "9999",
+                "stage_id": "2"
+              }
+            ]
+          }
+        ],
+        "http": {
+          "POST https://api.hubapi.com/crm/objects/2026-09/tickets/search": {
+            "status": 200,
+            "body": {
+              "results": [
+                {
+                  "id": "7001",
+                  "properties": {
+                    "subject": "Export broken",
+                    "content": "CSV export fails",
+                    "hs_pipeline_stage": "1",
+                    "hs_ticket_priority": "HIGH"
+                  }
+                }
+              ]
+            }
+          },
+          "PATCH https://api.hubapi.com/crm/objects/2026-09/tickets/7001": {
+            "status": 200,
+            "body": {
+              "id": "7001",
+              "properties": {}
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "required-only",
+      "kind": "edge",
+      "description": "Only the required inputs (without guidance).",
+      "inputs": {
+        "open_stage_ids": [
+          "1"
+        ],
+        "allowed_stage_ids": [
+          "2"
+        ]
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "triage",
+          "stage_changes",
+          "proposed_actions"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "triage": [
+              {
+                "ticket_id": "7001",
+                "category": "bug",
+                "urgency": "high",
+                "draft_reply": "Sorry about the export; we are on it."
+              }
+            ],
+            "stage_changes": [
+              {
+                "ticket_id": "7001",
+                "stage_id": "2"
+              }
+            ]
+          }
+        ],
+        "http": {
+          "POST https://api.hubapi.com/crm/objects/2026-09/tickets/search": {
+            "status": 200,
+            "body": {
+              "results": [
+                {
+                  "id": "7001",
+                  "properties": {
+                    "subject": "Export broken",
+                    "content": "CSV export fails",
+                    "hs_pipeline_stage": "1",
+                    "hs_ticket_priority": "HIGH"
+                  }
+                }
+              ]
+            }
+          },
+          "PATCH https://api.hubapi.com/crm/objects/2026-09/tickets/7001": {
+            "status": 200,
+            "body": {
+              "id": "7001",
+              "properties": {}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "actions_correct",
+      "question": "Is every proposed action exactly what you would approve (right recipient or record, right content)?"
+    },
+    {
+      "id": "changes_valid",
+      "question": "Stage changes target tickets read in this run."
+    },
+    {
+      "id": "allowed_stages",
+      "question": "Tickets only move to stages you allowed."
+    },
+    {
+      "id": "triage_known",
+      "question": "Every triaged ticket was read in this run."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Nothing is sent or changed during the run; every action waits for approval of its exact payload.",
+    "A provider error during reads fails the run without drafting.",
+    "An approval can be used once; unclear outcomes are recorded as unconfirmed."
+  ],
+  "knownGaps": [
+    "Provider responses are canned; no real provider has been called."
+  ]
+}

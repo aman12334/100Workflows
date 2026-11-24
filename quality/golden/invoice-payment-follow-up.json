@@ -1,0 +1,186 @@
+{
+  "workflowId": "invoice-payment-follow-up",
+  "datasetVersion": 1,
+  "derivedFrom": "tests/fixtures/phase4/invoice-payment-follow-up.json",
+  "scenarios": [
+    {
+      "id": "typical",
+      "kind": "typical",
+      "description": "Representative inputs from the reviewed test fixture.",
+      "inputs": {
+        "tone": "gentle",
+        "sender_name": "Sam, Acme finance"
+      },
+      "expect": {
+        "status": "succeeded",
+        "requiredFields": [
+          "reminders",
+          "skipped",
+          "proposed_actions"
+        ],
+        "forbiddenText": [
+          "as an ai language model",
+          "sk-ant-",
+          "-----begin"
+        ],
+        "minProposals": 1
+      },
+      "mock": {
+        "replies": [
+          {
+            "reminders": [
+              {
+                "key": "reminder_1",
+                "to": "ap@brightline.example",
+                "subject": "Invoice INV-0042 is overdue",
+                "text": "Hi, invoice INV-0042 for $1,440.00 is overdue: https://invoice.stripe.com/i/x"
+              }
+            ],
+            "skipped": []
+          }
+        ],
+        "http": {
+          "GET https://api.stripe.com/v1/invoices": {
+            "status": 200,
+            "body": {
+              "object": "list",
+              "data": [
+                {
+                  "id": "in_1",
+                  "number": "INV-0042",
+                  "customer_name": "Brightline",
+                  "customer_email": "ap@brightline.example",
+                  "amount_remaining": 144000,
+                  "currency": "usd",
+                  "due_date": 1735689600,
+                  "hosted_invoice_url": "https://invoice.stripe.com/i/x",
+                  "status": "open"
+                }
+              ]
+            }
+          },
+          "POST https://api.resend.com/emails": {
+            "status": 200,
+            "body": {
+              "id": "em_rem"
+            }
+          }
+        }
+      },
+      "live": true
+    },
+    {
+      "id": "known-bad",
+      "kind": "known_bad",
+      "description": "A reply that breaks the critical check \"reminders_valid\" must not be accepted.",
+      "inputs": {
+        "tone": "gentle",
+        "sender_name": "Sam, Acme finance"
+      },
+      "expect": {
+        "status": "needs_review",
+        "criticalFailures": [
+          "reminders_valid"
+        ]
+      },
+      "mock": {
+        "replies": [
+          {
+            "reminders": [
+              {
+                "key": "reminder_1",
+                "to": "boss@brightline.example",
+                "subject": "Overdue",
+                "text": "Please pay."
+              }
+            ],
+            "skipped": []
+          },
+          {
+            "reminders": [
+              {
+                "key": "reminder_1",
+                "to": "boss@brightline.example",
+                "subject": "Overdue",
+                "text": "Please pay."
+              }
+            ],
+            "skipped": []
+          },
+          {
+            "reminders": [
+              {
+                "key": "reminder_1",
+                "to": "boss@brightline.example",
+                "subject": "Overdue",
+                "text": "Please pay."
+              }
+            ],
+            "skipped": []
+          }
+        ],
+        "http": {
+          "GET https://api.stripe.com/v1/invoices": {
+            "status": 200,
+            "body": {
+              "object": "list",
+              "data": [
+                {
+                  "id": "in_1",
+                  "number": "INV-0042",
+                  "customer_name": "Brightline",
+                  "customer_email": "ap@brightline.example",
+                  "amount_remaining": 144000,
+                  "currency": "usd",
+                  "due_date": 1735689600,
+                  "hosted_invoice_url": "https://invoice.stripe.com/i/x",
+                  "status": "open"
+                }
+              ]
+            }
+          },
+          "POST https://api.resend.com/emails": {
+            "status": 200,
+            "body": {
+              "id": "em_rem"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "rubric": [
+    {
+      "id": "accurate",
+      "question": "Is everything stated consistent with the inputs (and sources, where used), with nothing invented?"
+    },
+    {
+      "id": "useful",
+      "question": "Would the intended user act on this output with little or no editing?"
+    },
+    {
+      "id": "complete",
+      "question": "Does it cover everything the task asks for, without padding?"
+    },
+    {
+      "id": "actions_correct",
+      "question": "Is every proposed action exactly what you would approve (right recipient or record, right content)?"
+    },
+    {
+      "id": "reminders_valid",
+      "question": "Every reminder goes to that invoice's billing email."
+    },
+    {
+      "id": "one_per_invoice",
+      "question": "No one gets two reminders."
+    }
+  ],
+  "expectedFailureBehavior": [
+    "Nothing is sent or changed during the run; every action waits for approval of its exact payload.",
+    "A provider error during reads fails the run without drafting.",
+    "An approval can be used once; unclear outcomes are recorded as unconfirmed."
+  ],
+  "knownGaps": [
+    "Provider responses are canned; no real provider has been called."
+  ]
+}
