@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FolderOpen, Hammer, KeyRound, LayoutGrid, MessageCircleMore, MessageSquareText, Package, PlayCircle, type LucideIcon } from "lucide-react";
+import { FolderOpen, Gauge, Hammer, KeyRound, LayoutGrid, MessageCircleMore, MessageSquareText, Package, PlayCircle, type LucideIcon } from "lucide-react";
 import { Logo } from "./logo";
 
 interface NavItem {
@@ -19,6 +19,7 @@ const NAV: NavItem[] = [
   { href: "/library", label: "Workflow library", icon: LayoutGrid, match: (p) => p.startsWith("/library") },
   { href: "/builder", label: "Build a workflow", icon: Hammer, match: (p) => p.startsWith("/builder") },
   { href: "/context", label: "Context & files", icon: FolderOpen, match: (p) => p.startsWith("/context") },
+  { href: "/quality", label: "Workflow quality", icon: Gauge, match: (p) => p.startsWith("/quality") },
   { href: "/settings", label: "Model & keys", icon: KeyRound, match: (p) => p.startsWith("/settings") },
 ];
 
