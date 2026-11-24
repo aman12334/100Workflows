@@ -23,7 +23,11 @@
     "catalog:schema": "tsx scripts/gen-schemas.ts",
     "catalog:docs": "node --conditions=react-server --import tsx scripts/catalog-docs.ts",
     "new:workflow": "node --conditions=react-server --import tsx scripts/new-workflow.ts",
-    "check": "npm run typecheck && npm test && npm run catalog:validate -- --strict && npm run catalog:schema -- --check && npm run catalog:docs -- --check"
+    "check": "npm run typecheck && npm test && npm run catalog:validate -- --strict && npm run catalog:schema -- --check && npm run catalog:docs -- --check && npm run quality:golden",
+    "quality:verify": "node --conditions=react-server --import tsx scripts/quality-verify.ts",
+    "quality:release": "node --conditions=react-server --import tsx scripts/quality-release.ts",
+    "quality:golden": "node --conditions=react-server --import tsx scripts/quality-golden.ts",
+    "quality:live": "node --conditions=react-server --import tsx scripts/quality-live.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
