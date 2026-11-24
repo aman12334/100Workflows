@@ -97,6 +97,8 @@ export async function approveAndExecute(
     transition(db, id, ["executing"], "succeeded", { executed_at: new Date().toISOString(), external_id: externalId, result_json: JSON.stringify(checked) });
     addEvent(db, id, "succeeded", "system", externalId ? `provider id ${externalId}` : "provider confirmed");
     log.info("action.succeeded", { actionId: id, action: action.action, externalId });
+    // Only a real network call is provider evidence; a substituted transport (tests, the harness) never is.
+    if (!opts.transport || opts.transport === fetchTransport) recordProviderEvidence(db, action, externalId);
   } catch (err) {
     const kind = err instanceof IntegrationError ? err.kind : "provider_error";
     const message = err instanceof Error ? err.message : String(err);
@@ -106,6 +108,28 @@ export async function approveAndExecute(
     log.warn("action.failed", { actionId: id, action: action.action, kind });
   }
   return getAction(db, id)!;
+}
+
+/**
+ * A provider-confirmed live action is real-world evidence for the workflow that proposed it
+ * (readiness criterion "provider_live"), checked against the definition the run was pinned to.
+ * Best effort: recording evidence can never change the action's own outcome.
+ */
+function recordProviderEvidence(db: DB, action: ActionRecord, externalId: string | null) {
+  try {
+    const row = db
+      .prepare(
+        `SELECT pw.definition_json FROM workflow_runs w JOIN runs r ON r.id = w.run_id
+         JOIN package_workflows pw ON pw.package_id = r.package_id AND pw.workflow_id = w.workflow_id WHERE w.id = ?`,
+      )
+      .get(action.workflowRunId) as { definition_json: string } | undefined;
+    if (!row) return;
+    void import("./quality/service")
+      .then(({ recordProviderLive }) => recordProviderLive(db, { actionId: action.id, provider: action.provider, action: action.action, externalId, workflow: JSON.parse(row.definition_json) }))
+      .catch((err) => log.warn("quality.provider_evidence_failed", { actionId: action.id, error: err }));
+  } catch (err) {
+    log.warn("quality.provider_evidence_failed", { actionId: action.id, error: err });
+  }
 }
 
 export function rejectAction(db: DB, id: string, env: Env = process.env, reason = ""): ActionRecord {
