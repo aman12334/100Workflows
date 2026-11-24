@@ -81,7 +81,8 @@ describe("health, history and builder APIs", () => {
       expect(res.status).toBe(200);
       const body = JSON.parse(text);
       expect(body).toMatchObject({ ok: true, database: "ok", migrations: { pending: 0 }, catalog: { workflows: 100, errors: 0 } });
-      expect(body.migrations.applied).toBe(7);
+      const { readMigrations } = await import("@/lib/server/db/migrate");
+      expect(body.migrations.applied).toBe(readMigrations().length);
       expect(text).not.toContain("SECRET");
       expect(text).not.toMatch(/anthropic|openai|\.env|\/Users\//i);
     } finally {
