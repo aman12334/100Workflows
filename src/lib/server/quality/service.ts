@@ -31,7 +31,7 @@ export function loadGoldens(dir = GOLDEN_DIR): { goldens: Record<string, Golden>
   if (!existsSync(/*turbopackIgnore: true*/ dir)) return { goldens, errors: [`${dir} does not exist`] };
   for (const f of readdirSync(/*turbopackIgnore: true*/ dir).filter((x) => x.endsWith(".json")).sort()) {
     try {
-      const parsed = GoldenSchema.safeParse(JSON.parse(readFileSync(/*turbopackIgnore: true*/ path.join(dir, f), "utf8")));
+      const parsed = GoldenSchema.safeParse(JSON.parse(readFileSync(path.join(/*turbopackIgnore: true*/ dir, f), "utf8")));
       if (!parsed.success) errors.push(`${f}: ${parsed.error.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`).join("; ")}`);
       else if (`${parsed.data.workflowId}.json` !== f) errors.push(`${f}: workflowId "${parsed.data.workflowId}" doesn't match the file name`);
       else goldens[parsed.data.workflowId] = parsed.data;
