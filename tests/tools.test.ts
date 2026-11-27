@@ -183,11 +183,12 @@ describe("tool registry", () => {
     }
   });
 
-  it("requires explicit opt-in, and web search requires Anthropic", () => {
+  it("requires explicit opt-in, with either provider", () => {
     expect(TOOLS["web-fetch"].availability({})).toMatch(/WORKFLOWS_WEB_FETCH=on/);
     expect(TOOLS["web-fetch"].availability({ WORKFLOWS_WEB_FETCH: "on" })).toBeNull();
-    expect(TOOLS["web-search"].availability({ OPENAI_API_KEY: "sk-x", WORKFLOWS_WEB_SEARCH: "on" })).toMatch(/only available with Anthropic/);
-    expect(TOOLS["web-search"].availability({ ANTHROPIC_API_KEY: "sk-ant-x" })).toMatch(/WORKFLOWS_WEB_SEARCH=on/);
+    expect(TOOLS["web-search"].availability({ OPENAI_API_KEY: "sk-x", WORKFLOWS_WEB_SEARCH: "on" })).toBeNull();
+    expect(TOOLS["web-search"].availability({ OPENAI_API_KEY: "sk-x" })).toMatch(/WORKFLOWS_WEB_SEARCH=on.*OpenAI bills/);
+    expect(TOOLS["web-search"].availability({ ANTHROPIC_API_KEY: "sk-ant-x" })).toMatch(/WORKFLOWS_WEB_SEARCH=on.*Anthropic bills/);
   });
 
   it("normalises search results: only API results count, with the passages it cited", () => {

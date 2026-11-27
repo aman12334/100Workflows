@@ -2358,5 +2358,5 @@ Defined once in `catalog/shared-inputs.json` and referenced with `{ "use": "<key
 
 | Id | Name | Provided today | Setup |
 | --- | --- | --- | --- |
-| `web-search` | Web search | yes | Anthropic's server-side web search tool. Turn on with WORKFLOWS_WEB_SEARCH=on; searches are billed by Anthropic. |
+| `web-search` | Web search | yes | Your model provider's built-in web search (Anthropic or OpenAI). Turn on with WORKFLOWS_WEB_SEARCH=on; searches are billed by the provider. With OpenAI, research workflows also need WORKFLOWS_WEB_FETCH=on to read the pages. |
 | `web-fetch` | Web fetch | yes | Built in, runs on this computer. Turn on with WORKFLOWS_WEB_FETCH=on. Public addresses only: private, local and cloud-metadata addresses are refused. |

@@ -224,8 +224,8 @@ export const marketResearch: Executor<ResearchState, Report> = {
 
   preflight(env) {
     const provider = PROVIDERS[resolveProvider(env)];
-    if (!provider.webSearch) {
-      return `Market Research needs web search, which 100 Workflows currently provides only through Anthropic. You're using ${provider.label}, so it will be skipped. ` +
+    if (!provider.webSearchPassages) {
+      return `Market Research needs web search that quotes the pages it found, which 100 Workflows currently provides only through Anthropic. You're using ${provider.label}, so it will be skipped. ` +
         "Add an ANTHROPIC_API_KEY (with WORKFLOWS_WEB_SEARCH=on) to run it.";
     }
     return webSearchEnabled(env)

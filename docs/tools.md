@@ -6,7 +6,7 @@ Research workflows retrieve information with **registered, read-only tools**. De
 
 | Id | Version | What it does | Needs | Per-run limit |
 | --- | --- | --- | --- | --- |
-| `web-search` | 1.0.0 | Anthropic's server-side web search, run inside a budgeted model call. Returns the result URLs, titles, dates and the passages the search engine cited. | Anthropic key and `WORKFLOWS_WEB_SEARCH=on` (searches are billed by Anthropic) | 1 search request (up to 5 searches) |
+| `web-search` | 1.0.0 | The provider's built-in web search, run inside a budgeted model call: Anthropic's server-side tool or OpenAI's `web_search` (Responses API, capped with `max_tool_calls`). Returns result URLs and titles, plus page-quoted passages with Anthropic. OpenAI's citations point into the model's own answer, so they are used for URLs and titles only, never as quotes. | A model key and `WORKFLOWS_WEB_SEARCH=on` (searches are billed by the provider); with OpenAI, research workflows also need `WORKFLOWS_WEB_FETCH=on` | 1 search request (up to 5 searches) |
 | `web-fetch` | 1.0.0 | Reads one public web page on this computer (GET only) and extracts its readable text, title, publisher, date and headings. | `WORKFLOWS_WEB_FETCH=on`; works with either provider | `maxPages` from the definition, at most 10 |
 
 Both are off until turned on in `.env.local`. A workflow whose required tools are off is skipped with the reason, never run without them.

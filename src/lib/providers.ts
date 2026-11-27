@@ -14,6 +14,12 @@ export interface ProviderInfo {
   keysUrl: string;
   /** Whether the runtime can offer web search with this provider. */
   webSearch: boolean;
+  /**
+   * Whether search results come with passages quoted from the pages themselves.
+   * Anthropic's tool returns cited page text; OpenAI's citations point into the model's own
+   * answer, so with OpenAI workflows must read the pages (web-fetch) to have evidence.
+   */
+  webSearchPassages: boolean;
 }
 
 export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
@@ -24,6 +30,7 @@ export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
     defaultModel: "claude-opus-5-5",
     keysUrl: "https://console.anthropic.com/settings/keys",
     webSearch: true,
+    webSearchPassages: true,
   },
   openai: {
     id: "openai",
@@ -31,7 +38,8 @@ export const PROVIDERS: Record<ProviderId, ProviderInfo> = {
     keyVar: "OPENAI_API_KEY",
     defaultModel: "gpt-6.1-sol",
     keysUrl: "https://platform.openai.com/api-keys",
-    webSearch: false,
+    webSearch: true,
+    webSearchPassages: false,
   },
 };
 

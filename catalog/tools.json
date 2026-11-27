@@ -6,7 +6,7 @@
       "name": "Web search",
       "description": "Searches the public web and returns pages with citable passages.",
       "available": true,
-      "setup": "Anthropic's server-side web search tool. Turn on with WORKFLOWS_WEB_SEARCH=on; searches are billed by Anthropic."
+      "setup": "Your model provider's built-in web search (Anthropic or OpenAI). Turn on with WORKFLOWS_WEB_SEARCH=on; searches are billed by the provider. With OpenAI, research workflows also need WORKFLOWS_WEB_FETCH=on to read the pages."
     },
     {
       "id": "web-fetch",

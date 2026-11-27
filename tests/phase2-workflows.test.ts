@@ -127,11 +127,8 @@ describe.each(IDS)("%s", (id) => {
     expect(runnability(wf, ENV)).toEqual({ runnable: true });
     const off = runnability(wf, { ANTHROPIC_API_KEY: "sk-ant-test" });
     expect(off.runnable).toBe(false);
-    if (wf.tools.some((t) => t.id === "web-search")) {
-      expect(runnability(wf, { OPENAI_API_KEY: "sk-x", WORKFLOWS_WEB_SEARCH: "on", WORKFLOWS_WEB_FETCH: "on" })).toMatchObject({ runnable: false, reason: /only available with Anthropic/ });
-    } else {
-      expect(runnability(wf, { OPENAI_API_KEY: "sk-x", WORKFLOWS_WEB_FETCH: "on" })).toEqual({ runnable: true });
-    }
+    // Both providers can search; with OpenAI the pages are read on this computer, so web-fetch is needed too.
+    expect(runnability(wf, { OPENAI_API_KEY: "sk-x", WORKFLOWS_WEB_SEARCH: "on", WORKFLOWS_WEB_FETCH: "on" })).toEqual({ runnable: true });
   });
 
   it("gathers sources with its tools, writes from them and passes every check, keeping the evidence", async () => {

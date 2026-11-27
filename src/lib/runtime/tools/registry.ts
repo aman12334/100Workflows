@@ -148,7 +148,7 @@ export function normalizeSearch(blocks: Block[]): { results: SearchOutput["resul
 const webSearch: ToolDefinition<{ request: string; context: string; maxSearches: number }, SearchOutput> = {
   id: "web-search",
   version: "1.0.0",
-  summary: "Searches the public web through Anthropic's server-side web search tool and returns results with the passages it cited.",
+  summary: "Searches the public web with the model provider's built-in web search tool (Anthropic or OpenAI) and returns the results, with cited passages where the provider supplies them.",
   permission: "read_public_web",
   input: z.object({ request: z.string().min(1).max(4000), context: z.string().max(40_000), maxSearches: z.number().int().min(1).max(5) }).strict(),
   output: SearchOutputSchema,
@@ -157,8 +157,8 @@ const webSearch: ToolDefinition<{ request: string; context: string; maxSearches:
   maxCallsPerRun: 1,
   availability: (env) => {
     const provider = PROVIDERS[resolveProvider(env)];
-    if (!provider.webSearch) return `Web search is only available with Anthropic in 100 Workflows; you're using ${provider.label}. Add an ANTHROPIC_API_KEY (with WORKFLOWS_WEB_SEARCH=on) to run this workflow.`;
-    return webSearchEnabled(env) ? null : "Web search is off. Set WORKFLOWS_WEB_SEARCH=on in .env.local and restart. Anthropic bills web searches separately from tokens.";
+    if (!provider.webSearch) return `Web search isn't available with ${provider.label} in 100 Workflows.`;
+    return webSearchEnabled(env) ? null : `Web search is off. Set WORKFLOWS_WEB_SEARCH=on in .env.local and restart. ${provider.label} bills web searches separately from tokens.`;
   },
   target: (input) => input.request.replace(/\s+/g, " ").slice(0, 300),
   async execute({ request, context, maxSearches }, env) {

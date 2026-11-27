@@ -7,6 +7,7 @@ import { loadCatalog } from "@/lib/catalog/load";
 import { runChatTurn } from "@/lib/server/chat";
 import { marketResearch } from "@/lib/runtime/executors/market-research";
 import { icpBuilder } from "@/lib/runtime/executors/icp-builder";
+import { normalizeSearch } from "@/lib/runtime/tools/registry";
 
 describe("provider selection", () => {
   it("prefers an explicit choice, then whichever key exists (Anthropic first)", () => {
@@ -91,8 +92,48 @@ describe("OpenAI request translation (Responses API)", () => {
     expect(plain.include).toBeUndefined();
   });
 
-  it("refuses Anthropic server tools instead of silently dropping them", () => {
-    expect(() => toOpenAIRequest(params({ tools: [{ type: "web_search_20260209", name: "web_search" }] as CreateParams["tools"] }))).toThrow(UnsupportedFeatureError);
+  it("refuses Anthropic server tools it can't map instead of silently dropping them", () => {
+    expect(() => toOpenAIRequest(params({ tools: [{ type: "code_execution_20250825", name: "code_execution" }] as unknown as CreateParams["tools"] }))).toThrow(UnsupportedFeatureError);
+  });
+
+  it("maps web search to OpenAI's built-in web_search tool, capping searches with max_tool_calls", () => {
+    const req = toOpenAIRequest(params({ tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 4 }] as CreateParams["tools"] }));
+    expect(req.tools).toEqual([{ type: "web_search" }]);
+    expect(req.max_tool_calls).toBe(4);
+    expect(req.include).toEqual(expect.arrayContaining(["web_search_call.action.sources", "reasoning.encrypted_content"]));
+  });
+});
+
+describe("OpenAI web search results", () => {
+  const res = (output: unknown[]) => ({ id: "r", model: "gpt-6.1-sol", output, usage: { input_tokens: 10, output_tokens: 5 } }) as never;
+  const answer = (annotations: unknown[]) => ({ type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", text: "Acme raised $12M (source).", annotations }] });
+
+  it("turns searches into results with URLs and titles only, cited pages first, and counts searches", () => {
+    const m = fromOpenAIResponse(
+      res([
+        { type: "web_search_call", id: "ws1", status: "completed", action: { type: "search", queries: ["acme funding"], sources: [{ type: "url", url: "https://b.example.com" }, { type: "url", url: "https://a.example.com/news" }] } },
+        { type: "web_search_call", id: "ws2", status: "completed", action: { type: "open_page", url: "https://c.example.com" } },
+        answer([
+          { type: "url_citation", url: "https://a.example.com/news", title: "Acme raises $12M", start_index: 0, end_index: 10 },
+          { type: "url_citation", url: "https://d.example.com/extra", title: "Extra", start_index: 0, end_index: 5 },
+        ]),
+      ]),
+    );
+    const blocks = m.content as unknown as Array<Record<string, unknown>>;
+    expect(blocks.filter((b) => b.type === "server_tool_use").map((b) => b.input)).toEqual([{ query: "acme funding" }, { query: "https://c.example.com" }]);
+    const results = blocks.filter((b) => b.type === "web_search_tool_result").flatMap((b) => b.content as Array<{ url: string; title: string }>);
+    expect(results.map((r) => r.url)).toEqual(["https://a.example.com/news", "https://b.example.com", "https://c.example.com", "https://d.example.com/extra"]);
+    expect(results[0].title).toBe("Acme raises $12M");
+    expect(m.usage.server_tool_use).toEqual({ web_search_requests: 1 });
+    // The model's own sentence is never passed off as text quoted from a page.
+    expect(blocks.filter((b) => b.type === "text").every((b) => b.citations === null)).toBe(true);
+    const { results: normalized } = normalizeSearch(m.content as never);
+    expect(normalized.every((r) => r.excerpts.length === 0)).toBe(true);
+  });
+
+  it("reports failed searches as search errors", () => {
+    const m = fromOpenAIResponse(res([{ type: "web_search_call", id: "ws1", status: "failed", action: { type: "search", queries: ["x"] } }, answer([])]));
+    expect(normalizeSearch(m.content as never).errors).toEqual(["openai_failed"]);
   });
 });
 

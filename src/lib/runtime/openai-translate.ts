@@ -99,9 +99,17 @@ export function toOpenAIRequest(params: CreateParams): ResponseParams {
   };
   if (instructions.length) request.instructions = instructions.join("\n\n");
 
+  const include = new Set<OpenAI.Responses.ResponseIncludable>();
   if (params.tools?.length) {
     request.tools = params.tools.map((t) => {
-      const tool = t as unknown as { type?: string; name: string; description?: string; input_schema?: Record<string, unknown> };
+      const tool = t as unknown as { type?: string; name: string; description?: string; input_schema?: Record<string, unknown>; max_uses?: number };
+      if (tool.type?.startsWith("web_search_")) {
+        // Anthropic's server-side web search maps to OpenAI's built-in web_search tool. OpenAI has no
+        // per-tool limit, so the search budget becomes the response's cap on built-in tool calls.
+        if (tool.max_uses) request.max_tool_calls = tool.max_uses;
+        include.add("web_search_call.action.sources");
+        return { type: "web_search" as const };
+      }
       if (tool.type && tool.type !== "custom") {
         throw new UnsupportedFeatureError(`The "${tool.name}" tool (${tool.type}) is only available with the Anthropic provider.`);
       }
@@ -118,13 +126,60 @@ export function toOpenAIRequest(params: CreateParams): ResponseParams {
   if (supportsReasoningEffort(params.model)) {
     const effort = params.output_config?.effort;
     request.reasoning = effort ? { effort: EFFORT[effort] ?? "medium" } : {};
-    request.include = ["reasoning.encrypted_content"];
+    include.add("reasoning.encrypted_content");
   }
+  if (include.size) request.include = [...include];
   return request;
 }
 
+/**
+ * OpenAI web search, in the Anthropic shape the runtime reads (server_tool_use + web_search_tool_result).
+ * Only URLs and titles are carried over: OpenAI's url_citation annotations point into the model's own
+ * answer, not into the page, so they are never turned into quoted passages. Workflows that need page
+ * text read the pages themselves (web-fetch) and check claims against that.
+ * Cited URLs come first, so "read the top N results" reads the pages the model actually relied on.
+ */
+function webSearchBlocks(res: OpenAIResponse): { blocks: Block[]; searches: number } {
+  const titles = new Map<string, string>();
+  for (const item of res.output) {
+    if (item.type !== "message") continue;
+    for (const part of item.content) {
+      if (part.type !== "output_text") continue;
+      for (const a of part.annotations ?? []) if (a.type === "url_citation" && !titles.has(a.url)) titles.set(a.url, a.title || a.url);
+    }
+  }
+  const blocks: Block[] = [];
+  let searches = 0;
+  for (const item of res.output) {
+    if (item.type !== "web_search_call") continue;
+    const action = item.action as { type: string; queries?: string[]; query?: string; sources?: Array<{ url: string }>; url?: string | null };
+    if (action?.type === "search") searches++;
+    const query = action?.queries?.join(" | ") || action?.query || action?.url || "";
+    blocks.push({ type: "server_tool_use", id: item.id, name: "web_search", input: { query } });
+    if (item.status === "failed" || item.status === "incomplete") {
+      blocks.push({ type: "web_search_tool_result", tool_use_id: item.id, content: { type: "web_search_tool_result_error", error_code: `openai_${item.status}` } });
+      continue;
+    }
+    const urls = action?.type === "search" ? (action.sources ?? []).map((s) => s.url) : action?.type === "open_page" && action.url ? [action.url] : [];
+    const ordered = [...urls.filter((u) => titles.has(u)), ...urls.filter((u) => !titles.has(u))];
+    blocks.push({
+      type: "web_search_tool_result",
+      tool_use_id: item.id,
+      content: ordered.map((url) => ({ type: "web_search_result", url, title: titles.get(url) ?? url, page_age: null, encrypted_content: "" })),
+    });
+  }
+  // Pages the model cited without them appearing in a search action's source list.
+  const listed = new Set(blocks.flatMap((b) => (Array.isArray(b.content) ? (b.content as Array<{ url: string }>).map((r) => r.url) : [])));
+  const extra = [...titles].filter(([url]) => !listed.has(url));
+  if (blocks.length && extra.length) {
+    blocks.push({ type: "web_search_tool_result", tool_use_id: "openai_citations", content: extra.map(([url, title]) => ({ type: "web_search_result", url, title, page_age: null, encrypted_content: "" })) });
+  }
+  return { blocks, searches };
+}
+
 export function fromOpenAIResponse(res: OpenAIResponse): Message {
-  const content: Block[] = [];
+  const search = webSearchBlocks(res);
+  const content: Block[] = [...search.blocks];
   let refused = false;
 
   // Some models narrate between tool calls ("commentary"); keep only the final answer when there is one.
@@ -174,7 +229,7 @@ export function fromOpenAIResponse(res: OpenAIResponse): Message {
       output_tokens: res.usage?.output_tokens ?? 0,
       cache_creation_input_tokens: null,
       cache_read_input_tokens: null,
-      server_tool_use: null,
+      server_tool_use: search.searches ? { web_search_requests: search.searches } : null,
     },
   } as unknown as Message;
 }
