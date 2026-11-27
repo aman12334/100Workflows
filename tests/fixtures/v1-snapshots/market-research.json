@@ -1,0 +1,141 @@
+{
+  "$schema": "../../workflow.schema.json",
+  "id": "market-research",
+  "version": "0.2.2",
+  "name": "Market Research Agent",
+  "category": "gtm",
+  "summary": "Turns a research objective into a structured market report where every claim points to a source.",
+  "description": "A researcher agent searches the web with Anthropic's web search tool (opt-in, see WORKFLOWS_WEB_SEARCH) and writes notes. A writer agent turns only the retrieved sources into a structured report, and deterministic checks verify that every finding, player and trend cites a source that was actually retrieved. A separate reviewer call grades whether the report answers the objective. If web search is off or returns nothing, the workflow stops and says so instead of inventing sources. This is a technical demonstration of the runtime, not a substitute for expert research.",
+  "status": "available",
+  "problems": [
+    "I need to understand a market before entering it",
+    "I don't know how big the opportunity is or who the main players are",
+    "I want a sourced overview of trends in my industry",
+    "I need evidence for a go-to-market decision"
+  ],
+  "tags": [
+    "research",
+    "market-sizing",
+    "trends",
+    "competitors",
+    "tam"
+  ],
+  "inputs": [
+    {
+      "key": "research_objective",
+      "label": "Research objective",
+      "type": "long_text",
+      "required": true,
+      "description": "The question this research should answer.",
+      "example": "How large is the market for AI bookkeeping tools for US agencies, and who leads it?"
+    },
+    {
+      "use": "company_name",
+      "required": false
+    },
+    {
+      "use": "product_description",
+      "required": false
+    },
+    {
+      "use": "target_market",
+      "required": true
+    },
+    {
+      "key": "known_competitors",
+      "label": "Known competitors",
+      "type": "list",
+      "required": false,
+      "description": "Competitors you already know about."
+    }
+  ],
+  "outputs": [
+    {
+      "key": "report",
+      "label": "Research report",
+      "description": "Executive summary, market overview, key players, trends, risks and open questions.",
+      "format": "markdown"
+    },
+    {
+      "key": "findings",
+      "label": "Findings with sources",
+      "description": "Each finding with the source URLs that support it.",
+      "format": "json"
+    }
+  ],
+  "steps": [
+    {
+      "id": "gather",
+      "name": "Search and take notes",
+      "kind": "agent",
+      "responsibility": "Run up to 5 web searches for the objective and write research notes with citations.",
+      "tools": [
+        "web-search"
+      ]
+    },
+    {
+      "id": "write_report",
+      "name": "Write report",
+      "kind": "agent",
+      "responsibility": "Draft a structured report using only the retrieved sources, citing each item by source id.",
+      "tools": []
+    },
+    {
+      "id": "verify_sources",
+      "name": "Verify sources",
+      "kind": "check",
+      "responsibility": "Confirm required sections are present and every cited source id was actually retrieved.",
+      "tools": []
+    },
+    {
+      "id": "review",
+      "name": "Review",
+      "kind": "agent",
+      "responsibility": "A separate reviewer grades whether the report answers the objective (1-5 rubric).",
+      "tools": []
+    }
+  ],
+  "tools": [
+    {
+      "id": "web-search",
+      "purpose": "Retrieve current public information about the market.",
+      "required": true
+    }
+  ],
+  "integrations": [],
+  "dependencies": [],
+  "evaluation": {
+    "criteria": [
+      {
+        "id": "schema_valid",
+        "description": "Report matches the output schema.",
+        "method": "schema",
+        "critical": true
+      },
+      {
+        "id": "sections_complete",
+        "description": "All required report sections are present and substantive.",
+        "method": "rule",
+        "critical": false
+      },
+      {
+        "id": "sources_traceable",
+        "description": "Every finding, key player and trend cites a retrieved source.",
+        "method": "rule",
+        "critical": true
+      },
+      {
+        "id": "answers_objective",
+        "description": "The report directly addresses the research objective.",
+        "method": "model",
+        "critical": false
+      }
+    ],
+    "threshold": 0.75
+  },
+  "limits": {
+    "maxRetries": 2,
+    "timeoutSeconds": 600,
+    "maxModelCalls": 10
+  }
+}

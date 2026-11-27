@@ -5,6 +5,8 @@ import { WorkflowFailure, type Confidence, type ExecContext, type Executor } fro
 import { jsonFormat, parseJson, textOf, type MessageParam } from "../model";
 import { PROVIDERS, resolveProvider } from "@/lib/providers";
 import { contextBlock, list, modelReview, text } from "./shared";
+import type { FetchedPageResult } from "../tools/registry";
+import { ToolError } from "../tools/runner";
 
 export const SourceSchema = z.object({
   id: z.string(),
@@ -42,6 +44,26 @@ export const ResearchOutputSchema = z.object({ report: ReportSchema, sources: z.
 export const MAX_SEARCHES = 5;
 const MAX_GATHER_CALLS = 3; // pause_turn continuations
 const MAX_SOURCES = 20;
+/** With providers whose search returns links only, the top results are read on this computer. */
+export const PAGES_TO_READ = 6;
+
+const STOP = new Set("about after also been both does from have into many more most much only other over same some such than that their them then there these they this those through very what when where which while with would your will were".split(" "));
+
+/**
+ * Up to four paragraphs from a page that best match the research terms, copied verbatim.
+ * Deterministic: no model chooses or rewrites the passages, so they can't be invented.
+ */
+export function pickPassages(pageText: string, about: string, max = 4): string[] {
+  const terms = new Set((about.toLowerCase().match(/[a-z0-9]{4,}/g) ?? []).filter((t) => !STOP.has(t)));
+  const paragraphs = pageText.split(/\n{1,}/).map((p) => p.trim()).filter((p) => p.length >= 80);
+  const scored = paragraphs
+    .map((p, i) => ({ p: p.slice(0, 400), i, score: new Set((p.toLowerCase().match(/[a-z0-9]{4,}/g) ?? []).filter((t) => terms.has(t))).size }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score || a.i - b.i)
+    .slice(0, max)
+    .sort((a, b) => a.i - b.i);
+  return scored.map((x) => x.p);
+}
 
 export function webSearchEnabled(env: Record<string, string | undefined>) {
   return env.WORKFLOWS_WEB_SEARCH?.trim().toLowerCase() === "on";
@@ -130,6 +152,30 @@ async function gather(ctx: ExecContext): Promise<ResearchState> {
     }
 
     const { sources, errors } = collectSources(blocks);
+    const provider = PROVIDERS[resolveProvider(ctx.env ?? {})];
+    let read = 0;
+    const unread: string[] = [];
+    if (!provider.webSearchPassages && sources.length) {
+      // The provider's search returned links only: read the top results here and quote their text.
+      const about = [objective, text(ctx.inputs, "target_market"), text(ctx.inputs, "product_description")].join(" ");
+      for (const source of sources.slice(0, PAGES_TO_READ)) {
+        try {
+          const page = await ctx.tools.run<FetchedPageResult>("gather", "web-fetch", { url: source.url });
+          source.excerpts = pickPassages(page.text, about);
+          if (page.title) source.title = page.title;
+          read++;
+        } catch (err) {
+          if (!(err instanceof ToolError)) throw err; // budgets, cancellation and time limits belong to the engine
+          unread.push(`${source.url}: ${err.message}`);
+        }
+      }
+      if (!sources.some((s) => s.excerpts.length)) {
+        throw new WorkflowFailure(
+          `${provider.label}'s web search returned links but none of the top pages could be read here${unread.length ? ` (${unread.slice(0, 3).join("; ")})` : ""}. ` +
+            "No report was written, because it would have had no page text to cite. Update to the latest Market Research version if this package is pinned to an older one.",
+        );
+      }
+    }
     if (sources.length === 0) {
       throw new WorkflowFailure(
         `Web search returned no usable sources${errors.length ? ` (search errors: ${[...new Set(errors)].join(", ")})` : ""}. ` +
@@ -139,7 +185,7 @@ async function gather(ctx: ExecContext): Promise<ResearchState> {
     const cited = sources.filter((s) => s.excerpts.length).length;
     return {
       value: { objective, context, sources, notes },
-      detail: `${sources.length} sources retrieved (${cited} with cited passages)${errors.length ? `; search errors: ${[...new Set(errors)].join(", ")}` : ""}`,
+      detail: `${sources.length} sources retrieved (${cited} with ${read ? `passages quoted from ${read} page${read === 1 ? "" : "s"} read here` : "cited passages"})${unread.length ? `; ${unread.length} page(s) couldn't be read` : ""}${errors.length ? `; search errors: ${[...new Set(errors)].join(", ")}` : ""}`,
     };
   });
 }
@@ -219,19 +265,20 @@ export function renderReport(state: ResearchState, report: Report): string {
 
 export const marketResearch: Executor<ResearchState, Report> = {
   workflowId: "market-research",
-  versions: ["0.2"],
+  versions: ["0.2", "0.3"],
   callsPerAttempt: 2, // write + review
 
   preflight(env) {
     const provider = PROVIDERS[resolveProvider(env)];
-    if (!provider.webSearchPassages) {
-      return `Market Research needs web search that quotes the pages it found, which 100 Workflows currently provides only through Anthropic. You're using ${provider.label}, so it will be skipped. ` +
-        "Add an ANTHROPIC_API_KEY (with WORKFLOWS_WEB_SEARCH=on) to run it.";
+    if (!provider.webSearchPassages && env.WORKFLOWS_WEB_FETCH?.trim().toLowerCase() !== "on") {
+      // With links-only search, the evidence comes from reading the top pages here.
+      return `Market Research needs page reading with ${provider.label}: its web search returns links only, so the top results are read on this computer and quoted. ` +
+        "Set WORKFLOWS_WEB_FETCH=on (and WORKFLOWS_WEB_SEARCH=on) in .env.local and restart.";
     }
     return webSearchEnabled(env)
       ? null
       : "Market Research needs a search tool, and web search is off. Set WORKFLOWS_WEB_SEARCH=on in .env.local and restart. " +
-          "Anthropic bills web searches separately from tokens. Without it the workflow won't run, because it would have no sources to cite.";
+          `${provider.label} bills web searches separately from tokens. Without it the workflow won't run, because it would have no sources to cite.`;
   },
 
   prepare: gather,

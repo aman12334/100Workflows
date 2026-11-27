@@ -19,6 +19,8 @@ const GOLDEN: Record<string, string> = {
   "pricing-analysis@0.1.1": "8fd76a22257c27e8071f4432df488f1fbc3a68293c01243cf634087356b07cb2",
   "icp-builder@0.2.1": "9ee678259d8cb7e86b4150f4182e046f6eeacfcde7eb91eaa8536b05f4687e5b",
   "market-research@0.2.2": "f231184128e088a30208dbde63d216a59e478a29133c31241c782d18d7c77979",
+  // 0.3.0 (2026-11-22) adds optional page reading for providers whose search returns links only; 0.2.2 is kept as a snapshot.
+  "market-research@0.3.0": "87dd0bba6691bf308254601be538f29372022960fda00c73150c28ddb3385056",
   "competitor-teardown@0.1.1": "e04f2502f28f9d6b2460c857f01c141580c8060d49ac20cd143ed33fd7e74100",
   "content-calendar@0.1.1": "6734a38eea3f9044857704f0b95f52f428bd01578f2a4ca8ac5b15be67774cb1",
   "sop-writer@0.1.0": "28feb40036d286537afb087c3777cece3d579613b87d9f0d36c19f6a5161728a",
@@ -29,7 +31,7 @@ const GOLDEN: Record<string, string> = {
   "survey-designer@0.1.1": "630fd86d4d089634cf1b73bbe52c9424f0f47298dac8e68bc83fc7696345b742",
 };
 
-/** The v1 files of the three migrated pilots, kept verbatim: packages created before the migration pinned these. */
+/** Superseded v1 files kept verbatim: the three migrated pilots, and Market Research 0.2.2. Packages created earlier pinned these. */
 const SNAPSHOT_DIR = path.join(process.cwd(), "tests", "fixtures", "v1-snapshots");
 const MIGRATED = ["discovery-call-prep", "sop-writer", "survey-designer"];
 
@@ -63,11 +65,11 @@ describe("backward compatibility: fingerprints", () => {
     const migrated = catalog.filter((w) => MIGRATED.includes(w.id));
     expect(Object.fromEntries(migrated.map((w) => [`${w.id}@${w.version}`, definitionHash(w)]))).toEqual(PILOTS_V2);
     for (const wf of migrated) expect(Object.hasOwn(GOLDEN, `${wf.id}@${wf.version}`), wf.id).toBe(false);
-    expect(readdirSync(SNAPSHOT_DIR).sort()).toEqual(MIGRATED.map((id) => `${id}.json`));
+    expect(readdirSync(SNAPSHOT_DIR).sort()).toEqual([...MIGRATED, "market-research"].sort().map((id) => `${id}.json`));
   });
 
   it("adds no schema-v2 keys to v1 definitions", () => {
-    expect(v1).toHaveLength(12);
+    expect(v1).toHaveLength(13);
     for (const wf of v1) {
       for (const key of ["schemaVersion", "execution", "outputSchema"]) expect(Object.hasOwn(wf, key), `${wf.id}.${key}`).toBe(false);
       for (const st of wf.steps) for (const key of ["prompt", "mode"]) expect(Object.hasOwn(st, key), `${wf.id} step ${st.id}.${key}`).toBe(false);

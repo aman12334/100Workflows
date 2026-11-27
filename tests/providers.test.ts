@@ -30,8 +30,10 @@ describe("provider selection", () => {
     expect(getModelConfig({ WORKFLOWS_PROVIDER: "gemini" }).problem).toMatch(/must be "anthropic" or "openai"/);
   });
 
-  it("skips Market Research on OpenAI because web search is Anthropic-only, but ICP still runs", () => {
-    expect(marketResearch.preflight({ OPENAI_API_KEY: "sk-x", WORKFLOWS_WEB_SEARCH: "on" })).toMatch(/only through Anthropic/);
+  it("runs Market Research on OpenAI only with page reading on (search returns links only); ICP always runs", () => {
+    expect(marketResearch.preflight({ OPENAI_API_KEY: "sk-x", WORKFLOWS_WEB_SEARCH: "on" })).toMatch(/needs page reading with OpenAI.*WORKFLOWS_WEB_FETCH=on/);
+    expect(marketResearch.preflight({ OPENAI_API_KEY: "sk-x", WORKFLOWS_WEB_SEARCH: "on", WORKFLOWS_WEB_FETCH: "on" })).toBeNull();
+    expect(marketResearch.preflight({ ANTHROPIC_API_KEY: "sk-ant-x", WORKFLOWS_WEB_SEARCH: "on" })).toBeNull();
     expect(icpBuilder.preflight({ OPENAI_API_KEY: "sk-x" })).toBeNull();
   });
 });

@@ -138,7 +138,8 @@ describe("search and versions", () => {
     const mr = EXECUTORS["market-research"];
     expect(implementsVersion(mr, "0.2.0")).toBe(true);
     expect(implementsVersion(mr, "0.2.7")).toBe(true);
-    expect(implementsVersion(mr, "0.3.0")).toBe(false);
+    expect(implementsVersion(mr, "0.3.0")).toBe(true);
+    expect(implementsVersion(mr, "0.4.0")).toBe(false);
     expect(implementsVersion(mr, "0.20.0")).toBe(false);
   });
 });

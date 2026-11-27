@@ -1,11 +1,11 @@
 {
   "$schema": "../../workflow.schema.json",
   "id": "market-research",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "name": "Market Research Agent",
   "category": "gtm",
   "summary": "Turns a research objective into a structured market report where every claim points to a source.",
-  "description": "A researcher agent searches the web with Anthropic's web search tool (opt-in, see WORKFLOWS_WEB_SEARCH) and writes notes. A writer agent turns only the retrieved sources into a structured report, and deterministic checks verify that every finding, player and trend cites a source that was actually retrieved. A separate reviewer call grades whether the report answers the objective. If web search is off or returns nothing, the workflow stops and says so instead of inventing sources. This is a technical demonstration of the runtime, not a substitute for expert research.",
+  "description": "A researcher agent searches the web with the model provider's web search tool (opt-in, see WORKFLOWS_WEB_SEARCH) and writes notes. With Anthropic, cited passages come from the search tool; with OpenAI, whose search returns links only, the top results are read on this computer (WORKFLOWS_WEB_FETCH) and passages are quoted word for word from those pages. A writer agent turns only the retrieved sources into a structured report, and deterministic checks verify that every finding, player and trend cites a source that was actually retrieved. A separate reviewer call grades whether the report answers the objective. If web search is off or returns nothing, the workflow stops and says so instead of inventing sources. This is a technical demonstration of the runtime, not a substitute for expert research.",
   "status": "available",
   "problems": [
     "I need to understand a market before entering it",
@@ -70,7 +70,8 @@
       "kind": "agent",
       "responsibility": "Run up to 5 web searches for the objective and write research notes with citations.",
       "tools": [
-        "web-search"
+        "web-search",
+        "web-fetch"
       ]
     },
     {
@@ -100,6 +101,11 @@
       "id": "web-search",
       "purpose": "Retrieve current public information about the market.",
       "required": true
+    },
+    {
+      "id": "web-fetch",
+      "purpose": "Read the top search results when the provider's search returns links only (OpenAI).",
+      "required": false
     }
   ],
   "integrations": [],
