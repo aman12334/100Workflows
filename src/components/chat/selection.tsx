@@ -26,7 +26,7 @@ export function SelectableCard({
   return (
     <div
       className={`group relative flex gap-3.5 rounded-2xl border bg-surface p-4 transition ${
-        checked ? "border-volt-500 shadow-lg shadow-volt-500/15 ring-1 ring-volt-500" : "border-line hover:border-volt-400"
+        checked ? "border-volt-500 ring-1 ring-volt-500" : "border-line hover:bg-hover"
       }`}
     >
       <button
@@ -40,19 +40,19 @@ export function SelectableCard({
       <span
         aria-hidden
         className={`pointer-events-none relative mt-0.5 grid size-6 shrink-0 place-items-center rounded-lg border-2 transition ${
-          checked ? "border-volt-500 bg-volt-500 text-white" : "border-ink-300/60 bg-surface text-transparent group-hover:border-volt-400"
+          checked ? "border-volt-500 bg-volt-500 text-white" : "border-ink-300/60 bg-surface text-transparent group-hover:bg-hover"
         }`}
       >
         <Check className="size-4" strokeWidth={3} />
       </span>
       {!compact && (
-        <div className="pointer-events-none relative hidden size-11 shrink-0 place-items-center rounded-xl sm:grid" style={{ background: s.gradient }}>
-          <Icon className="size-5.5 text-white" strokeWidth={2.2} />
+        <div aria-hidden className="pointer-events-none relative hidden size-10 shrink-0 place-items-center rounded-xl bg-raised text-ink-700 sm:grid">
+          <Icon className="size-5" strokeWidth={2} />
         </div>
       )}
       <div className="pointer-events-none relative min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-display text-[15px] font-bold text-ink-950">{workflow.name}</span>
+          <span className="font-display text-[15px] font-semibold text-ink-950">{workflow.name}</span>
           <StatusBadge status={workflow.status} />
         </div>
         <p className="mt-1 text-sm leading-relaxed text-ink-700">{reason ?? workflow.summary}</p>
@@ -70,7 +70,7 @@ export function SelectableCard({
         href={`/library/${workflow.id}`}
         target="_blank"
         aria-label={`Open ${workflow.name} details`}
-        className="relative self-start rounded-lg p-1.5 text-ink-300 transition hover:bg-canvas hover:text-volt-600"
+        className="relative self-start rounded-lg p-1.5 text-ink-300 transition hover:bg-raised hover:text-ink-950"
       >
         <ArrowUpRight className="size-4" />
       </Link>
@@ -98,13 +98,13 @@ export function SelectionTray({
   const extra = [...new Set(selected.flatMap((w) => w.requires))].filter((id) => !ids.has(id));
 
   return (
-    <div className="animate-rise mb-3 overflow-hidden rounded-3xl bg-ink-950 text-white shadow-2xl shadow-ink-950/30">
+    <div className="animate-rise mb-3 overflow-hidden rounded-[16px] bg-action text-white">
       <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <span className="grid size-6 place-items-center rounded-full bg-lime-glow font-mono text-xs text-ink-950">{selected.length}</span>
+            <span className="grid size-6 place-items-center rounded-full bg-white text-xs font-semibold text-ink-950 tabular-nums">{selected.length}</span>
             selected for a new package
-            <button onClick={onClear} className="ml-1 text-xs font-medium text-ink-300 underline-offset-2 hover:text-white hover:underline">
+            <button onClick={onClear} className="ml-1 text-xs font-medium text-white/80 underline-offset-2 hover:text-white hover:underline">
               clear
             </button>
           </div>
@@ -118,7 +118,7 @@ export function SelectionTray({
               </span>
             ))}
             {extra.map((id) => (
-              <span key={id} className="inline-flex items-center gap-1 rounded-full border border-dashed border-white/25 px-2.5 py-0.5 text-xs text-ink-300">
+              <span key={id} className="inline-flex items-center gap-1 rounded-full border border-dashed border-white/40 px-2.5 py-0.5 text-xs text-white/85">
                 + {workflowNames[id] ?? id} <span className="text-[10px]">(required)</span>
               </span>
             ))}
@@ -127,7 +127,7 @@ export function SelectionTray({
         <button
           onClick={onCreate}
           disabled={creating}
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-volt-500 px-5 py-2.5 text-sm font-semibold shadow-lg shadow-volt-500/40 transition hover:bg-volt-400 disabled:opacity-60"
+          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-action px-5 py-2.5 text-sm font-semibold transition hover:bg-action-hover disabled:opacity-60"
         >
           {creating ? <Loader2 className="size-4 animate-spin" /> : <PackagePlus className="size-4" />}
           {creating ? "Creating…" : "Create package"}

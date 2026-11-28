@@ -113,7 +113,7 @@ export function ChatView(props: Props) {
     <div className="mx-auto flex min-h-dvh max-w-4xl flex-col px-4 sm:px-8">
       <header className="flex items-center justify-between gap-3 py-5">
         <div className="flex min-w-0 items-center gap-2 text-sm text-ink-500">
-          <Sparkles className="size-4 shrink-0 text-volt-500" />
+          <Sparkles className="size-4 shrink-0 text-ink-700" />
           <span className="truncate">
             Guided by your own {providerLabel} key · {catalogSize} workflows in the catalog
           </span>
@@ -121,7 +121,7 @@ export function ChatView(props: Props) {
         {!empty && (
           <Link
             href="/"
-            className="flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-ink-700 transition hover:border-volt-400 hover:text-volt-600"
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-line bg-surface px-3.5 py-1.5 text-xs font-semibold text-ink-700 transition hover:bg-hover hover:text-ink-950"
           >
             <Plus className="size-3.5" /> New chat
           </Link>
@@ -129,11 +129,11 @@ export function ChatView(props: Props) {
       </header>
 
       {!configured && (
-        <div className="mb-4 flex items-start gap-3 rounded-2xl border border-coral/30 bg-[#fff1f0] p-4 text-sm text-[#8a1f1f]">
+        <div className="mb-4 flex items-start gap-3 rounded-2xl border bg-danger-tint p-4 text-sm text-coral">
           <KeyRound className="mt-0.5 size-5 shrink-0" />
           <div>
             <div className="font-semibold">Connect a model key to start chatting</div>
-            <p className="mt-0.5 text-[#8a1f1f]/80">
+            <p className="mt-0.5 text-coral/80">
               {configProblem} You can still browse the{" "}
               <Link href="/library" className="font-semibold underline">
                 workflow library
@@ -148,11 +148,11 @@ export function ChatView(props: Props) {
       )}
 
       {linkedPackages.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-volt-100 bg-volt-50/60 px-4 py-3 text-sm text-ink-800">
+        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-transparent bg-volt-50/60 px-4 py-3 text-sm text-ink-950">
           <Package className="size-4 text-volt-600" />
           Packages from this chat:
           {linkedPackages.map((p) => (
-            <Link key={p.id} href={`/packages/${p.id}`} className="rounded-full bg-surface px-3 py-0.5 font-semibold text-volt-700 ring-1 ring-volt-100 hover:ring-volt-400">
+            <Link key={p.id} href={`/packages/${p.id}`} className="rounded-full bg-surface px-3 py-0.5 font-semibold text-volt-600 ring-1 ring-volt-100 hover:ring-volt-400">
               {p.name}
             </Link>
           ))}
@@ -177,7 +177,7 @@ export function ChatView(props: Props) {
         <div ref={bottomRef} />
       </div>
 
-      <div className="sticky bottom-0 -mx-4 bg-gradient-to-t from-canvas via-canvas/95 to-transparent px-4 pt-6 pb-5 sm:-mx-8 sm:px-8">
+      <div className="sticky bottom-0 -mx-4 bg-canvas px-4 pt-6 pb-5 sm:-mx-8 sm:px-8">
         {selected.length > 0 && (
           <SelectionTray
             selected={selected.map((id) => refs.get(id)).filter((r): r is WorkflowRef => Boolean(r))}
@@ -222,8 +222,8 @@ function AssistantMessage({
         <Logo size={32} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="rounded-3xl rounded-tl-lg border border-line bg-surface px-5 py-4 shadow-[0_1px_0_rgb(19_16_46/0.04)]">
-          <div className="prose-flow text-ink-800">
+        <div className="rounded-[16px] rounded-tl-lg border border-line bg-surface px-5 py-4">
+          <div className="prose-flow text-ink-950">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
           </div>
         </div>
@@ -273,7 +273,7 @@ function AssistantMessage({
         )}
 
         {reply && reply.unknownWorkflowIds.length > 0 && (
-          <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-300/60 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
+          <div className="mt-3 flex items-start gap-2 rounded-xl border border-transparent bg-warn-tint px-3.5 py-2.5 text-xs text-ink-950">
             <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
             <span>
               The reply referenced {reply.unknownWorkflowIds.map((id) => `“${id}”`).join(", ")}, which{" "}
@@ -286,7 +286,7 @@ function AssistantMessage({
         {reply?.stopped === "max_tokens" && <p className="mt-2 text-xs text-ink-500">The answer hit the length limit and was cut off.</p>}
 
         {reply && (
-          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 px-1 font-mono text-[11px] text-ink-300">
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 px-1 font-mono text-[11px] text-ink-500">
             <span>{reply.model}</span>
             <span>
               {reply.usage.modelCalls} call{reply.usage.modelCalls === 1 ? "" : "s"}
